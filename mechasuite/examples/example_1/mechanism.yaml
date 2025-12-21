@@ -1,0 +1,27 @@
+example1:
+  units: kcal
+  min_items:
+  - R
+  - I
+  - P
+  ts_items:
+  - TS1
+  - TS2
+  ref_items:
+  - ref_item1
+
+  refs:
+    global_ref:
+    - ref_item1
+
+  apply_refs:
+    global_ref: .* # all items
+
+  plots:
+    plot1:
+      path1:
+      - R
+      - TS1
+      - I
+      - TS2
+      - P

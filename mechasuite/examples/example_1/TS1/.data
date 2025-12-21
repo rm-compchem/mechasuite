@@ -1,0 +1,5 @@
+program xxx
+energy 17.0
+struct opt.xyz
+tp min
+unit kcal
