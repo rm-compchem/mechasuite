@@ -1,7 +1,8 @@
 #ifndef FREQTABLE_H
 #define FREQTABLE_H
 
-#include <QtWidgets>
+//#include <QtWidgets>
+#include <QtWidgets/QTableWidget>
 #include "globals.h"
 
 

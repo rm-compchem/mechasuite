@@ -1,9 +1,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
+#include <QtWidgets/QMainWindow>
 #include <QMimeData>
-#include <QIcon>
+#include <QtGui/QIcon>
 #include "qglbegin.h"
 #include "multichoicedialog.h"
 #include "multichoicedialog2.h"
