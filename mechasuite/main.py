@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from PyQt5.QtWidgets import QApplication
-from Sheet import MainWindow
+from mechasuite.Sheet import MainWindow
 import sys
 
 if __name__ == "__main__":

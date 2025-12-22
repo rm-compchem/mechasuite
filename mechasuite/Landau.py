@@ -3,7 +3,7 @@ import math
 import sys
 import argparse
 import os
-import .globs
+import mechasuite.globs as globs
 from scipy.integrate import quad
 
 # -------------------------------

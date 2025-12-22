@@ -1,12 +1,12 @@
 from collections import OrderedDict
-from .Read import *
-from .globs import *
+from mechasuite.Read import *
+from mechasuite.globs import *
 import os, time, random
 import numpy as np
 import shutil
-import .Thermo
+import mechasuite.Thermo as Thermo
 from scipy import optimize
-from .Landau import *
+from mechasuite.Landau import *
 import yaml, json
 import copy
 

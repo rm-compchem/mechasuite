@@ -1,4 +1,4 @@
-from pyposcar import *
+from mechasuite.pyposcar import *
 
 
 def read_oszicar_energy(oszicar):

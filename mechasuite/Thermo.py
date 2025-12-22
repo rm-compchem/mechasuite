@@ -3,7 +3,7 @@
 import numpy as np
 import sys
 import math
-from .globs import conv, masas, sigma
+from mechasuite.globs import conv, masas, sigma
 
 # some constants here as per the NIST (CODATA 2014)
 NA = 6.022140857e23 #Avogadro's number

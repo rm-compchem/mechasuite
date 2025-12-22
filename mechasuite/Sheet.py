@@ -7,14 +7,14 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QWidget, \
     QListWidget, QDialogButtonBox, QListWidgetItem
 from PyQt5.QtGui import QPixmap, QCursor, QFont, QColor
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
-from .MyWidgets import *
-from .Plot import plot, MainCanvas
+from mechasuite.Widgets import *
+from mechasuite.Plot import plot, MainCanvas
 import json
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from .Data import *
+from mechasuite.Data import *
 from math import cos, sin, acos
-from .Read import unfold_temps
+from mechasuite.Read import unfold_temps
 import re
 # import rotate
 import time

@@ -4,7 +4,7 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QMenu, QComboBox, QInputDialog, QColorDialog, QLineEdit, QMessageBox, QFileDialog, QShortcut
 from PyQt5.QtGui import QPainter, QPen, QFont, QColor, QPixmap, QBrush, QKeySequence
 from PyQt5.QtCore import Qt, QRect
-from MyWidgets import MultipleChoiceDialog
+from mechasuite.Widgets import MultipleChoiceDialog
 import sys
 import numpy as np
 import matplotlib
