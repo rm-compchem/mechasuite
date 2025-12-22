@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/open.png</file>
+        <file>icons/save.png</file>
+        <file>icons/edit.jpg</file>
+        <file>icons/showcell.png</file>
+        <file>icons/specular.png</file>
+        <file>icons/light.png</file>
+        <file>icons/color.png</file>
+        <file>icons/play.png</file>
+        <file>icons/stop.png</file>
+        <file>icons/scatter.png</file>
+        <file>icons/time.png</file>
+        <file>icons/track.png</file>
+        <file>icons/crop.png</file>
+    </qresource>
+</RCC>
