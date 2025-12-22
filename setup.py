@@ -11,15 +11,14 @@ setup(
     #install_requires=requirements,
     scripts=["mechasuite/mechadata.py", "mechasuite/mechakinetics.py"],
     setup_requires=[
-        'setuptools>=18.0',  # automatically handles Cython extensions
-        'cython>=0.28.4',
-        'PyOpenGL',
-        'matplotlib',
-        'scipy',
-        'pyyaml',
-        'openpyxl'
-        'PyQt5',
-        'numpy'
+     #   'setuptools>=18.0',  # automatically handles Cython extensions
+     #   'PyOpenGL',
+     #   'matplotlib',
+     #   'scipy',
+     #   'pyyaml',
+     #   'openpyxl',
+     #   'PyQt5',
+     #   'numpy'
     ],
 
 )
