@@ -6525,7 +6525,18 @@ considered as a single word
     return final_list;
 }
 
-
+#ifdef _WIN32
+#include <windows.h>
+void updateMemoryUsage() {
+    MEMORYSTATUSEX memInfo;
+    memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+    GlobalMemoryStatusEx(&memInfo);
+    long long totalPhys = memInfo.ullTotalPhys;
+    long long physUsed = memInfo.ullTotalPhys - memInfo.ullAvailPhys;
+    // do something with physUsed / totalPhys
+   availableMemory = totalPhys - physUsed;
+}
+#else
 void updateMemoryUsage()
 {
     long pages = sysconf(_SC_PHYS_PAGES);
@@ -6541,6 +6552,6 @@ void updateMemoryUsage()
    memUsage = resident * page_size_kb;
    availableMemory = totalMemory - memUsage;
 }
-
+#endif
 //*************************GLOBAL FUNCTIONS*******************************************************
 
