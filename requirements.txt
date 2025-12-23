@@ -1,0 +1,8 @@
+setuptools>=18.0
+PyOpenGL
+matplotlib
+scipy
+pyyaml
+openpyxl
+PyQt5
+numpy

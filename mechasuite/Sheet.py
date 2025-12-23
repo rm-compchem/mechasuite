@@ -74,7 +74,7 @@ class QGLBegin(QOpenGLWidget):
         self.bool_peli = False
         self.struct_is_set = False
         self.zlimit = 0
-        self.initializeGL()
+        #self.initializeGL() # crashes under windows
 
     def set_zrange(self):
         # return
