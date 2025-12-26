@@ -1,0 +1,57 @@
+{% set name = "mechasuite" %}
+{% set version = "1.0" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  #path: /home/reisel/github_rm-compchem/mechasuite 
+  git_url: https://github.com/rm-compchem/mechasuite.git
+  git_branch: main
+  git_depth: 1 # (Defaults to -1/not shallow)
+
+build:
+  number: 0
+  #script: "{{ PYTHON }} -m pip install . -vv "
+
+requirements:
+  host:
+    - pip >=21
+    - python >=3.9,<3.13
+    - qt-main
+    #- qt==5.15.7
+    - PyOpenGL
+    - matplotlib
+    - scipy
+    - pyyaml
+    - openpyxl
+    - pyqt
+    - numpy
+  run:
+    - python >=3.9,<3.13
+    - qt-main
+    - PyOpenGL
+    - matplotlib
+    - scipy
+    - pyyaml
+    - openpyxl
+    - pyqt
+    - numpy
+    #- qt
+    #- qt==5.15.7
+  build:
+    - python >=3.9,<3.13
+    - setuptools >=61
+    - wheel
+    - {{ compiler('cxx') }}
+    - qt-main
+    #- qt
+    #- qt==5.15.7
+
+#test:
+#  imports:
+#    - click
+
+about:
+  summary: Composable command line interface toolkit
