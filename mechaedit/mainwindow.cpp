@@ -10,7 +10,7 @@ MainWindow::MainWindow() :
     ui->setupUi(this);
     setAcceptDrops(true);
 
-    setWindowTitle(tr("RMOL. Have fun building cool Chemical Structures!!!"));
+    setWindowTitle(tr("MechaEdit"));
 //    QList list
     QList<int> lista = {800,300};
     ui->splitter->setSizes(lista);

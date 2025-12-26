@@ -1712,7 +1712,7 @@ void Struct::load_cif(QString inputfile){
             continue;
         }
         if(line.startsWith("loop_")){
-            cout<<"reading loop\n";
+            //cout<<"reading loop\n";
             reading_loop = true;
             reading_loop_headers = true;
             loop_headers.clear();
@@ -1827,7 +1827,7 @@ void Struct::load_cif(QString inputfile){
     }
 
     int index_cont = 0;
-    cout<<sym_equivalent_sites.size()<<" table number:"<<tableNumber <<endl;
+    //cout<<sym_equivalent_sites.size()<<" table number:"<<tableNumber <<endl;
     for(unsigned int i=0;i<coors.size();i++){
         for(auto &s:sym_equivalent_sites){
             tempcoor = calculate_cif_symmetry_positions(s, coors[i]);
@@ -3338,9 +3338,9 @@ void Struct::save_poscar(QString filename){
 void Struct::prueba(){
     for(auto sel:selat){
         for (int j =0;j<4;j++){
-            cout<<sel->color[j]<<"  ";
+            //cout<<sel->color[j]<<"  ";
         }
-        cout<<endl;
+        //cout<<endl;
     }
 }
 
