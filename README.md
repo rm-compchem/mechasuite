@@ -29,4 +29,5 @@ pip install -r requirements.txt
 pip install .
 ```
 
+After installing you can enter the examples folders and open the input files provided:
 
