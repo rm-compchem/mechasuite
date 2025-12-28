@@ -972,7 +972,7 @@ class MainSheet(QTableWidget):
         update = menu.addAction("Update Item")
         update_data_from_folder = menu.addAction("Update Item From Folder")
         update_selection_from_folder = menu.addAction("Update Selection From Folder")
-        export_to_graph = menu.addAction("Export Maplotlib")
+        #export_to_graph = menu.addAction("Export Maplotlib")
         export_csv = menu.addAction("Export Thermochemical CSV")
         removeentropy = menu.addAction("Remove 1/3 of Translational Entropy")
         showrotmat = menu.addAction("Show Rotational Matrix")
@@ -1020,8 +1020,8 @@ class MainSheet(QTableWidget):
             self.on_merge_items()
         elif action == copytomech:
             self.copy_to_mech()
-        elif action == export_to_graph:
-            self.export_to_matplotlib()
+        #elif action == export_to_graph:
+        #    self.export_to_matplotlib()
         elif action == loadfreqs:
             self.load_freqs()
         elif action == delthermo:
@@ -1065,7 +1065,7 @@ class MainSheet(QTableWidget):
         import subprocess as sb
         cellobjs = self.selectedItems()
         colname = self.horizontalHeaderItem(self.currentColumn()).text()
-        cmd = shutil.which("rmol")
+        cmd = shutil.which("mechaedit")
         if cmd is None:
             cmd = shutil.which("tg")
         if cmd is None:
@@ -1601,28 +1601,28 @@ class MainSheet(QTableWidget):
                 msb.setText("Could not load frequencies")
                 msb.exec()
 
-    def export_to_matplotlib(self):
-        cellobjs = self.selectedItems()
-        itmnames = [cellobj.text() for cellobj in cellobjs
-                    if self.verticalHeaderItem(cellobj.row()).text() == "Name"]
-
-        f = open("matinput", "a")
-        colname = self.horizontalHeaderItem(cellobjs[0].column()).text()
-        pos = 0
-        f.write("0 zero%       0      blue_b\n")
-        for num, itmname in enumerate(itmnames):
-            itmobj = self.data.get_mech(colname).get_itm(itmname)
-            if itmobj is None:
-                continue
-            pos += 1
-            f.write(str(pos) + "     ")
-            f.write(itmobj.name + "     ")
-            f.write(str(itmobj.get_def_ref_energy()) + "    ")
-            if num < len(itmnames) - 1:
-                f.write("blue_b\n")
-            else:
-                f.write("n\n")
-        f.close()
+#    def export_to_matplotlib(self):
+#        cellobjs = self.selectedItems()
+#        itmnames = [cellobj.text() for cellobj in cellobjs
+#                    if self.verticalHeaderItem(cellobj.row()).text() == "Name"]
+#
+#        f = open("matinput", "a")
+#        colname = self.horizontalHeaderItem(cellobjs[0].column()).text()
+#        pos = 0
+#        f.write("0 zero%       0      blue_b\n")
+#        for num, itmname in enumerate(itmnames):
+#            itmobj = self.data.get_mech(colname).get_itm(itmname)
+#            if itmobj is None:
+#                continue
+#            pos += 1
+#            f.write(str(pos) + "     ")
+#            f.write(itmobj.name + "     ")
+#            f.write(str(itmobj.get_def_ref_energy()) + "    ")
+#            if num < len(itmnames) - 1:
+#                f.write("blue_b\n")
+#            else:
+#                f.write("n\n")
+#        f.close()
 
     def copy_to_mech(self):
         allmechs = self.data.get_mechs_names()
@@ -2751,8 +2751,8 @@ class MainWindow(QMainWindow):
         ExportMecExcel.setStatusTip("Export to Excel")
         ExportMecExcel.triggered.connect(self.export_to_excel)
 
-        ExportPictures = QAction("&Export Images", self)
-        ExportPictures.triggered.connect(self.export_pictures)
+        #ExportPictures = QAction("&Export Images", self)
+        #ExportPictures.triggered.connect(self.export_pictures)
 
         saveAs = QAction("&Save As", self)
         saveAs.setShortcut("Ctrl+Shift+s")
