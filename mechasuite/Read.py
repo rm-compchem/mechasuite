@@ -8,7 +8,8 @@ def read_oszicar_energy(oszicar):
     for line in lineas:
         if "F=" in line:
             energy = float(line.split()[4])
-    return energy
+            spin = round(float(line.split()[9]))
+    return energy, spin
 
 def read_orca_pg(outfile):
     pg = None

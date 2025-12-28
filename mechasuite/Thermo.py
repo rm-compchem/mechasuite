@@ -806,13 +806,15 @@ def elec():
     Qelect = []
 
     if spin:
+        s_number = (spin_mult)/2
         Selec = R*math.log(2*spin_mult + 1)
     else:
         Selec = 0
 
     for T in Final_temps:
         SelecT.append(Selec)
-        Qelect.append(1.0)
+        qspin = 2*s_number + 1
+        Qelect.append(qspin)
 
 
 # function to calculate the total contributions of U and S
