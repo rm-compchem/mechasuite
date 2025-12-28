@@ -27270,1191 +27270,14 @@
     ],
     "diagrams": [
         {
-            "xmax": 10,
-            "ymax": 17.58273877049796,
-            "ymin": -20.134866252401842,
-            "xmin": 0,
-            "name": "0_TBOH_SN2",
-            "ref": "global_ref",
-            "col": "No tertbutol",
-            "etype": "G",
-            "temps": [
-                298.15,
-                373.15
-            ],
-            "temp": 298.15,
-            "itms": [
-                {
-                    "name": "REACTANT",
-                    "color": [
-                        0,
-                        0,
-                        255
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        1,
-                        0.0,
-                        2,
-                        0.0
-                    ],
-                    "blinks": [],
-                    "alinks": [
-                        "SN2REACTANT",
-                        "E2REACTANT"
-                    ]
-                },
-                {
-                    "name": "SN2",
-                    "color": [
-                        0,
-                        0,
-                        255
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        3,
-                        13.919161943718791,
-                        4,
-                        13.919161943718791
-                    ],
-                    "blinks": [
-                        "SN2REACTANT"
-                    ],
-                    "alinks": [
-                        "PROD_SN2SN2"
-                    ]
-                },
-                {
-                    "name": "PROD_SN2",
-                    "color": [
-                        0,
-                        0,
-                        255
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        5,
-                        -16.991732500493526,
-                        6,
-                        -16.991732500493526
-                    ],
-                    "blinks": [
-                        "PROD_SN2SN2"
-                    ],
-                    "alinks": []
-                },
-                {
-                    "name": "E2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "width": 6,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        6,
-                        14.439605018589646,
-                        7,
-                        14.439605018589646
-                    ],
-                    "blinks": [
-                        "E2REACTANT"
-                    ],
-                    "alinks": [
-                        "PROD_E2E2"
-                    ]
-                },
-                {
-                    "name": "PROD_E2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "width": 6,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        8,
-                        -8.478950579185039,
-                        9,
-                        -8.478950579185039
-                    ],
-                    "blinks": [
-                        "PROD_E2E2"
-                    ],
-                    "alinks": []
-                }
-            ],
-            "links": [
-                {
-                    "name": "SN2REACTANT",
-                    "color": [
-                        0,
-                        0,
-                        255
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        2,
-                        0.0,
-                        3,
-                        13.919161943718791
-                    ],
-                    "pitm1": "REACTANT",
-                    "pitm2": "SN2"
-                },
-                {
-                    "name": "PROD_SN2SN2",
-                    "color": [
-                        0,
-                        0,
-                        255
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        4,
-                        13.919161943718791,
-                        5,
-                        -16.991732500493526
-                    ],
-                    "pitm1": "SN2",
-                    "pitm2": "PROD_SN2"
-                },
-                {
-                    "name": "PROD_E2E2",
-                    "color": [
-                        100,
-                        100,
-                        100
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        7,
-                        14.439605018589646,
-                        8,
-                        -8.478950579185039
-                    ],
-                    "pitm1": "E2",
-                    "pitm2": "PROD_E2"
-                },
-                {
-                    "name": "E2REACTANT",
-                    "color": [
-                        100,
-                        100,
-                        100
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        2,
-                        0.0,
-                        6,
-                        14.439605018589646
-                    ],
-                    "pitm1": "REACTANT",
-                    "pitm2": "E2"
-                }
-            ],
-            "labels": [
-                {
-                    "itm": "E2",
-                    "text": "E2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "name": "E2",
-                    "font": "",
-                    "coors": [
-                        6,
-                        14.439605018589646
-                    ],
-                    "visible": true
-                },
-                {
-                    "itm": "PROD_E2",
-                    "text": "PROD_E2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "name": "PROD_E2",
-                    "font": "",
-                    "coors": [
-                        8,
-                        -8.478950579185039
-                    ],
-                    "visible": true
-                }
-            ]
-        },
-        {
-            "xmax": 12,
-            "ymax": 16.077234666002916,
-            "ymin": -19.998002242902295,
-            "xmin": 0,
-            "name": "1_TBOH_SN2",
-            "ref": "global_ref",
-            "col": "1 Tertbutol",
-            "etype": "E",
-            "temps": [],
-            "temp": null,
-            "itms": [
-                {
-                    "name": "0_TERTOH",
-                    "color": [
-                        170,
-                        0,
-                        0
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        1,
-                        0.0,
-                        2,
-                        0.0
-                    ],
-                    "blinks": [],
-                    "alinks": [
-                        "REACTANT0_TERTOH"
-                    ]
-                },
-                {
-                    "name": "REACTANT",
-                    "color": [
-                        170,
-                        0,
-                        0
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        3,
-                        -6.134929632768035,
-                        4,
-                        -6.134929632768035
-                    ],
-                    "blinks": [
-                        "REACTANT0_TERTOH"
-                    ],
-                    "alinks": [
-                        "SN2_TBOHREACTANT",
-                        "E2_TBOHREACTANT"
-                    ]
-                },
-                {
-                    "name": "SN2_TBOH",
-                    "color": [
-                        170,
-                        0,
-                        0
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        5,
-                        11.234403689857572,
-                        6,
-                        11.234403689857572
-                    ],
-                    "blinks": [
-                        "SN2_TBOHREACTANT"
-                    ],
-                    "alinks": [
-                        "PROD_SN2SN2_TBOH"
-                    ]
-                },
-                {
-                    "name": "PROD_SN2",
-                    "color": [
-                        170,
-                        0,
-                        0
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        7,
-                        -16.991732500493526,
-                        8,
-                        -16.991732500493526
-                    ],
-                    "blinks": [
-                        "PROD_SN2SN2_TBOH"
-                    ],
-                    "alinks": []
-                },
-                {
-                    "name": "E2_TBOH",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "width": 6,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        8,
-                        13.070964923594147,
-                        9,
-                        13.070964923594147
-                    ],
-                    "blinks": [
-                        "E2_TBOHREACTANT"
-                    ],
-                    "alinks": [
-                        "PROD_E2E2_TBOH"
-                    ]
-                },
-                {
-                    "name": "PROD_E2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "width": 6,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        10,
-                        -8.478950579185039,
-                        11,
-                        -8.478950579185039
-                    ],
-                    "blinks": [
-                        "PROD_E2E2_TBOH"
-                    ],
-                    "alinks": []
-                }
-            ],
-            "links": [
-                {
-                    "name": "REACTANT0_TERTOH",
-                    "color": [
-                        170,
-                        0,
-                        0
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        2,
-                        4.656612873077393e-10,
-                        3,
-                        -19.36986140254885
-                    ],
-                    "pitm1": "0_TERTOH",
-                    "pitm2": "REACTANT"
-                },
-                {
-                    "name": "SN2_TBOHREACTANT",
-                    "color": [
-                        170,
-                        0,
-                        0
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        4,
-                        -19.36986140254885,
-                        5,
-                        -8.799129175487906
-                    ],
-                    "pitm1": "REACTANT",
-                    "pitm2": "SN2_TBOH"
-                },
-                {
-                    "name": "PROD_SN2SN2_TBOH",
-                    "color": [
-                        170,
-                        0,
-                        0
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        6,
-                        -8.799129175487906,
-                        7,
-                        -17.329740069340914
-                    ],
-                    "pitm1": "SN2_TBOH",
-                    "pitm2": "PROD_SN2"
-                },
-                {
-                    "name": "PROD_E2E2_TBOH",
-                    "color": [
-                        100,
-                        100,
-                        100
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        9,
-                        -4.818964885082096,
-                        10,
-                        3.470330385491252
-                    ],
-                    "pitm1": "E2_TBOH",
-                    "pitm2": "PROD_E2"
-                },
-                {
-                    "name": "E2_TBOHREACTANT",
-                    "color": [
-                        100,
-                        100,
-                        100
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        4,
-                        -19.36986140254885,
-                        8,
-                        -4.818964885082096
-                    ],
-                    "pitm1": "REACTANT",
-                    "pitm2": "E2_TBOH"
-                }
-            ],
-            "labels": [
-                {
-                    "itm": "E2_TBOH",
-                    "text": "E2_TBOH",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "name": "E2_TBOH",
-                    "font": "",
-                    "coors": [
-                        8,
-                        13.070964923594147
-                    ],
-                    "visible": true
-                },
-                {
-                    "itm": "PROD_E2",
-                    "text": "PROD_E2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "name": "PROD_E2",
-                    "font": "",
-                    "coors": [
-                        10,
-                        -8.478950579185039
-                    ],
-                    "visible": true
-                }
-            ]
-        },
-        {
-            "xmax": 14,
-            "ymax": 16.44229295407422,
-            "ymin": -20.03118935949169,
-            "xmin": 0,
-            "name": "2_TBOH_SN2",
-            "ref": "global_ref",
-            "col": "2 Tertbutol",
-            "etype": "E",
-            "temps": [],
-            "temp": null,
-            "itms": [
-                {
-                    "name": "0_TERTOH",
-                    "color": [
-                        0,
-                        170,
-                        0
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        1,
-                        0.0,
-                        2,
-                        0.0
-                    ],
-                    "blinks": [],
-                    "alinks": [
-                        "1_TERTOH0_TERTOH"
-                    ]
-                },
-                {
-                    "name": "1_TERTOH",
-                    "color": [
-                        0,
-                        170,
-                        0
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        3,
-                        -6.134929632302374,
-                        4,
-                        -6.134929632302374
-                    ],
-                    "blinks": [
-                        "1_TERTOH0_TERTOH"
-                    ],
-                    "alinks": [
-                        "REACTANT1_TERTOH"
-                    ]
-                },
-                {
-                    "name": "REACTANT",
-                    "color": [
-                        0,
-                        170,
-                        0
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        5,
-                        -9.261733648832887,
-                        6,
-                        -9.261733648832887
-                    ],
-                    "blinks": [
-                        "REACTANT1_TERTOH"
-                    ],
-                    "alinks": [
-                        "SN2_TBOH2REACTANT",
-                        "E2_TBOH2REACTANT"
-                    ]
-                },
-                {
-                    "name": "SN2_TBOH2",
-                    "color": [
-                        0,
-                        170,
-                        0
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        7,
-                        9.770770548842847,
-                        8,
-                        9.770770548842847
-                    ],
-                    "blinks": [
-                        "SN2_TBOH2REACTANT"
-                    ],
-                    "alinks": [
-                        "PROD_SN2SN2_TBOH2"
-                    ]
-                },
-                {
-                    "name": "PROD_SN2",
-                    "color": [
-                        0,
-                        170,
-                        0
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        9,
-                        -16.991732500027865,
-                        10,
-                        -16.991732500027865
-                    ],
-                    "blinks": [
-                        "PROD_SN2SN2_TBOH2"
-                    ],
-                    "alinks": []
-                },
-                {
-                    "name": "E2_TBOH2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "width": 6,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        10,
-                        13.402836094610393,
-                        11,
-                        13.402836094610393
-                    ],
-                    "blinks": [
-                        "E2_TBOH2REACTANT"
-                    ],
-                    "alinks": [
-                        "PROD_E2E2_TBOH2"
-                    ]
-                },
-                {
-                    "name": "PROD_E2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "width": 6,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        12,
-                        -8.478950578719378,
-                        13,
-                        -8.478950578719378
-                    ],
-                    "blinks": [
-                        "PROD_E2E2_TBOH2"
-                    ],
-                    "alinks": []
-                }
-            ],
-            "links": [
-                {
-                    "name": "1_TERTOH0_TERTOH",
-                    "color": [
-                        0,
-                        170,
-                        0
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        2,
-                        4.656612873077393e-10,
-                        3,
-                        -19.36986140254885
-                    ],
-                    "pitm1": "0_TERTOH",
-                    "pitm2": "1_TERTOH"
-                },
-                {
-                    "name": "REACTANT1_TERTOH",
-                    "color": [
-                        0,
-                        170,
-                        0
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        4,
-                        -19.36986140254885,
-                        5,
-                        -35.290022584144026
-                    ],
-                    "pitm1": "1_TERTOH",
-                    "pitm2": "REACTANT"
-                },
-                {
-                    "name": "SN2_TBOH2REACTANT",
-                    "color": [
-                        0,
-                        170,
-                        0
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        6,
-                        -35.290022584144026,
-                        7,
-                        -22.576476539950818
-                    ],
-                    "pitm1": "REACTANT",
-                    "pitm2": "SN2_TBOH2"
-                },
-                {
-                    "name": "PROD_SN2SN2_TBOH2",
-                    "color": [
-                        0,
-                        170,
-                        0
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        8,
-                        -22.576476539950818,
-                        9,
-                        -17.329740069340914
-                    ],
-                    "pitm1": "SN2_TBOH2",
-                    "pitm2": "PROD_SN2"
-                },
-                {
-                    "name": "PROD_E2E2_TBOH2",
-                    "color": [
-                        100,
-                        100,
-                        100
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        11,
-                        -16.225295333191752,
-                        12,
-                        3.470330385491252
-                    ],
-                    "pitm1": "E2_TBOH2",
-                    "pitm2": "PROD_E2"
-                },
-                {
-                    "name": "E2_TBOH2REACTANT",
-                    "color": [
-                        100,
-                        100,
-                        100
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        6,
-                        -35.290022584144026,
-                        10,
-                        -16.225295333191752
-                    ],
-                    "pitm1": "REACTANT",
-                    "pitm2": "E2_TBOH2"
-                }
-            ],
-            "labels": [
-                {
-                    "itm": "E2_TBOH2",
-                    "text": "E2_TBOH2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "name": "E2_TBOH2",
-                    "font": "",
-                    "coors": [
-                        10,
-                        13.402836094610393
-                    ],
-                    "visible": true
-                },
-                {
-                    "itm": "PROD_E2",
-                    "text": "PROD_E2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "name": "PROD_E2",
-                    "font": "",
-                    "coors": [
-                        12,
-                        -8.478950578719378
-                    ],
-                    "visible": true
-                }
-            ]
-        },
-        {
-            "xmax": 16,
-            "ymax": 32.664936477597806,
-            "ymin": -21.773922854382544,
-            "xmin": 0,
-            "name": "3_TBOH_SN2",
-            "ref": "global_ref",
-            "col": "3 Tertbutol",
-            "etype": "E",
-            "temps": [],
-            "temp": null,
-            "itms": [
-                {
-                    "name": "0_TERTOH",
-                    "color": [
-                        255,
-                        85,
-                        255
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        1,
-                        0.0,
-                        2,
-                        0.0
-                    ],
-                    "blinks": [],
-                    "alinks": [
-                        "1_TERTOH0_TERTOH"
-                    ]
-                },
-                {
-                    "name": "1_TERTOH",
-                    "color": [
-                        255,
-                        85,
-                        255
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        3,
-                        -3.23974283458665,
-                        4,
-                        -3.23974283458665
-                    ],
-                    "blinks": [
-                        "1_TERTOH0_TERTOH"
-                    ],
-                    "alinks": [
-                        "2_TERTOH1_TERTOH"
-                    ]
-                },
-                {
-                    "name": "2_TERTOH",
-                    "color": [
-                        255,
-                        85,
-                        255
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        5,
-                        -3.6088064843788743,
-                        6,
-                        -3.6088064843788743
-                    ],
-                    "blinks": [
-                        "2_TERTOH1_TERTOH"
-                    ],
-                    "alinks": [
-                        "REACTANT2_TERTOH"
-                    ]
-                },
-                {
-                    "name": "REACTANT",
-                    "color": [
-                        255,
-                        85,
-                        255
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        7,
-                        -2.6728873569518328,
-                        8,
-                        -2.6728873569518328
-                    ],
-                    "blinks": [
-                        "REACTANT2_TERTOH"
-                    ],
-                    "alinks": [
-                        "SN2_TBOH3REACTANT",
-                        "E2_TBOH3REACTANT"
-                    ]
-                },
-                {
-                    "name": "SN2_TBOH3",
-                    "color": [
-                        255,
-                        85,
-                        255
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        9,
-                        21.659621604252607,
-                        10,
-                        21.659621604252607
-                    ],
-                    "blinks": [
-                        "SN2_TBOH3REACTANT"
-                    ],
-                    "alinks": [
-                        "PROD_SN2SN2_TBOH3"
-                    ]
-                },
-                {
-                    "name": "PROD_SN2",
-                    "color": [
-                        255,
-                        85,
-                        255
-                    ],
-                    "width": 10,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        11,
-                        -17.237351243384182,
-                        12,
-                        -17.237351243384182
-                    ],
-                    "blinks": [
-                        "PROD_SN2SN2_TBOH3"
-                    ],
-                    "alinks": []
-                },
-                {
-                    "name": "E2_TBOH3",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "width": 6,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        12,
-                        28.12836486659944,
-                        13,
-                        28.12836486659944
-                    ],
-                    "blinks": [
-                        "E2_TBOH3REACTANT"
-                    ],
-                    "alinks": [
-                        "PROD_E2E2_TBOH3"
-                    ]
-                },
-                {
-                    "name": "PROD_E2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "width": 6,
-                    "length": 1,
-                    "style": "solid line",
-                    "coors": [
-                        14,
-                        -11.061568261589855,
-                        15,
-                        -11.061568261589855
-                    ],
-                    "blinks": [
-                        "PROD_E2E2_TBOH3"
-                    ],
-                    "alinks": []
-                }
-            ],
-            "links": [
-                {
-                    "name": "1_TERTOH0_TERTOH",
-                    "color": [
-                        255,
-                        85,
-                        255
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        2,
-                        4.656612873077393e-10,
-                        3,
-                        -19.36986140254885
-                    ],
-                    "pitm1": "0_TERTOH",
-                    "pitm2": "1_TERTOH"
-                },
-                {
-                    "name": "2_TERTOH1_TERTOH",
-                    "color": [
-                        255,
-                        85,
-                        255
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        4,
-                        -19.36986140254885,
-                        5,
-                        -35.29002258460969
-                    ],
-                    "pitm1": "1_TERTOH",
-                    "pitm2": "2_TERTOH"
-                },
-                {
-                    "name": "REACTANT2_TERTOH",
-                    "color": [
-                        255,
-                        85,
-                        255
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        6,
-                        -35.29002258460969,
-                        7,
-                        -50.67613953864202
-                    ],
-                    "pitm1": "2_TERTOH",
-                    "pitm2": "REACTANT"
-                },
-                {
-                    "name": "SN2_TBOH3REACTANT",
-                    "color": [
-                        255,
-                        85,
-                        255
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        8,
-                        -50.67613953864202,
-                        9,
-                        -32.62746143247932
-                    ],
-                    "pitm1": "REACTANT",
-                    "pitm2": "SN2_TBOH3"
-                },
-                {
-                    "name": "PROD_SN2SN2_TBOH3",
-                    "color": [
-                        255,
-                        85,
-                        255
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        10,
-                        -32.62746143247932,
-                        11,
-                        -17.329740069806576
-                    ],
-                    "pitm1": "SN2_TBOH3",
-                    "pitm2": "PROD_SN2"
-                },
-                {
-                    "name": "PROD_E2E2_TBOH3",
-                    "color": [
-                        100,
-                        100,
-                        100
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        13,
-                        -22.557666200678796,
-                        14,
-                        3.4703303850255907
-                    ],
-                    "pitm1": "E2_TBOH3",
-                    "pitm2": "PROD_E2"
-                },
-                {
-                    "name": "E2_TBOH3REACTANT",
-                    "color": [
-                        100,
-                        100,
-                        100
-                    ],
-                    "width": 4,
-                    "style": "solid line",
-                    "coors": [
-                        8,
-                        -50.67613953864202,
-                        12,
-                        -22.557666200678796
-                    ],
-                    "pitm1": "REACTANT",
-                    "pitm2": "E2_TBOH3"
-                }
-            ],
-            "labels": [
-                {
-                    "itm": "E2_TBOH3",
-                    "text": "E2_TBOH3",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "name": "E2_TBOH3",
-                    "font": "",
-                    "coors": [
-                        12,
-                        28.12836486659944
-                    ],
-                    "visible": true
-                },
-                {
-                    "itm": "PROD_E2",
-                    "text": "PROD_E2",
-                    "color": [
-                        0,
-                        0,
-                        0
-                    ],
-                    "name": "PROD_E2",
-                    "font": "",
-                    "coors": [
-                        14,
-                        -11.061568261589855
-                    ],
-                    "visible": true
-                }
-            ]
-        },
-        {
             "xmax": 6.895248724489797,
-            "ymax": 17.58273877049796,
-            "ymin": -20.134866252401842,
+            "ymax": 13.612325606774538,
+            "ymin": -20.14265513131395,
             "xmin": 0,
             "name": "0TBOH 298.15",
             "ref": "global_ref",
             "col": "No tertbutol",
-            "etype": "G",
+            "etype": "E",
             "temps": [
                 298.15,
                 373.15
@@ -28464,11 +27287,11 @@
                 {
                     "name": "REACTANT",
                     "color": [
-                        0,
-                        0,
-                        255
+                        74,
+                        144,
+                        192
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
@@ -28486,18 +27309,18 @@
                 {
                     "name": "SN2",
                     "color": [
-                        0,
-                        0,
-                        255
+                        74,
+                        144,
+                        192
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         3.1,
-                        13.919161943718791,
+                        7.318095706868917,
                         4.1,
-                        13.919161943718791
+                        7.318095706868917
                     ],
                     "blinks": [
                         "SN2REACTANT"
@@ -28509,18 +27332,18 @@
                 {
                     "name": "E2",
                     "color": [
-                        0,
-                        0,
-                        255
+                        74,
+                        144,
+                        192
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
-                    "style": "dash dot line",
+                    "style": "solid line",
                     "coors": [
                         3.089772291217456,
-                        14.439605018589646,
+                        10.799410545267165,
                         4.089772291217456,
-                        14.439605018589646
+                        10.799410545267165
                     ],
                     "blinks": [
                         "E2REACTANT"
@@ -28532,18 +27355,18 @@
                 {
                     "name": "PROD_E2",
                     "color": [
-                        0,
-                        0,
-                        255
+                        74,
+                        144,
+                        192
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
-                    "style": "dash dot line",
+                    "style": "solid line",
                     "coors": [
                         4.849296100741265,
-                        -8.478950579185039,
+                        3.470330385491252,
                         5.849296100741265,
-                        -8.478950579185039
+                        3.470330385491252
                     ],
                     "blinks": [
                         "PROD_E2E2"
@@ -28553,18 +27376,18 @@
                 {
                     "name": "PROD_SN2",
                     "color": [
-                        0,
-                        0,
-                        255
+                        74,
+                        144,
+                        192
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         4.8952487244897975,
-                        -16.991732500493526,
+                        -17.329740069806576,
                         5.895248724489797,
-                        -16.991732500493526
+                        -17.329740069806576
                     ],
                     "blinks": [
                         "PROD_SN2SN2"
@@ -28576,17 +27399,17 @@
                 {
                     "name": "SN2REACTANT",
                     "color": [
-                        0,
-                        0,
-                        255
+                        74,
+                        144,
+                        192
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         2.0849702380952384,
                         0.0,
                         3.1,
-                        13.919161943718791
+                        7.318095706868917
                     ],
                     "pitm1": "REACTANT",
                     "pitm2": "SN2"
@@ -28594,17 +27417,17 @@
                 {
                     "name": "PROD_E2E2",
                     "color": [
-                        0,
-                        0,
-                        255
+                        74,
+                        144,
+                        192
                     ],
-                    "width": 4,
-                    "style": "solid line",
+                    "width": 2,
+                    "style": "dash line",
                     "coors": [
                         4.089772291217456,
-                        14.439605018589646,
+                        10.799410545267165,
                         4.849296100741265,
-                        -8.478950579185039
+                        3.470330385491252
                     ],
                     "pitm1": "E2",
                     "pitm2": "PROD_E2"
@@ -28612,17 +27435,17 @@
                 {
                     "name": "E2REACTANT",
                     "color": [
-                        0,
-                        0,
-                        255
+                        74,
+                        144,
+                        192
                     ],
-                    "width": 4,
-                    "style": "solid line",
+                    "width": 2,
+                    "style": "dash line",
                     "coors": [
                         2.0849702380952384,
                         0.0,
                         3.089772291217456,
-                        14.439605018589646
+                        10.799410545267165
                     ],
                     "pitm1": "REACTANT",
                     "pitm2": "E2"
@@ -28630,17 +27453,17 @@
                 {
                     "name": "PROD_SN2SN2",
                     "color": [
-                        0,
-                        0,
-                        255
+                        74,
+                        144,
+                        192
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         4.1,
-                        13.919161943718791,
+                        7.318095706868917,
                         4.8952487244897975,
-                        -16.991732500493526
+                        -17.329740069806576
                     ],
                     "pitm1": "SN2",
                     "pitm2": "PROD_SN2"
@@ -28650,13 +27473,13 @@
         },
         {
             "xmax": 9.111011904761906,
-            "ymax": 16.077234666002916,
-            "ymin": -19.998002242902295,
+            "ymax": 5.7543495642952625,
+            "ymin": -21.65388058135286,
             "xmin": 0,
             "name": "1TBOH 298.15",
             "ref": "global_ref",
             "col": "1 Tertbutol",
-            "etype": "G",
+            "etype": "E",
             "temps": [
                 298.15,
                 373.15
@@ -28666,18 +27489,18 @@
                 {
                     "name": "0_TERTOH",
                     "color": [
-                        170,
-                        0,
-                        0
+                        18,
+                        58,
+                        74
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         1.1,
-                        0.0,
+                        4.656612873077393e-10,
                         2.1,
-                        0.0
+                        4.656612873077393e-10
                     ],
                     "blinks": [],
                     "alinks": [
@@ -28687,18 +27510,18 @@
                 {
                     "name": "REACTANT",
                     "color": [
-                        170,
-                        0,
-                        0
+                        18,
+                        58,
+                        74
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         3.1180059523809525,
-                        -6.134929632768035,
+                        -19.36986140254885,
                         4.118005952380952,
-                        -6.134929632768035
+                        -19.36986140254885
                     ],
                     "blinks": [
                         "REACTANT0_TERTOH"
@@ -28711,18 +27534,18 @@
                 {
                     "name": "SN2_TBOH",
                     "color": [
-                        170,
-                        0,
-                        0
+                        18,
+                        58,
+                        74
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         5.1,
-                        11.234403689857572,
+                        -8.799129175487906,
                         6.1,
-                        11.234403689857572
+                        -8.799129175487906
                     ],
                     "blinks": [
                         "SN2_TBOHREACTANT"
@@ -28734,18 +27557,18 @@
                 {
                     "name": "PROD_SN2",
                     "color": [
-                        170,
-                        0,
-                        0
+                        18,
+                        58,
+                        74
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         7.1,
-                        -16.991732500493526,
+                        -17.329740069340914,
                         8.1,
-                        -16.991732500493526
+                        -17.329740069340914
                     ],
                     "blinks": [
                         "PROD_SN2SN2_TBOH"
@@ -28755,18 +27578,18 @@
                 {
                     "name": "E2_TBOH",
                     "color": [
-                        170,
-                        0,
-                        0
+                        18,
+                        58,
+                        74
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
-                    "style": "dash dot line",
+                    "style": "solid line",
                     "coors": [
                         5.129017857142858,
-                        13.070964923594147,
+                        -4.818964885082096,
                         6.129017857142851,
-                        13.070964923594147
+                        -4.818964885082096
                     ],
                     "blinks": [
                         "E2_TBOHREACTANT"
@@ -28778,18 +27601,18 @@
                 {
                     "name": "PROD_E2",
                     "color": [
-                        170,
-                        0,
-                        0
+                        18,
+                        58,
+                        74
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
-                    "style": "dash dot line",
+                    "style": "solid line",
                     "coors": [
                         7.111011904761904,
-                        -8.478950579185039,
+                        3.470330385491252,
                         8.111011904761906,
-                        -8.478950579185039
+                        3.470330385491252
                     ],
                     "blinks": [
                         "PROD_E2E2_TBOH"
@@ -28801,17 +27624,17 @@
                 {
                     "name": "REACTANT0_TERTOH",
                     "color": [
-                        170,
-                        0,
-                        0
+                        18,
+                        58,
+                        74
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         2.1,
-                        0.0,
+                        4.656612873077393e-10,
                         3.1180059523809525,
-                        -6.134929632768035
+                        -19.36986140254885
                     ],
                     "pitm1": "0_TERTOH",
                     "pitm2": "REACTANT"
@@ -28819,17 +27642,17 @@
                 {
                     "name": "SN2_TBOHREACTANT",
                     "color": [
-                        170,
-                        0,
-                        0
+                        18,
+                        58,
+                        74
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         4.118005952380952,
-                        -6.134929632768035,
+                        -19.36986140254885,
                         5.1,
-                        11.234403689857572
+                        -8.799129175487906
                     ],
                     "pitm1": "REACTANT",
                     "pitm2": "SN2_TBOH"
@@ -28837,17 +27660,17 @@
                 {
                     "name": "PROD_SN2SN2_TBOH",
                     "color": [
-                        170,
-                        0,
-                        0
+                        18,
+                        58,
+                        74
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         6.1,
-                        11.234403689857572,
+                        -8.799129175487906,
                         7.1,
-                        -16.991732500493526
+                        -17.329740069340914
                     ],
                     "pitm1": "SN2_TBOH",
                     "pitm2": "PROD_SN2"
@@ -28855,17 +27678,17 @@
                 {
                     "name": "PROD_E2E2_TBOH",
                     "color": [
-                        170,
-                        0,
-                        0
+                        18,
+                        58,
+                        74
                     ],
-                    "width": 4,
-                    "style": "solid line",
+                    "width": 2,
+                    "style": "dash line",
                     "coors": [
                         6.129017857142851,
-                        13.070964923594147,
+                        -4.818964885082096,
                         7.111011904761904,
-                        -8.478950579185039
+                        3.470330385491252
                     ],
                     "pitm1": "E2_TBOH",
                     "pitm2": "PROD_E2"
@@ -28873,17 +27696,17 @@
                 {
                     "name": "E2_TBOHREACTANT",
                     "color": [
-                        170,
-                        0,
-                        0
+                        18,
+                        58,
+                        74
                     ],
-                    "width": 4,
-                    "style": "solid line",
+                    "width": 2,
+                    "style": "dash line",
                     "coors": [
                         4.118005952380952,
-                        -6.134929632768035,
+                        -19.36986140254885,
                         5.129017857142858,
-                        13.070964923594147
+                        -4.818964885082096
                     ],
                     "pitm1": "REACTANT",
                     "pitm2": "E2_TBOH"
@@ -28893,13 +27716,13 @@
         },
         {
             "xmax": 11.120535714285717,
-            "ymax": 16.44229295407422,
-            "ymin": -20.03118935949169,
+            "ymax": 7.346365682454779,
+            "ymin": -39.166057881107555,
             "xmin": 0,
             "name": "2TBOH 298.15",
             "ref": "global_ref",
             "col": "2 Tertbutol",
-            "etype": "G",
+            "etype": "E",
             "temps": [
                 298.15,
                 373.15
@@ -28909,18 +27732,18 @@
                 {
                     "name": "0_TERTOH",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         1.1,
-                        0.0,
+                        4.656612873077393e-10,
                         2.1,
-                        0.0
+                        4.656612873077393e-10
                     ],
                     "blinks": [],
                     "alinks": [
@@ -28930,18 +27753,18 @@
                 {
                     "name": "1_TERTOH",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         3.1,
-                        -6.134929632302374,
+                        -19.36986140254885,
                         4.1,
-                        -6.134929632302374
+                        -19.36986140254885
                     ],
                     "blinks": [
                         "1_TERTOH0_TERTOH"
@@ -28953,18 +27776,18 @@
                 {
                     "name": "REACTANT",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         5.1,
-                        -9.261733648832887,
+                        -35.290022584144026,
                         6.1,
-                        -9.261733648832887
+                        -35.290022584144026
                     ],
                     "blinks": [
                         "REACTANT1_TERTOH"
@@ -28977,18 +27800,18 @@
                 {
                     "name": "SN2_TBOH2",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         7.1,
-                        9.770770548842847,
+                        -22.576476539950818,
                         8.1,
-                        9.770770548842847
+                        -22.576476539950818
                     ],
                     "blinks": [
                         "SN2_TBOH2REACTANT"
@@ -29000,18 +27823,18 @@
                 {
                     "name": "PROD_SN2",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         9.1,
-                        -16.991732500027865,
+                        -17.329740069340914,
                         10.1,
-                        -16.991732500027865
+                        -17.329740069340914
                     ],
                     "blinks": [
                         "PROD_SN2SN2_TBOH2"
@@ -29021,18 +27844,18 @@
                 {
                     "name": "E2_TBOH2",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
-                    "style": "dash dot line",
+                    "style": "solid line",
                     "coors": [
                         7.120535714285713,
-                        13.402836094610393,
+                        -16.225295333191752,
                         8.120535714285712,
-                        13.402836094610393
+                        -16.225295333191752
                     ],
                     "blinks": [
                         "E2_TBOH2REACTANT"
@@ -29044,18 +27867,18 @@
                 {
                     "name": "PROD_E2",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
-                    "style": "dash dot line",
+                    "style": "solid line",
                     "coors": [
                         9.12053571428572,
-                        -8.478950578719378,
+                        3.470330385491252,
                         10.120535714285717,
-                        -8.478950578719378
+                        3.470330385491252
                     ],
                     "blinks": [
                         "PROD_E2E2_TBOH2"
@@ -29067,17 +27890,17 @@
                 {
                     "name": "1_TERTOH0_TERTOH",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         2.1,
-                        0.0,
+                        4.656612873077393e-10,
                         3.1,
-                        -6.134929632302374
+                        -19.36986140254885
                     ],
                     "pitm1": "0_TERTOH",
                     "pitm2": "1_TERTOH"
@@ -29085,17 +27908,17 @@
                 {
                     "name": "REACTANT1_TERTOH",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         4.1,
-                        -6.134929632302374,
+                        -19.36986140254885,
                         5.1,
-                        -9.261733648832887
+                        -35.290022584144026
                     ],
                     "pitm1": "1_TERTOH",
                     "pitm2": "REACTANT"
@@ -29103,17 +27926,17 @@
                 {
                     "name": "SN2_TBOH2REACTANT",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         6.1,
-                        -9.261733648832887,
+                        -35.290022584144026,
                         7.1,
-                        9.770770548842847
+                        -22.576476539950818
                     ],
                     "pitm1": "REACTANT",
                     "pitm2": "SN2_TBOH2"
@@ -29121,17 +27944,17 @@
                 {
                     "name": "PROD_SN2SN2_TBOH2",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         8.1,
-                        9.770770548842847,
+                        -22.576476539950818,
                         9.1,
-                        -16.991732500027865
+                        -17.329740069340914
                     ],
                     "pitm1": "SN2_TBOH2",
                     "pitm2": "PROD_SN2"
@@ -29139,17 +27962,17 @@
                 {
                     "name": "PROD_E2E2_TBOH2",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 4,
-                    "style": "solid line",
+                    "width": 2,
+                    "style": "dash line",
                     "coors": [
                         8.120535714285712,
-                        13.402836094610393,
+                        -16.225295333191752,
                         9.12053571428572,
-                        -8.478950578719378
+                        3.470330385491252
                     ],
                     "pitm1": "E2_TBOH2",
                     "pitm2": "PROD_E2"
@@ -29157,17 +27980,17 @@
                 {
                     "name": "E2_TBOH2REACTANT",
                     "color": [
-                        0,
-                        170,
-                        0
+                        224,
+                        158,
+                        69
                     ],
-                    "width": 4,
-                    "style": "solid line",
+                    "width": 2,
+                    "style": "dash line",
                     "coors": [
                         6.1,
-                        -9.261733648832887,
+                        -35.290022584144026,
                         7.120535714285713,
-                        13.402836094610393
+                        -16.225295333191752
                     ],
                     "pitm1": "REACTANT",
                     "pitm2": "E2_TBOH2"
@@ -29177,13 +28000,13 @@
         },
         {
             "xmax": 13.10520833333333,
-            "ymax": 23.09056822694838,
-            "ymin": -20.63557802066207,
+            "ymax": 8.884977377392353,
+            "ymin": -56.09078653100878,
             "xmin": 0,
             "name": "3TBOH 298.15",
             "ref": "global_ref",
             "col": "3 Tertbutol",
-            "etype": "G",
+            "etype": "E",
             "temps": [
                 298.15,
                 373.15
@@ -29193,18 +28016,18 @@
                 {
                     "name": "0_TERTOH",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         1.1,
-                        0.0,
+                        4.656612873077393e-10,
                         2.1,
-                        0.0
+                        4.656612873077393e-10
                     ],
                     "blinks": [],
                     "alinks": [
@@ -29214,18 +28037,18 @@
                 {
                     "name": "1_TERTOH",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         3.1,
-                        -6.134929632302374,
+                        -19.36986140254885,
                         4.1,
-                        -6.134929632302374
+                        -19.36986140254885
                     ],
                     "blinks": [
                         "1_TERTOH0_TERTOH"
@@ -29237,18 +28060,18 @@
                 {
                     "name": "2_TERTOH",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         5.1,
-                        -9.261733648832887,
+                        -35.29002258460969,
                         6.1,
-                        -9.261733648832887
+                        -35.29002258460969
                     ],
                     "blinks": [
                         "2_TERTOH1_TERTOH"
@@ -29260,18 +28083,18 @@
                 {
                     "name": "REACTANT",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         7.1,
-                        -11.303706595208496,
+                        -50.67613953864202,
                         8.1,
-                        -11.303706595208496
+                        -50.67613953864202
                     ],
                     "blinks": [
                         "REACTANT2_TERTOH"
@@ -29284,18 +28107,18 @@
                 {
                     "name": "SN2_TBOH3",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         9.1,
-                        12.750933346804231,
+                        -32.62746143247932,
                         10.1,
-                        12.750933346804231
+                        -32.62746143247932
                     ],
                     "blinks": [
                         "SN2_TBOH3REACTANT"
@@ -29307,18 +28130,18 @@
                 {
                     "name": "PROD_SN2",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
                     "style": "solid line",
                     "coors": [
                         11.1,
-                        -16.991732500027865,
+                        -17.329740069806576,
                         12.1,
-                        -16.991732500027865
+                        -17.329740069806576
                     ],
                     "blinks": [
                         "PROD_SN2SN2_TBOH3"
@@ -29328,18 +28151,18 @@
                 {
                     "name": "E2_TBOH3",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
-                    "style": "dash dot line",
+                    "style": "solid line",
                     "coors": [
                         9.105208333333332,
-                        19.446722706314176,
+                        -22.557666200678796,
                         10.105208333333337,
-                        19.446722706314176
+                        -22.557666200678796
                     ],
                     "blinks": [
                         "E2_TBOH3REACTANT"
@@ -29351,18 +28174,18 @@
                 {
                     "name": "PROD_E2",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 6,
+                    "width": 3,
                     "length": 1,
-                    "style": "dash dot line",
+                    "style": "solid line",
                     "coors": [
                         11.105208333333334,
-                        -8.478950578719378,
+                        3.4703303850255907,
                         12.10520833333333,
-                        -8.478950578719378
+                        3.4703303850255907
                     ],
                     "blinks": [
                         "PROD_E2E2_TBOH3"
@@ -29374,17 +28197,17 @@
                 {
                     "name": "1_TERTOH0_TERTOH",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         2.1,
-                        0.0,
+                        4.656612873077393e-10,
                         3.1,
-                        -6.134929632302374
+                        -19.36986140254885
                     ],
                     "pitm1": "0_TERTOH",
                     "pitm2": "1_TERTOH"
@@ -29392,17 +28215,17 @@
                 {
                     "name": "2_TERTOH1_TERTOH",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         4.1,
-                        -6.134929632302374,
+                        -19.36986140254885,
                         5.1,
-                        -9.261733648832887
+                        -35.29002258460969
                     ],
                     "pitm1": "1_TERTOH",
                     "pitm2": "2_TERTOH"
@@ -29410,17 +28233,17 @@
                 {
                     "name": "REACTANT2_TERTOH",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         6.1,
-                        -9.261733648832887,
+                        -35.29002258460969,
                         7.1,
-                        -11.303706595208496
+                        -50.67613953864202
                     ],
                     "pitm1": "2_TERTOH",
                     "pitm2": "REACTANT"
@@ -29428,17 +28251,17 @@
                 {
                     "name": "SN2_TBOH3REACTANT",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         8.1,
-                        -11.303706595208496,
+                        -50.67613953864202,
                         9.1,
-                        12.750933346804231
+                        -32.62746143247932
                     ],
                     "pitm1": "REACTANT",
                     "pitm2": "SN2_TBOH3"
@@ -29446,17 +28269,17 @@
                 {
                     "name": "PROD_SN2SN2_TBOH3",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 4,
+                    "width": 2,
                     "style": "solid line",
                     "coors": [
                         10.1,
-                        12.750933346804231,
+                        -32.62746143247932,
                         11.1,
-                        -16.991732500027865
+                        -17.329740069806576
                     ],
                     "pitm1": "SN2_TBOH3",
                     "pitm2": "PROD_SN2"
@@ -29464,17 +28287,17 @@
                 {
                     "name": "PROD_E2E2_TBOH3",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 4,
-                    "style": "solid line",
+                    "width": 2,
+                    "style": "dash line",
                     "coors": [
                         10.105208333333337,
-                        19.446722706314176,
+                        -22.557666200678796,
                         11.105208333333334,
-                        -8.478950578719378
+                        3.4703303850255907
                     ],
                     "pitm1": "E2_TBOH3",
                     "pitm2": "PROD_E2"
@@ -29482,17 +28305,17 @@
                 {
                     "name": "E2_TBOH3REACTANT",
                     "color": [
-                        255,
-                        85,
-                        255
+                        139,
+                        30,
+                        45
                     ],
-                    "width": 4,
-                    "style": "solid line",
+                    "width": 2,
+                    "style": "dash line",
                     "coors": [
                         8.1,
-                        -11.303706595208496,
+                        -50.67613953864202,
                         9.105208333333332,
-                        19.446722706314176
+                        -22.557666200678796
                     ],
                     "pitm1": "REACTANT",
                     "pitm2": "E2_TBOH3"
