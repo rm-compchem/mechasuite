@@ -4,6 +4,8 @@ import numpy as np
 from scipy.integrate import odeint
 from scipy import stats
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+from cycler import cycler
 import sys
 import json
 
@@ -188,10 +190,12 @@ class Mechanim(object):
 
     def plot(self):
         plt.rcParams["font.size"] = 14
+        lc = ['#123a4a', '#d18b2c', '#8b1e2d', '#4a90c0', '#2f6f6d', '#d65f4f', '#2c4f9e', '#7fa33b', '#7b3fa0', '#6b6b6b']
+        mpl.rcParams['axes.prop_cycle'] = cycler('color', lc)
         plt.ylabel("Concentration")
         plt.xlabel("Time (s)")
         for i, spec in enumerate(self.species):
-            plt.plot(self.t, self.conc[:, i], label=spec)
+            plt.plot(self.t, self.conc[:, i], label=spec, linewidth=2.5)
         plt.legend()
         plt.show()
 
