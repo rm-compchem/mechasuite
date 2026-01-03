@@ -717,6 +717,9 @@ class Struct():
         self.set_atoms()
 
     def set_atoms(self):
+        # reset atoms
+        self.atoms = OrderedDict()
+
         labels_by_elements, num_elements = [], []
         for label in self.labels:
             if not label in labels_by_elements:
