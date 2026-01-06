@@ -1565,14 +1565,15 @@ class MainSheet(QTableWidget):
         itmobj = self.data.get_mech(cname).get_itm(itmname)
         if itmobj is None:
             return
-        props = itmobj.thermo.keys()
-        msg = "    ".join(props)
-        msg += "  \n"
-        for temp in itmobj.temps:
-            msg += str(temp) + ":  "
-            for prop in props:
-                msg += "{:.3f}".format(itmobj.thermo[prop][temp]) + "   "
+        msg = " ".join([str(t) for t in itmobj.temps])
+        msg += "\n"
+        for k in itmobj.thermo.keys():
+            msg += f"{k}: "
+            for temp in itmobj.temps:
+                val = itmobj.thermo[k][temp]
+                msg += f"{val:.4f}  "
             msg += "\n"
+        print(msg)
         msgbox = QMessageBox(self)
         msgbox.setText(msg)
         msgbox.exec()
@@ -2446,6 +2447,8 @@ class MainSheet(QTableWidget):
         li += "ATOMS: " + ", ".join([str(v) + " "+ str(k) for k, v in itmobj.struct.atoms.items()]) + "\n"
         li += "PG: "+ str(itmobj.pg) + "\n"
         li += "SPIN: "+ str(itmobj.spin) + "\n"
+        if itmobj.merged:
+            li += "itms: " + ", ".join([itm.name for itm in itmobj.itms]) + "\n"
         if itmobj.tp == "mecp":
             li += "MECP PROPS: RedMass: " + str(itmobj.redmass) + ", SOC: " + str(itmobj.SOC)
             li += ", Grad: " + str(itmobj.grad) + ", DiffGrad: " + str(itmobj.diffgrad) + "\n"
@@ -2799,7 +2802,7 @@ class MainWindow(QMainWindow):
         filemenu.addAction(save)
         filemenu.addAction(saveAs)
         filemenu.addAction(ExportMecExcel)
-        filemenu.addAction(ExportPictures)
+        #filemenu.addAction(ExportPictures)
         filemenu.addAction(openfile)
         filemenu.addAction(closefile)
         filemenu.addAction(close)

@@ -194,9 +194,10 @@ class Mechanim(object):
         mpl.rcParams['axes.prop_cycle'] = cycler('color', lc)
         plt.ylabel("Concentration")
         plt.xlabel("Time (s)")
+        plt.ticklabel_format(style="sci", scilimits=[0, 0])
         for i, spec in enumerate(self.species):
             plt.plot(self.t, self.conc[:, i], label=spec, linewidth=2.5)
-        plt.legend()
+        #plt.legend()
         plt.show()
 
     def get_order(self):

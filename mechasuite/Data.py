@@ -2294,7 +2294,7 @@ class Mechanism(object):
         else:
             itmobj.cm += "FILE " + freqs_file + " TO READ FREQUENCIES DOES NOT EXIST\n"
 
-        print(folder + "/" + structfile)
+        #print(folder + "/" + structfile)
         if os.path.isfile(folder + "/" + structfile):
             itmobj.struct_from_file(folder + "/" + structfile)
         else:

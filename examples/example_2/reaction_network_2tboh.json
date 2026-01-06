@@ -1,20 +1,21 @@
 {
     "mec": {
-        "REACTANT=PROD_SN2": {
+        "CH3CH2Br+TBAF=CH3CH2F+TBABr": {
             "373.15": [
-                35.46276037024275,
-                3.7624616069251835e-07
+                3.546e+01,
+                3.762e-07
             ]
         },
-        "REACTANT=PROD_E2": {
+        "CH3CH2Br+TBAF=C2H4+HF+TBABr": {
             "373.15": [
-                0.2515305535810539,
-                1.096097472851119e-05
+                2.515e-01,
+                1.096e-05
             ]
         }
     },
-    "time": "0 1e-1 1000",
+    "time": "0 1. 30",
     "initial_values": {
-        "REACTANT": 1
+        "CH3CH2Br": 1,
+        "TBAF": 1
     }
 }
