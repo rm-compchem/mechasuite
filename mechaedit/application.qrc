@@ -2,7 +2,7 @@
     <qresource prefix="/">
         <file>icons/open.png</file>
         <file>icons/save.png</file>
-        <file>icons/edit.jpg</file>
+        <file>icons/edit.png</file>
         <file>icons/showcell.png</file>
         <file>icons/specular.png</file>
         <file>icons/light.png</file>

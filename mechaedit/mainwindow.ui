@@ -3571,8 +3571,8 @@
    </property>
    <property name="icon">
     <iconset resource="application.qrc">
-     <normaloff>:/icons/edit.jpg</normaloff>
-     <normalon>icons/edit.jpg</normalon>:/icons/edit.jpg</iconset>
+     <normaloff>:/icons/edit.png</normaloff>
+     <normalon>icons/edit.png</normalon>:/icons/edit.png</iconset>
    </property>
    <property name="text">
     <string>Edit</string>
