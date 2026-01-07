@@ -105,8 +105,8 @@ class Poscar:
                         print ("   bad format for sel dynamics in POSCAR")
                         print ("=========================================")
                 del self.coor[i][3:] 
-        else:
-            print ("Sel dynamics flags not found")
+        #else:
+            #print ("Sel dynamics flags not found")
 
         # calculo los coses y los senos de los angulos de la celda
         # unidad con los que se hara la matrix de transformacion

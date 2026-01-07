@@ -3,12 +3,16 @@ from mechasuite.pyposcar import *
 
 def read_oszicar_energy(oszicar):
     energy = 0.0
+    spin = 0
     with open(oszicar) as f:
         lineas = f.readlines()
     for line in lineas:
         if "F=" in line:
             energy = float(line.split()[4])
-            spin = round(float(line.split()[9]))
+            if len(line.split()) >= 10:
+              spin = round(float(line.split()[9]))
+              #print("reading spin ", spin, energy)
+    print(oszicar, energy, spin)
     return energy, spin
 
 def read_orca_pg(outfile):
@@ -71,7 +75,6 @@ def read_mfreq(mfreqfile, vibfile):
                 line = lines[i]
             # now read frequencies until blank line
                 freqs += [float(f) for f in line.split()]
-            print(freqs)
 
         elif "The Reduced Mass orthogonal to the seam of crossing is" in line:
             redmass = float(lines[i+1].split()[0])
@@ -150,9 +153,8 @@ def read_tp_from_outcar(outcar):
             break
         if num == 2000:
             break
-    print(tp)
+    #print(tp)
     return tp
-
 
 def read_xyz(infile):
     try:
@@ -186,11 +188,11 @@ def read_poscar(poscar):
     try:
         p.load_poscar(poscar)
     except Exception as e:
-        print(e)
+        #print(e)
         return 0, [], [], []
 
     p.extend_label()
-    print(p.coortype)
+    #print(p.coortype)
     if p.coortype == "Direct":
         p.xyz = p.frac_cart(p.coor)
     else:
