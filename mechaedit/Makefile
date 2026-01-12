@@ -795,7 +795,7 @@ qrc_application.cpp: application.qrc \
 		icons/showcell.png \
 		icons/time.png \
 		icons/crop.png \
-		icons/edit.jpg
+		icons/edit.png
 	/home/reisel/soft/miniconda3/bin/rcc -name application application.qrc -o qrc_application.cpp
 
 compiler_moc_predefs_make_all: moc_predefs.h

@@ -1883,11 +1883,14 @@ class Mechanism(object):
             return self.itms[newname]
 
     def chg_unit(self, unit=None):
+        #print(unit); print(self.unit); print("Unit")
         if unit is None:
             return
 
         itmobjs = self.get_itms()
         for itmobj in itmobjs:
+            print(conv[self.unit][unit])
+            print(itmobj.energy)
             itmobj.energy *= conv[self.unit][unit]
             itmobj.zpe *= conv[self.unit][unit]
             for prop in itmobj.thermo.keys():
@@ -2215,9 +2218,14 @@ class Mechanism(object):
             lines = f.readlines()
         program = lines[0].split()[0]
 
-        for line in lines[1:]:
+        for line in lines:
             if not line: continue
 
+            if "program" in line.lower():
+                try:
+                    program = line.split()[1]
+                except IndexError:
+                    pass
             if "energy" in line.lower():
                 try:
                     en_file = line.split()[1]
@@ -2268,10 +2276,12 @@ class Mechanism(object):
             unit = "eV"
             if os.path.isfile(folder + "/" + en_file):
                 try:
-                    energy = read_oszicar_energy(folder + "/" + en_file)
-                except ValueError:
+                    energy, spin = read_oszicar_energy(folder + "/" + en_file)
+                    print("energy: ", energy)
+                except ValueError as e:
                     energy = 0.0
                     cm = "ERROR READING ENERGY FROM: " + en_file + "\n"
+                    print(e)
 
         if not energy:
             try:
@@ -2323,7 +2333,7 @@ class Mechanism(object):
                 continue
             try:
                 if pfile == "OSZICAR.opt":
-                    energy = read_oszicar_energy(path)
+                    energy, spin = read_oszicar_energy(path)
                     unit = "eV"
                 elif pfile == "job.out":
                     energy = read_orca_energy(path)

@@ -419,8 +419,8 @@ public:
         actionEditToolBar->setObjectName(QString::fromUtf8("actionEditToolBar"));
         actionEditToolBar->setCheckable(true);
         QIcon icon8;
-        icon8.addFile(QString::fromUtf8(":/icons/edit.jpg"), QSize(), QIcon::Normal, QIcon::Off);
-        icon8.addFile(QString::fromUtf8("icons/edit.jpg"), QSize(), QIcon::Normal, QIcon::On);
+        icon8.addFile(QString::fromUtf8(":/icons/edit.png"), QSize(), QIcon::Normal, QIcon::Off);
+        icon8.addFile(QString::fromUtf8("icons/edit.png"), QSize(), QIcon::Normal, QIcon::On);
         actionEditToolBar->setIcon(icon8);
         actionShow_Cell = new QAction(MainWindow);
         actionShow_Cell->setObjectName(QString::fromUtf8("actionShow_Cell"));

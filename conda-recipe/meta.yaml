@@ -27,7 +27,7 @@ requirements:
     - pyyaml
     - openpyxl
     - pyqt
-    - numpy
+    - numpy >=2.2
   run:
     - python >=3.9,<3.13
     - qt-main
@@ -37,7 +37,7 @@ requirements:
     - pyyaml
     - openpyxl
     - pyqt
-    - numpy
+    - numpy >=2.2
     #- qt
     #- qt==5.15.7
   build:

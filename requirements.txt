@@ -5,4 +5,4 @@ scipy
 pyyaml
 openpyxl
 PyQt5
-numpy
+numpy>=2.2
