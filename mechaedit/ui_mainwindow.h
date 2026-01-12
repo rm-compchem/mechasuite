@@ -1569,11 +1569,11 @@ public:
         actionIndex->setText(QCoreApplication::translate("MainWindow", "&Index", nullptr));
         actionmake_supercell->setText(QCoreApplication::translate("MainWindow", "&make supercell", nullptr));
         actionDownload_from_IZA_DB->setText(QCoreApplication::translate("MainWindow", "Download from IZA DB", nullptr));
-        label_3->setText(QCoreApplication::translate("MainWindow", "Atomic Radio", nullptr));
-        label_4->setText(QCoreApplication::translate("MainWindow", "Bond Radio", nullptr));
+        label_3->setText(QCoreApplication::translate("MainWindow", "Atomic Radius", nullptr));
+        label_4->setText(QCoreApplication::translate("MainWindow", "Cylinder Radius", nullptr));
         label_9->setText(QCoreApplication::translate("MainWindow", "shininess", nullptr));
         label->setText(QCoreApplication::translate("MainWindow", "Element", nullptr));
-        label_2->setText(QCoreApplication::translate("MainWindow", "Sphere", nullptr));
+        label_2->setText(QCoreApplication::translate("MainWindow", "Sphere Radius", nullptr));
         label_5->setText(QCoreApplication::translate("MainWindow", "Atom Color", nullptr));
         colorpushButton->setText(QString());
         label_6->setText(QCoreApplication::translate("MainWindow", "Quality", nullptr));
