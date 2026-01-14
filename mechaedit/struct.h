@@ -150,7 +150,7 @@ public:
     void genbonds();
     void paste_atoms(vector <Atom> &ats);
     void delete_selection();
-    void delete_by_index(vector<int> &indices);
+    void delete_by_index(const vector<int> &indices);
     void readsettings();
     void save_xyz(QString filename);
     void save_xyz_trajectory(QString filename);
@@ -217,6 +217,7 @@ public:
     void check_covered();    //check whether there atoms over z axis so that it is not necesarry to render them
     bool valid_cell();
     void remove_duplicates(bool cart);
+    void remove_duplicates_pbc_frac();
 
    protected:
 

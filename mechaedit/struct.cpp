@@ -4,7 +4,28 @@
 
 #include<chrono>
 
-void parseXYZCommentLine(char* comment, double& step, double& time, double& energy )
+
+std::array<float, 3> substract3D(const std::array<float, 3>& a1, const std::array<float, 3>& a2){
+
+      std::array<float, 3> diff;
+      for(int i=0; i<3; i++){
+         diff [i] = a1[i] - a2[i];
+      } 
+
+      return diff;
+}
+
+std::array<float, 3> abs3D(const std::array<float, 3>& a1){
+
+      std::array<float, 3> diff;
+      for(int i=0; i<3; i++){
+         diff[i] = abs(a1[i]);
+      } 
+      return diff;
+}
+
+
+void parseXYZCommentLine(char* comment, int& step, double& time, double& energy )
 {
   int n=0;
   char *cmp_pointer;
@@ -21,11 +42,11 @@ void parseXYZCommentLine(char* comment, double& step, double& time, double& ener
   //try to read Time
   cmp_pointer = strstr(comment, "Time=");
   if(cmp_pointer) 
-    n = sscanf(cmp_pointer, "Time=%f", &time);
+    n = sscanf(cmp_pointer, "Time=%lf", &time);
   if (n==0){
     cmp_pointer = strstr(comment, "time =");
     if(cmp_pointer) 
-      n = sscanf(cmp_pointer, "time =%f", &time);
+      n = sscanf(cmp_pointer, "time =%lf", &time);
   }
 
   //try to read Energy
@@ -1719,7 +1740,7 @@ void Struct::load_cif(QString inputfile){
     while(!in.atEnd()){
         line = in.readLine();
         line = line.trimmed();
-        if(line.startsWith("#")){
+        if(line.startsWith("#") || line.startsWith('\r')){
             continue;
         }
         if(line.isEmpty()){
@@ -1921,7 +1942,8 @@ void Struct::load_cif(QString inputfile){
 
     //bring all atoms that are outside inside cell
     bring_inside_cell(false);
-    remove_duplicates(false);
+    //remove_duplicates(false);
+    remove_duplicates_pbc_frac();
     frac_cart(atoms);   //este linea siempre debe ir despues que la celda este definida
     // setup animation ------------------------------
     Animation anim;
@@ -2355,7 +2377,8 @@ void Struct::load_xyz(QString inputfile){
             line = in.readLine();
 	    if (in.atEnd()) break;
 
-	    double step = 0, time = 0, energy = 0;
+	    double time = 0, energy = 0;
+	    int step = 0;
 	    char comment[1048];
 	    strcpy(comment,line.toStdString().c_str());
 	    parseXYZCommentLine(comment, step, time, energy);
@@ -3220,30 +3243,41 @@ void Struct::delete_selection(){
 
 
 
-void Struct::delete_by_index(vector<int> &indices){
+//void Struct::delete_by_index(vector<int> &indices){
+//
+//    //sort the indices to properly take them out of atoms vector in order
+//    sort(indices.begin(), indices.end());
+//    int dec = 0;
+//
+//    // keep what going to be deleted to add them afterwards if ctrl z
+////    add_to_before("del", indices);
+//    //I actually have the indices, no need to add_to_before now, can be done before calling
+//    // this function
+//
+//    //erase the atoms with index i from atoms vector
+//    for(auto i:indices){
+//        atoms.erase(atoms.begin()+i-dec);
+//        dec += 1;
+//    }
+//    //update indices of the atoms not deleted
+//    for(unsigned int i=0;i<atoms.size();i++){
+//        atoms[i].index = i;
+//    }
+//    printf("done deleting  \n");
+//}
 
-    //sort the indices to properly take them out of atoms vector in order
-    sort(indices.begin(), indices.end());
-    int dec = 0;
+void Struct::delete_by_index(const vector<int> &inds){
+  std::vector<Atom> tempatoms;
+  tempatoms.reserve(this->atoms.size());
+  for (size_t i = 0; i < atoms.size(); i++)
+  {
+    if (std::find(inds.begin(), inds.end(), i) != inds.end())
+      continue;
+    tempatoms.emplace_back(atoms[i]);
+  }
+  atoms = tempatoms;
 
-    // keep what going to be deleted to add them afterwards if ctrl z
-//    add_to_before("del", indices);
-    //I actually have the indices, no need to add_to_before now, can be done before calling
-    // this function
-
-    //erase the atoms with index i from atoms vector
-    for(auto i:indices){
-        atoms.erase(atoms.begin()+i-dec);
-        dec += 1;
-    }
-    //update indices of the atoms not deleted
-    for(unsigned int i=0;i<atoms.size();i++){
-        atoms[i].index = i;
-    }
 }
-
-
-
 
 void Struct::save_gaussian_input(QString filename){
     QFile outfile(filename);
@@ -4369,6 +4403,61 @@ void Struct::remove_duplicates(bool cart){
     delete_by_index(indices);
 }
 
+void Struct::remove_duplicates_pbc_frac(){
+
+   // I assume everything is in fractional coordinates
+   
+  std::array<std::array<float, 3>,8> tranvec = {{
+    {0,0,0}, 
+    {1,0,0}, 
+    {0,1,0}, 
+    {0,0,1}, 
+    {1,1,0}, 
+    {0,1,1}, 
+    {1,0,1}, 
+    {1,1,1}, 
+  }};
+  // final copy of atoms
+  //std::vector<Atom> newAtoms;
+  std::vector<int> idxSkip;
+  //defice threshold
+  float deltax = 0.1, deltay = 0.1, deltaz=0.1; // this will probably has to be modified base on the lattice
+  float a = sqrt(pow(cell[0][0],2) + pow(cell[0][1],2) + pow(cell[0][2],2));
+  float b = sqrt(pow(cell[1][0],2) + pow(cell[1][1],2) + pow(cell[1][2],2));
+  float c = sqrt(pow(cell[2][0],2) + pow(cell[2][1],2) + pow(cell[2][2],2));
+  deltax /= a; deltay /= b; deltaz /= c;
+
+  for(size_t i=0; i<atoms.size(); ++i){
+    for(size_t j=0; j<i; j++){
+      std::array<float, 3> coori = atoms[i].coor;
+      std::array<float, 3> coorj = atoms[j].coor;
+      // substract coors to get vector
+       
+      std::array<float, 3> diff;
+      diff = substract3D(coori, coorj);
+      diff = abs3D(diff);
+      // substract with tranlations vectors
+      // if the substraction is 0, 0, 0 both atoms are related
+      // by translation
+      for(auto tvec:tranvec){
+	std::array<float, 3> tdiff = substract3D(tvec, diff);
+        // since everything is inside the cell there is only need
+        // to check 0 and 1 for lattice vectors
+        if(abs(tdiff[0]) < deltax && abs(tdiff[1]) < deltay && abs(tdiff[2]) < deltaz) {
+        // printf("tdiffs  %f %f %f %f %f %f \n", tdiff.x, tdiff.y, tdiff.z);
+          idxSkip.push_back(j);
+          break;
+        }
+      }
+    }
+  }
+
+  // make final list of atoms
+  //deleteAtoms(idxSkip);
+  //if(wereCart) fractionalToCartesian();
+  //printf("size of idxSkip %li %li\n", idxSkip.size(), atoms.size());
+  delete_by_index(idxSkip);
+}
 
 void Struct::selectBySphere(float ss){
     for(auto &at:atoms){
