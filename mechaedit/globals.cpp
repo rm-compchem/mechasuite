@@ -15,8 +15,21 @@ double totalMemory = 0;
 double availableMemory = 0;
 double memUsage = 0;
 
-array<float, 12> clw;
-array<array<float, 4>, 12> clc;
+array<float, 12> clw = {0.1, 0.1, 0.1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+array<array<float, 4>, 12> clc = {{
+	{1.0, 0.0, 0.0, 1.0},
+	{0.0, 1.0, 0.0, 1.0},
+	{0.0, 0.0, 1.0, 1.0},
+	{0.5, 0.5, 0.5, 1.0},
+	{0.5, 0.5, 0.5, 1.0},
+	{0.5, 0.5, 0.5, 1.0},
+	{0.5, 0.5, 0.5, 1.0},
+	{0.5, 0.5, 0.5, 1.0},
+	{0.5, 0.5, 0.5, 1.0},
+	{0.5, 0.5, 0.5, 1.0},
+	{0.5, 0.5, 0.5, 1.0},
+	{0.5, 0.5, 0.5, 1.0}
+}};
 
 array<string,73> element_symbols = {
     "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V",
@@ -5793,7 +5806,7 @@ void setSpaceGroups(){
 }
 
 void set_init_properties(){
-
+    setlocale(LC_NUMERIC, "C");
     setSpaceGroups();
 
     colors["H"]={0.6,0.6,0.6,1.0};

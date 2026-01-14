@@ -400,6 +400,7 @@ void QGLBegin::draw(){
      }
 
      if(st->showcell){
+	     //printf("showing cell \n");
          for(unsigned int i=0;i<3; i++){
 		// glEnable (GL_POLYGON_SMOOTH);
 		//glEnable (GL_BLEND);
@@ -437,7 +438,7 @@ void QGLBegin::draw(){
             glColor4f(st->cell_lines_colors[i][0], st->cell_lines_colors[i][1], st->cell_lines_colors[i][2], st->cell_lines_colors[i][3]);
             glVertex3f(st->cell_lines[2*i][0], st->cell_lines[2*i][1], st->cell_lines[2*i][2]);
             glVertex3f(st->cell_lines[2*i+1][0], st->cell_lines[2*i+1][1], st->cell_lines[2*i+1][2]);
-	    printf("%f  \n", st->cell_lines[2*i][0]);
+	    //printf("%f  \n", st->cell_lines[2*i][0]);
             glEnd();
          }
 

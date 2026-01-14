@@ -4,6 +4,78 @@
 
 #include<chrono>
 
+void parseXYZCommentLine(char* comment, double& step, double& time, double& energy )
+{
+  int n=0;
+  char *cmp_pointer;
+  
+  // read cell
+  //glm::mat3 cell; 
+  float cell[3][3];
+  n = sscanf(comment,  "Lattice=\"%f %f %f %f %f %f %f %f %f\"", &cell[0][0], &cell[0][1], &cell[0][2], 
+                                                            &cell[1][0], &cell[1][1],&cell[1][2],
+                                                            &cell[2][0], &cell[2][1],&cell[2][2]);
+
+  //if (n == 9) fr.setUnitCell(cell);
+  
+  //try to read Time
+  cmp_pointer = strstr(comment, "Time=");
+  if(cmp_pointer) 
+    n = sscanf(cmp_pointer, "Time=%f", &time);
+  if (n==0){
+    cmp_pointer = strstr(comment, "time =");
+    if(cmp_pointer) 
+      n = sscanf(cmp_pointer, "time =%f", &time);
+  }
+
+  //try to read Energy
+  n = 0;
+  cmp_pointer = strstr(comment, "Energy=");
+  if(cmp_pointer) 
+    n = sscanf(cmp_pointer, "Energy=%lf", &energy);
+  if (n==0){
+    cmp_pointer = strstr(comment, "E ");
+    if(cmp_pointer) 
+      n = sscanf(cmp_pointer, "E %lf", &energy);
+    if(cmp_pointer && n==0)
+      n = sscanf(cmp_pointer, "E =%lf", &energy);
+    
+  }
+  if (n==0){
+    cmp_pointer = strstr(comment, "energy=");
+    if(cmp_pointer){ 
+      n = sscanf(cmp_pointer, "energy=%lf ", &energy);
+    }
+  }
+  
+  //try to read Step
+  cmp_pointer = strstr(comment, "Step=");
+  if(cmp_pointer) 
+    n = sscanf(cmp_pointer, "Step=%i ", &step);
+  if (n==0){
+    cmp_pointer = strstr(comment, "i =");
+    if(cmp_pointer) 
+      n = sscanf(cmp_pointer, "i =%i ", &step);
+  }
+  //try to read geom_id
+  //cmp_pointer = strstr(comment, "geom_id=");
+  //if(cmp_pointer) 
+  //  n = sscanf(cmp_pointer, "geom_id=%li ", &fr.genericId);
+
+  // try to read E_pot
+  cmp_pointer = strstr(comment, "E_pot =");
+  if(cmp_pointer){ 
+    n = sscanf(cmp_pointer, "E_pot = %lf %f %f %f %f %f %f %f %f %f", &energy, 
+               &cell[0][0], &cell[0][1],&cell[0][2], 
+               &cell[1][0], &cell[1][1],&cell[1][2],
+               &cell[2][0], &cell[2][1],&cell[2][2]);
+    //if (n == 10) fr.setUnitCell(cell);
+  }
+  
+  return;
+}
+
+
 Struct::Struct()
 {
     MM = 0.0;
@@ -2201,6 +2273,9 @@ void Struct::appendFragmentCml(QString inputfile){
 }
 
 void Struct::load_xyz(QString inputfile){
+
+    setlocale(LC_NUMERIC, "C");
+
     QFile file1(inputfile);
     if(!file1.open(QIODevice::ReadOnly)) {
         QMessageBox::information(0, "error", file1.errorString());
@@ -2224,7 +2299,7 @@ void Struct::load_xyz(QString inputfile){
 //                auto start = chrono::high_resolution_clock::now();
             line = in.readLine();
             lsplitted = line.split(" ", QString::SkipEmptyParts);
-            if (lsplitted.count() == 4){
+            if (lsplitted.count() >= 4){
                 tempcoor[0] = lsplitted[1].toFloat();
                 tempcoor[1] = lsplitted[2].toFloat();
                 tempcoor[2] = lsplitted[3].toFloat();
@@ -2260,47 +2335,77 @@ void Struct::load_xyz(QString inputfile){
         }
         else{
             line = in.readLine();
+	    if (in.atEnd()) break;
+
             lsplitted = line.split(" ", QString::SkipEmptyParts);
             if (lsplitted.count() == 1){
                 try{
                     //getting the number of atoms that will be read
                     nat = lsplitted[0].toInt();
                     readcoors = true;
-
-                    //try to read the energy, time and step in the second line
-                    //check the format
-                    line = in.readLine();
-                    if(format == 0){
-                        if(line.contains("i =") && line.contains("time =") && line.contains("E =")){
-                            format = 1;
-                            line.replace(",", "");
-                            lsplitted = line.split(" ", QString::SkipEmptyParts);
-                            temp_animation = Animation();
-                            temp_animation.step = lsplitted[2].toInt();
-                            temp_animation.time = lsplitted[5].toFloat();
-                            temp_animation.energy = lsplitted[8].toFloat();
-                        }
-                    }
-                    else if(format == 1){
-                        line.replace(",", "");
-                        lsplitted = line.split(" ", QString::SkipEmptyParts);
-                        temp_animation = Animation();
-                        temp_animation.step = lsplitted[2].toInt();
-                        temp_animation.time = lsplitted[5].toFloat();
-                        temp_animation.energy = lsplitted[8].toFloat();
-                    }
-                }
+		}
                 catch(...){
                     readcoors = false;
                     cont = 0;
                     nat = 0;
+		    continue;
                 }
-            }
+	    }
+
+            line = in.readLine();
+	    if (in.atEnd()) break;
+
+	    double step = 0, time = 0, energy = 0;
+	    char comment[1048];
+	    strcpy(comment,line.toStdString().c_str());
+	    parseXYZCommentLine(comment, step, time, energy);
+	    
+            temp_animation = Animation();
+            temp_animation.step = step;
+            temp_animation.time = time;
+            temp_animation.energy = energy;
+            //lsplitted = line.split(" ", QString::SkipEmptyParts);
+            //if (lsplitted.count() == 1){
+            //    try{
+            //        //getting the number of atoms that will be read
+            //        nat = lsplitted[0].toInt();
+            //        readcoors = true;
+
+            //        //try to read the energy, time and step in the second line
+            //        //check the format
+            //        line = in.readLine();
+            //        if(format == 0){
+            //            if(line.contains("i =") && line.contains("time =") && line.contains("E =")){
+            //                format = 1;
+            //                line.replace(",", "");
+            //                lsplitted = line.split(" ", QString::SkipEmptyParts);
+            //                temp_animation = Animation();
+            //                temp_animation.step = lsplitted[2].toInt();
+            //                temp_animation.time = lsplitted[5].toFloat();
+            //                temp_animation.energy = lsplitted[8].toFloat();
+            //            }
+            //        }
+            //        else if(format == 1){
+            //            line.replace(",", "");
+            //            lsplitted = line.split(" ", QString::SkipEmptyParts);
+            //            temp_animation = Animation();
+            //            temp_animation.step = lsplitted[2].toInt();
+            //            temp_animation.time = lsplitted[5].toFloat();
+            //            temp_animation.energy = lsplitted[8].toFloat();
+            //        }
+            //    }
+            //    catch(...){
+            //        readcoors = false;
+            //        cont = 0;
+            //        nat = 0;
+            //    }
+            //}
         }
     }
        pelisize = pelicount;
        file1.close();
        showcell = false;
+       
 }
 
 void Struct::load_poscar(QString inputfile){
