@@ -796,10 +796,16 @@ class MainSheet(QTableWidget):
 
     def itm_changed(self, itm):
         if not self.editing:
+            # doing some update here causes an error
+            # because it is called when initializing the app
             return
         itmtext, row, col = itm.text(), itm.row(), itm.column()
         if itmtext == self.activecelltext:
             return
+        if not itmtext:
+            itm.setText(self.activecelltext)
+            return 
+
 
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
@@ -818,7 +824,7 @@ class MainSheet(QTableWidget):
         colname = self.horizontalHeaderItem(col).text()
         if rowname == "Name":
             colobj = self.data.get_mech(colname)
-            if colobj.itm_exists(itmtext):
+            if colobj.itm_exists(itmtext): # this is also checked in itmtext == self.activecelltext
                 msg.setText(itmtext + " already exists")
                 msg.setWindowTitle("Error")
                 msg.exec()
@@ -840,6 +846,7 @@ class MainSheet(QTableWidget):
             msg.setWindowTitle("Error")
             msg.exec()
             itm.setText("")
+        self.update_data()
 
     def header_popup(self, event):
         # self.horizontalHeader().sectionClicked.emit(1)
@@ -2307,6 +2314,7 @@ class MainSheet(QTableWidget):
 
         self.clear()
         self.setColumnCount(len(self.data.mechs.keys()))
+        #print(len(self.data.mechs.keys()))
         for col, colname in enumerate(self.data.mechs.keys()):
             # print(col, colname)
             self.setHorizontalHeaderItem(col, QTableWidgetItem(colname))
@@ -2997,7 +3005,19 @@ class MainWindow(QMainWindow):
         if dialog.exec() == 0:
             return
         text = dialog.textValue()
-        self.data.add_m(text)
+        if not text:
+            msg = QMessageBox()
+            msg.setText("Please enter a valid name!")
+            msg.exec()
+            return
+
+        newmec = self.data.add_m(text)
+        if newmec is None:
+            msg = QMessageBox()
+            msg.setText("There i already a mechanism with that name !")
+            msg.exec()
+            return
+
         self.table.update_data(self.data)
 
     def import_mec(self, e):
@@ -3009,7 +3029,7 @@ class MainWindow(QMainWindow):
         if self.data.mec_from_folder(filedialog) is None:
             return
         self.last_dir = filedialog
-        self.table.update_data()
+        self.table.update_data(self.data)
 
     def import_from_mec_file(self):
         fd = QFileDialog().getOpenFileName(self, "Choose mechanism file", self.last_dir)
