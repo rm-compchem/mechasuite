@@ -807,7 +807,7 @@ def elec():
 
     if spin:
         s_number = (spin_mult)/2
-        Selec = R*math.log(2*spin_mult + 1)
+        Selec = R*math.log(2*s_number + 1)
     else:
         Selec = 0
 

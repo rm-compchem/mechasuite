@@ -725,6 +725,8 @@ class MECPropsDialog(QDialog):
         layout.addWidget(self.cancelb, 4, 1)
         self.setLayout(layout)
 
+
+
     def get_values(self):
         if self.exec() != QDialog.Accepted:
             return False, None, None, None, None
@@ -739,6 +741,58 @@ class MECPropsDialog(QDialog):
             msg.exec()
             return False, None, None, None, None
         return True, redmass, SOC, grad, diffgrad
+
+class DFDialog(QDialog):
+    def __init__(self, parent=None, DF_type=None, DF_value=None):
+        super().__init__(parent)
+
+
+        self.DF_edit = QLineEdit(self)
+
+        if DF_value is not None:
+            self.DF_edit.setText(str(DF_value))
+            
+        self.ok = False
+        self.labelDF = QLabel("Driving Force:")
+        self.labelDF2 = QLabel("(Considering Weak Coupling Limit)")
+
+        
+        self.comboDF = QComboBox()
+        self.comboDF.addItems(["NR_decay", "RISC", "IC"])
+        self.okb = QPushButton("Ok")
+        self.cancelb = QPushButton("Cancel")
+
+        self.okb.clicked.connect(self.on_accept)
+        self.cancelb.clicked.connect(self.reject)
+
+        self.glayout = QGridLayout()
+        self.glayout.addWidget(self.labelDF, 0, 0)
+        self.glayout.addWidget(self.labelDF2, 0, 1)
+        self.glayout.addWidget(self.comboDF, 0, 2)
+        self.glayout.addWidget(QLabel("Magnitude of Driving Force (cm-1)"), 1, 0)
+        self.glayout.addWidget(self.DF_edit, 1, 1)
+        self.glayout.addWidget(self.okb, 2, 0)
+        self.glayout.addWidget(self.cancelb, 2, 1)
+        self.setLayout(self.glayout)
+
+    def get_values(self):
+        if self.exec() != QDialog.Accepted:
+            return False, None, None
+        try:
+            df_value = float(self.DF_edit.text())
+            df_type = self.comboDF.currentText()
+        except ValueError:
+            msg = QMessageBox(self)
+            msg.setText("Driving Force must be numeric.")
+            msg.exec()
+            return False, None, None
+
+        return True, df_value, df_type
+    
+    def on_accept(self):
+        self.df = self.comboDF.currentText()
+        self.ok = True
+        self.accept()
 
 
 class MainSheet(QTableWidget):
@@ -966,6 +1020,7 @@ class MainSheet(QTableWidget):
 
         addzero = menu.addAction("Add Reference")
         addreac = menu.addAction("Add Reactant")
+        addexc = menu.addAction("Add State")
         settype = menu.addAction("Set Type")
         setpg = menu.addAction("Set Point Group")
         setspin = menu.addAction("Set Spin Multiplicity")
@@ -1007,6 +1062,8 @@ class MainSheet(QTableWidget):
             self.add_zero()
         elif action == addreac:
             self.add_reac()
+        elif action == addexc:
+            self.add_excited_state()
         elif action == settype:
             self.set_type()
         elif action == setpg:
@@ -2305,6 +2362,68 @@ class MainSheet(QTableWidget):
                 else:
                     itmobj.add_reac(reacobj)
 
+    def add_excited_state(self):
+
+        currentColumn = self.currentColumn()
+        colname = self.horizontalHeaderItem(currentColumn).text()
+        itmsnames = self.data.get_mech(colname).get_itms_names()
+        dialog = MultipleChoiceDialog(itmsnames)
+        dialog.exec()
+        if not dialog.ok:
+            return
+        for cellobj in self.selectedItems():
+            col, row = cellobj.column(), cellobj.row()
+            if col != currentColumn:
+                continue
+            rowname = self.verticalHeaderItem(row).text()
+            if rowname != "Name":
+                continue
+            itmname = cellobj.text()
+            itmobj = self.data.get_mech(colname).get_itm(itmname)
+            for exc in dialog.items:
+                excobj = self.data.get_mech(colname).get_itm(exc)
+                if excobj.struct.nat != itmobj.struct.nat:
+                    if len(excobj.struct.atoms) != len(itmobj.struct.atoms):
+                        msg = QMessageBox()
+                        text = "Excited state and itermediate do not have" \
+                               " the same number of types of atoms"
+                        msg.setText(text)
+                        msg.exec()
+                        return
+                    same_refs_names = []
+                    for itmref in itmobj.get_refs():
+                        for excref in excobj.get_refs():
+                            if itmref.name == excref.name:
+                                same_refs_names.append(itmref.name)
+                    if not same_refs_names:
+                        msg = QMessageBox()
+                        text = "Excited state and itermediate do not have" \
+                               " the same number of atoms, neither coincident" \
+                               " references. \nPlease add same reference to both"
+                        msg.setText(text)
+                        msg.exec()
+                        return
+                    elif len(same_refs_names) == 1:
+                        ok, df_value, proc_type = DFDialog(self).get_values()
+                        if not ok:
+                            return
+                        itmobj.add_excited_state(excobj, proc_type, relref=same_refs_names[0])
+                    else:
+                        dialog = MultipleChoiceDialog(same_refs_names)
+                        dialog.exec()
+                        if not dialog.ok:
+                            return
+                        ok, df_value, proc_type = DFDialog(self).get_values()
+                        if not ok:
+                            return
+                        itmobj.add_excited_state(excobj, proc_type, relref=dialog.items[0])
+                else:
+                    ok, df_value, proc_type = DFDialog(self).get_values()
+                    if not ok:
+                        return
+                    print(itmobj.name, "was added")
+                    itmobj.add_excited_state(excobj, proc_type, df_value)
+
     def update_data(self, data=None, filter=None):
         # print("updating sheet", len(self.data.mechs.keys()))
         if data is not None:
@@ -2447,6 +2566,7 @@ class MainSheet(QTableWidget):
         # set combo box temperatures----------------------------
         self.parent.ztable.update_data(itmobj)
         self.parent.reltable.update_data(itmobj)
+        self.parent.exctable.update_data(itmobj)
 
         li = ""
         li += "UNIT:" + mec.unit + ",  "
@@ -2485,6 +2605,8 @@ class RefSheet(QTableWidget):
         self.tp = tp
         if tp == "reac":
             self.vlabels = [" \u0394E", " \u0394ZPE", " \u0394H", " \u0394G", " \u0394S", " k", " A"]
+        elif tp == "exc":
+            self.vlabels = [" \u0394E", " \u0394G", " DF", " Type", " k(0)", " k(T)"]
         else:
             self.vlabels = [" E", " ZPE",  " \u0394H", " G", " \u0394S"]
 
@@ -2508,8 +2630,10 @@ class RefSheet(QTableWidget):
     def customize_corner_button(self):
         if self.tp  == "ref":
           btn = QPushButton("Relative", self)
-        else:
+        elif self.tp == "reac":
           btn = QPushButton("Reaction", self)
+        else:
+          btn = QPushButton("Excited States", self)
         btn.move(0, 0)
         btn.resize(100, self.horizontalHeader().height())
         self.verticalHeader().setFixedWidth(100)
@@ -2615,8 +2739,10 @@ class RefSheet(QTableWidget):
 
         if self.tp == "ref":
             zobjlist = self.itmobj.get_refs()
-        else:
+        elif self.tp == "reac":
             zobjlist = self.itmobj.get_reacs()
+        else:
+            zobjlist = self.itmobj.get_excited_states()
 
         self.clearContents()
         self.setColumnCount(6)
@@ -2653,7 +2779,7 @@ class RefSheet(QTableWidget):
                     self.setItem(6, col, QTableWidgetItem(""))
                     self.setItem(7, col, QTableWidgetItem(""))
                     self.setItem(8, col, QTableWidgetItem(""))
-        else:
+        elif self.tp == "reac":
             for col, zobj in enumerate(zobjlist):
                 if col + 1 > self.columnCount():
                     self.setColumnCount(col)
@@ -2679,6 +2805,27 @@ class RefSheet(QTableWidget):
                     self.setItem(6, col, QTableWidgetItem(""))
                     self.setItem(7, col, QTableWidgetItem(""))
                     self.setItem(8, col, QTableWidgetItem(""))
+        else:  # excited states
+            for col, zobj in enumerate(zobjlist):
+                if col + 1 > self.columnCount():
+                    self.setColumnCount(col)
+                    header = self.horizontalHeader()
+                    header.setSectionResizeMode(col, QHeaderView.ResizeToContents)
+
+                self.setHorizontalHeaderItem(col, QTableWidgetItem(zobj.name))
+                self.setItem(0, col, QTableWidgetItem("{:.4f}".format(zobj.egap)))
+                if T in zobj.thermo["g"]:
+                    self.setItem(1, col, QTableWidgetItem("{:.4f}".format(zobj.g(T))))
+                    self.setItem(2, col, QTableWidgetItem("{:.4f}".format(zobj.df_mag)))
+                    self.setItem(3, col, QTableWidgetItem(str(zobj.process_type)))
+                    self.setItem(4, col, QTableWidgetItem("{:.3e}".format(zobj.k0(T))))
+                    self.setItem(5, col, QTableWidgetItem("{:.3e}".format(zobj.kT(T))))
+                else:
+                    self.setItem(1, col, QTableWidgetItem(""))
+                    self.setItem(2, col, QTableWidgetItem(""))
+                    self.setItem(3, col, QTableWidgetItem(""))
+                    self.setItem(4, col, QTableWidgetItem(""))
+                    self.setItem(5, col, QTableWidgetItem(""))
 
 
 class MainWindow(QMainWindow):
@@ -2696,6 +2843,7 @@ class MainWindow(QMainWindow):
 
         self.ztable = RefSheet(self)
         self.reltable = RefSheet(self, tp="reac")
+        self.exctable = RefSheet(self, tp="exc")
 
         self.info_label = InfoLabel(self)
 
@@ -2852,6 +3000,7 @@ class MainWindow(QMainWindow):
         self.splitter2.addWidget(self.splitter3)
         self.splitter3.addWidget(self.ztable)
         self.splitter3.addWidget(self.reltable)
+        self.splitter3.addWidget(self.exctable)
 
         self.splitter2.addWidget(self.image)
         self.splitter2.addWidget(self.openGLWidget)
@@ -2889,6 +3038,7 @@ class MainWindow(QMainWindow):
     def on_combo_T(self):
         self.ztable.update_data()
         self.reltable.update_data()
+        self.exctable.update_data()
 
     # def on_combo_filter_enter(self):
     #     text = self.combo_filter.currentText()
