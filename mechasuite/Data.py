@@ -133,6 +133,9 @@ class PlotItm(object):
             self.style = "solid line"
         if "coors" in kwargs:
             self.coors = kwargs["coors"]
+            # fix energy that might change
+            self.coors[1] = self.energy()
+            self.coors[3] = self.energy()
         else:
             self.coors = [0, self.energy(),
                           0, self.energy()]
@@ -1426,7 +1429,7 @@ class Itm(object):
     def update_data_from_itm(self, itm):
         for k in ["energy", "tp", "cm", "struct", "freqs", "pg", "spin", "redmass", "SOC", "grad", "diffgrad"]:
             value = getattr(itm, k)
-            if value:
+            if value is not None:
                 setattr(self, k, value)
         return
     
@@ -2470,7 +2473,7 @@ class Data(object):
     def clone_plot(self, gname, newname):
         self.diagrams[newname] = copy.deepcopy(self.diagrams[gname])
         self.diagrams[newname].name = newname
-        print(self.diagrams.keys())
+        #print(self.diagrams.keys())
 
     def get_plots_names(self):
         return list(self.diagrams.keys())
@@ -2500,6 +2503,10 @@ class Data(object):
         if name not in self.diagrams:
             self.diagrams[name] = Plot(name, ref, col, *args, **kwargs)
         return self.diagrams[name]
+
+    def update_plot_energies(self):
+        for plot in self.diagrams.values():
+            plot.update_temp_en()
 
     def add_m(self, name, *args, **kwargs):
         if isinstance(name, Mechanism):

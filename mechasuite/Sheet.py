@@ -847,6 +847,9 @@ class MainSheet(QTableWidget):
             msg.exec()
             itm.setText("")
         self.update_data()
+        # update plots
+        self.data.update_plot_energies()
+        self.parent.plot.update_data()
 
     def header_popup(self, event):
         # self.horizontalHeader().sectionClicked.emit(1)
@@ -1430,6 +1433,9 @@ class MainSheet(QTableWidget):
                 continue
             itmobj.full_update()
             self.update_data()
+            # update plots
+            self.data.update_plot_energies()
+            self.parent.plot.update_data()
 
     def update_itm_data_from_folder(self):
         """
@@ -1464,7 +1470,7 @@ class MainSheet(QTableWidget):
         dialog.setOption(QFileDialog.DontUseNativeDialog)
         folder = dialog.getExistingDirectory(self, "Choose folder",
                                                   self.parent.last_dir)
-        print(os.path.basename(str(folder)))
+        #print(os.path.basename(str(folder)))
         if os.path.basename(str(folder)) != itmname:
             Log.show_msg("To avoid mistakes, the name of the folder must equal the name of the item")
             return
@@ -1476,7 +1482,11 @@ class MainSheet(QTableWidget):
             Log.show_msg("Could not load data from folder: "+str(itm))
             return
         itmobj.update_data_from_itm(itm)
+        itmobj.full_update()
         self.update_data()
+        # update plots
+        self.data.update_plot_energies()
+        self.parent.plot.update_data()
 
     def update_selection_data_from_folder(self):
         """
@@ -1534,8 +1544,12 @@ class MainSheet(QTableWidget):
                 Log.show_msg("Could not load data from folder: "+str(itm))
                 continue
             itmobj.update_data_from_itm(itm)
+            itmobj.full_update()
             print("Updated item: ", itmname)
         self.update_data()
+        # update plots
+        self.data.update_plot_energies()
+        self.parent.plot.update_data()
 
     def on_header_merge_items(self):
         col = self.currentColumn()
