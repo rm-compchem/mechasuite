@@ -1,0 +1,1031 @@
+{
+    "mechs": [
+        {
+            "name": "example1",
+            "unit": "kcal",
+            "def_basis_ref": [],
+            "refs": {
+                "global_ref": [
+                    "ref_item1"
+                ]
+            },
+            "itms": [
+                {
+                    "name": "TS1",
+                    "energy": 17.00000000000003,
+                    "zpe": 0.0,
+                    "tp": "ts",
+                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "mech": "example1",
+                    "temps": [],
+                    "thermo": {
+                        "g": {},
+                        "h": {},
+                        "stot": {},
+                        "svib": {},
+                        "strans": {},
+                        "srot": {},
+                        "select": {},
+                        "etot": {},
+                        "evib": {},
+                        "etrans": {},
+                        "erot": {},
+                        "qtot": {},
+                        "qrot": {},
+                        "qtrans": {},
+                        "qvib": {},
+                        "qvibg": {},
+                        "qelect": {}
+                    },
+                    "struct": {
+                        "coors": [
+                            [
+                                0.0,
+                                0.0,
+                                0.0
+                            ]
+                        ],
+                        "cell": [
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ]
+                        ],
+                        "labels": [
+                            "H"
+                        ],
+                        "nat": 1,
+                        "atoms": {
+                            "H": 1
+                        },
+                        "rRange": 10,
+                        "lRange": -10,
+                        "uRange": 10,
+                        "dRange": -10,
+                        "rot_mat": [
+                            [
+                                1,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                1,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                1
+                            ]
+                        ]
+                    },
+                    "refs": [
+                        {
+                            "parent_itm": "TS1",
+                            "refs": [
+                                "ref_item1"
+                            ],
+                            "coefs": [
+                                1.0
+                            ],
+                            "name": "global_ref",
+                            "thermo": {
+                                "g": {},
+                                "h": {},
+                                "stot": {},
+                                "qtot": {},
+                                "k": {},
+                                "kq": {},
+                                "a": {}
+                            }
+                        }
+                    ],
+                    "reacs": [
+                        {
+                            "parent_itm": "TS1",
+                            "ref": "R",
+                            "name": "R",
+                            "thermo": {
+                                "g": {},
+                                "h": {},
+                                "stot": {},
+                                "qtot": {},
+                                "k": {},
+                                "kq": {},
+                                "a": {},
+                                "ae": {}
+                            },
+                            "relref": ""
+                        }
+                    ],
+                    "itms": [],
+                    "merged": false,
+                    "freqs": {
+                        "vibs": [],
+                        "unit": null
+                    },
+                    "freq_is_set": false,
+                    "pg": null,
+                    "spin": 0,
+                    "photos": []
+                },
+                {
+                    "name": "TS2",
+                    "energy": -3.0000000000000044,
+                    "zpe": 0.0,
+                    "tp": "ts",
+                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "mech": "example1",
+                    "temps": [],
+                    "thermo": {
+                        "g": {},
+                        "h": {},
+                        "stot": {},
+                        "svib": {},
+                        "strans": {},
+                        "srot": {},
+                        "select": {},
+                        "etot": {},
+                        "evib": {},
+                        "etrans": {},
+                        "erot": {},
+                        "qtot": {},
+                        "qrot": {},
+                        "qtrans": {},
+                        "qvib": {},
+                        "qvibg": {},
+                        "qelect": {}
+                    },
+                    "struct": {
+                        "coors": [
+                            [
+                                0.0,
+                                0.0,
+                                0.0
+                            ]
+                        ],
+                        "cell": [
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ]
+                        ],
+                        "labels": [
+                            "H"
+                        ],
+                        "nat": 1,
+                        "atoms": {
+                            "H": 1
+                        },
+                        "rRange": 10,
+                        "lRange": -10,
+                        "uRange": 10,
+                        "dRange": -10,
+                        "rot_mat": [
+                            [
+                                1,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                1,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                1
+                            ]
+                        ]
+                    },
+                    "refs": [
+                        {
+                            "parent_itm": "TS2",
+                            "refs": [
+                                "ref_item1"
+                            ],
+                            "coefs": [
+                                1.0
+                            ],
+                            "name": "global_ref",
+                            "thermo": {
+                                "g": {},
+                                "h": {},
+                                "stot": {},
+                                "qtot": {},
+                                "k": {},
+                                "kq": {},
+                                "a": {}
+                            }
+                        }
+                    ],
+                    "reacs": [
+                        {
+                            "parent_itm": "TS2",
+                            "ref": "I",
+                            "name": "I",
+                            "thermo": {
+                                "g": {},
+                                "h": {},
+                                "stot": {},
+                                "qtot": {},
+                                "k": {},
+                                "kq": {},
+                                "a": {},
+                                "ae": {}
+                            },
+                            "relref": ""
+                        }
+                    ],
+                    "itms": [],
+                    "merged": false,
+                    "freqs": {
+                        "vibs": [],
+                        "unit": null
+                    },
+                    "freq_is_set": false,
+                    "pg": null,
+                    "spin": 0,
+                    "photos": []
+                },
+                {
+                    "name": "R",
+                    "energy": 0.0,
+                    "zpe": 0.0,
+                    "tp": "min",
+                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "mech": "example1",
+                    "temps": [],
+                    "thermo": {
+                        "g": {},
+                        "h": {},
+                        "stot": {},
+                        "svib": {},
+                        "strans": {},
+                        "srot": {},
+                        "select": {},
+                        "etot": {},
+                        "evib": {},
+                        "etrans": {},
+                        "erot": {},
+                        "qtot": {},
+                        "qrot": {},
+                        "qtrans": {},
+                        "qvib": {},
+                        "qvibg": {},
+                        "qelect": {}
+                    },
+                    "struct": {
+                        "coors": [
+                            [
+                                0.0,
+                                0.0,
+                                0.0
+                            ]
+                        ],
+                        "cell": [
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ]
+                        ],
+                        "labels": [
+                            "H"
+                        ],
+                        "nat": 1,
+                        "atoms": {
+                            "H": 1
+                        },
+                        "rRange": 10,
+                        "lRange": -10,
+                        "uRange": 10,
+                        "dRange": -10,
+                        "rot_mat": [
+                            [
+                                1,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                1,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                1
+                            ]
+                        ]
+                    },
+                    "refs": [
+                        {
+                            "parent_itm": "R",
+                            "refs": [
+                                "ref_item1"
+                            ],
+                            "coefs": [
+                                1.0
+                            ],
+                            "name": "global_ref",
+                            "thermo": {
+                                "g": {},
+                                "h": {},
+                                "stot": {},
+                                "qtot": {},
+                                "k": {},
+                                "kq": {},
+                                "a": {}
+                            }
+                        }
+                    ],
+                    "reacs": [],
+                    "itms": [],
+                    "merged": false,
+                    "freqs": {
+                        "vibs": [],
+                        "unit": null
+                    },
+                    "freq_is_set": false,
+                    "pg": null,
+                    "spin": 0,
+                    "photos": []
+                },
+                {
+                    "name": "I",
+                    "energy": -20.000000000000032,
+                    "zpe": 0.0,
+                    "tp": "min",
+                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "mech": "example1",
+                    "temps": [],
+                    "thermo": {
+                        "g": {},
+                        "h": {},
+                        "stot": {},
+                        "svib": {},
+                        "strans": {},
+                        "srot": {},
+                        "select": {},
+                        "etot": {},
+                        "evib": {},
+                        "etrans": {},
+                        "erot": {},
+                        "qtot": {},
+                        "qrot": {},
+                        "qtrans": {},
+                        "qvib": {},
+                        "qvibg": {},
+                        "qelect": {}
+                    },
+                    "struct": {
+                        "coors": [
+                            [
+                                0.0,
+                                0.0,
+                                0.0
+                            ]
+                        ],
+                        "cell": [
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ]
+                        ],
+                        "labels": [
+                            "H"
+                        ],
+                        "nat": 1,
+                        "atoms": {
+                            "H": 1
+                        },
+                        "rRange": 10,
+                        "lRange": -10,
+                        "uRange": 10,
+                        "dRange": -10,
+                        "rot_mat": [
+                            [
+                                1,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                1,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                1
+                            ]
+                        ]
+                    },
+                    "refs": [
+                        {
+                            "parent_itm": "I",
+                            "refs": [
+                                "ref_item1"
+                            ],
+                            "coefs": [
+                                1.0
+                            ],
+                            "name": "global_ref",
+                            "thermo": {
+                                "g": {},
+                                "h": {},
+                                "stot": {},
+                                "qtot": {},
+                                "k": {},
+                                "kq": {},
+                                "a": {}
+                            }
+                        }
+                    ],
+                    "reacs": [
+                        {
+                            "parent_itm": "I",
+                            "ref": "TS1",
+                            "name": "TS1",
+                            "thermo": {
+                                "g": {},
+                                "h": {},
+                                "stot": {},
+                                "qtot": {},
+                                "k": {},
+                                "kq": {},
+                                "a": {},
+                                "ae": {}
+                            },
+                            "relref": ""
+                        }
+                    ],
+                    "itms": [],
+                    "merged": false,
+                    "freqs": {
+                        "vibs": [],
+                        "unit": null
+                    },
+                    "freq_is_set": false,
+                    "pg": null,
+                    "spin": 0,
+                    "photos": []
+                },
+                {
+                    "name": "P",
+                    "energy": -40.000000000000064,
+                    "zpe": 0.0,
+                    "tp": "min",
+                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "mech": "example1",
+                    "temps": [],
+                    "thermo": {
+                        "g": {},
+                        "h": {},
+                        "stot": {},
+                        "svib": {},
+                        "strans": {},
+                        "srot": {},
+                        "select": {},
+                        "etot": {},
+                        "evib": {},
+                        "etrans": {},
+                        "erot": {},
+                        "qtot": {},
+                        "qrot": {},
+                        "qtrans": {},
+                        "qvib": {},
+                        "qvibg": {},
+                        "qelect": {}
+                    },
+                    "struct": {
+                        "coors": [
+                            [
+                                0.0,
+                                0.0,
+                                0.0
+                            ]
+                        ],
+                        "cell": [
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ]
+                        ],
+                        "labels": [
+                            "H"
+                        ],
+                        "nat": 1,
+                        "atoms": {
+                            "H": 1
+                        },
+                        "rRange": 10,
+                        "lRange": -10,
+                        "uRange": 10,
+                        "dRange": -10,
+                        "rot_mat": [
+                            [
+                                1,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                1,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                1
+                            ]
+                        ]
+                    },
+                    "refs": [
+                        {
+                            "parent_itm": "P",
+                            "refs": [
+                                "ref_item1"
+                            ],
+                            "coefs": [
+                                1.0
+                            ],
+                            "name": "global_ref",
+                            "thermo": {
+                                "g": {},
+                                "h": {},
+                                "stot": {},
+                                "qtot": {},
+                                "k": {},
+                                "kq": {},
+                                "a": {}
+                            }
+                        }
+                    ],
+                    "reacs": [
+                        {
+                            "parent_itm": "P",
+                            "ref": "TS2",
+                            "name": "TS2",
+                            "thermo": {
+                                "g": {},
+                                "h": {},
+                                "stot": {},
+                                "qtot": {},
+                                "k": {},
+                                "kq": {},
+                                "a": {},
+                                "ae": {}
+                            },
+                            "relref": ""
+                        }
+                    ],
+                    "itms": [],
+                    "merged": false,
+                    "freqs": {
+                        "vibs": [],
+                        "unit": null
+                    },
+                    "freq_is_set": false,
+                    "pg": null,
+                    "spin": 0,
+                    "photos": []
+                },
+                {
+                    "name": "ref_item1",
+                    "energy": 0.0,
+                    "zpe": 0.0,
+                    "tp": "ref",
+                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "mech": "example1",
+                    "temps": [],
+                    "thermo": {
+                        "g": {},
+                        "h": {},
+                        "stot": {},
+                        "svib": {},
+                        "strans": {},
+                        "srot": {},
+                        "select": {},
+                        "etot": {},
+                        "evib": {},
+                        "etrans": {},
+                        "erot": {},
+                        "qtot": {},
+                        "qrot": {},
+                        "qtrans": {},
+                        "qvib": {},
+                        "qvibg": {},
+                        "qelect": {}
+                    },
+                    "struct": {
+                        "coors": [
+                            [
+                                0.0,
+                                0.0,
+                                0.0
+                            ]
+                        ],
+                        "cell": [
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                0
+                            ]
+                        ],
+                        "labels": [
+                            "H"
+                        ],
+                        "nat": 1,
+                        "atoms": {
+                            "H": 1
+                        },
+                        "rRange": 10,
+                        "lRange": -10,
+                        "uRange": 10,
+                        "dRange": -10,
+                        "rot_mat": [
+                            [
+                                1,
+                                0,
+                                0
+                            ],
+                            [
+                                0,
+                                1,
+                                0
+                            ],
+                            [
+                                0,
+                                0,
+                                1
+                            ]
+                        ]
+                    },
+                    "refs": [],
+                    "reacs": [],
+                    "itms": [],
+                    "merged": false,
+                    "freqs": {
+                        "vibs": [],
+                        "unit": null
+                    },
+                    "freq_is_set": false,
+                    "pg": null,
+                    "spin": 0,
+                    "photos": []
+                }
+            ]
+        }
+    ],
+    "diagrams": [
+        {
+            "xmax": 11,
+            "ymax": 22.70000000000004,
+            "ymin": -45.700000000000074,
+            "xmin": 0,
+            "name": "plot1",
+            "ref": "global_ref",
+            "col": "example1",
+            "etype": "E",
+            "temps": [],
+            "temp": null,
+            "itms": [
+                {
+                    "name": "R",
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "width": 6,
+                    "length": 1,
+                    "style": "solid line",
+                    "coors": [
+                        1,
+                        0.0,
+                        2,
+                        0.0
+                    ],
+                    "blinks": [],
+                    "alinks": [
+                        "TS1R"
+                    ]
+                },
+                {
+                    "name": "TS1",
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "width": 6,
+                    "length": 1,
+                    "style": "solid line",
+                    "coors": [
+                        3,
+                        17.00000000000003,
+                        4,
+                        17.00000000000003
+                    ],
+                    "blinks": [
+                        "TS1R"
+                    ],
+                    "alinks": [
+                        "ITS1"
+                    ]
+                },
+                {
+                    "name": "I",
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "width": 6,
+                    "length": 1,
+                    "style": "solid line",
+                    "coors": [
+                        5,
+                        -20.000000000000032,
+                        6,
+                        -20.000000000000032
+                    ],
+                    "blinks": [
+                        "ITS1"
+                    ],
+                    "alinks": [
+                        "TS2I"
+                    ]
+                },
+                {
+                    "name": "TS2",
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "width": 6,
+                    "length": 1,
+                    "style": "solid line",
+                    "coors": [
+                        7,
+                        -3.0000000000000044,
+                        8,
+                        -3.0000000000000044
+                    ],
+                    "blinks": [
+                        "TS2I"
+                    ],
+                    "alinks": [
+                        "PTS2"
+                    ]
+                },
+                {
+                    "name": "P",
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "width": 6,
+                    "length": 1,
+                    "style": "solid line",
+                    "coors": [
+                        9,
+                        -40.000000000000064,
+                        10,
+                        -40.000000000000064
+                    ],
+                    "blinks": [
+                        "PTS2"
+                    ],
+                    "alinks": []
+                }
+            ],
+            "links": [
+                {
+                    "name": "TS1R",
+                    "color": [
+                        100,
+                        100,
+                        100
+                    ],
+                    "width": 4,
+                    "style": "solid line",
+                    "coors": [
+                        2,
+                        0.0,
+                        3,
+                        17.00000000000003
+                    ],
+                    "pitm1": "R",
+                    "pitm2": "TS1"
+                },
+                {
+                    "name": "ITS1",
+                    "color": [
+                        100,
+                        100,
+                        100
+                    ],
+                    "width": 4,
+                    "style": "solid line",
+                    "coors": [
+                        4,
+                        17.00000000000003,
+                        5,
+                        -20.000000000000032
+                    ],
+                    "pitm1": "TS1",
+                    "pitm2": "I"
+                },
+                {
+                    "name": "TS2I",
+                    "color": [
+                        100,
+                        100,
+                        100
+                    ],
+                    "width": 4,
+                    "style": "solid line",
+                    "coors": [
+                        6,
+                        -20.000000000000032,
+                        7,
+                        -3.0000000000000044
+                    ],
+                    "pitm1": "I",
+                    "pitm2": "TS2"
+                },
+                {
+                    "name": "PTS2",
+                    "color": [
+                        100,
+                        100,
+                        100
+                    ],
+                    "width": 4,
+                    "style": "solid line",
+                    "coors": [
+                        8,
+                        -3.0000000000000044,
+                        9,
+                        -40.000000000000064
+                    ],
+                    "pitm1": "TS2",
+                    "pitm2": "P"
+                }
+            ],
+            "labels": [
+                {
+                    "itm": "R",
+                    "text": "R",
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "name": "R",
+                    "font": "",
+                    "coors": [
+                        1,
+                        0.0
+                    ],
+                    "visible": true
+                },
+                {
+                    "itm": "TS1",
+                    "text": "TS1",
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "name": "TS1",
+                    "font": "",
+                    "coors": [
+                        3,
+                        17.00000000000003
+                    ],
+                    "visible": true
+                },
+                {
+                    "itm": "I",
+                    "text": "I",
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "name": "I",
+                    "font": "",
+                    "coors": [
+                        5,
+                        -20.000000000000032
+                    ],
+                    "visible": true
+                },
+                {
+                    "itm": "TS2",
+                    "text": "TS2",
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "name": "TS2",
+                    "font": "",
+                    "coors": [
+                        7,
+                        -3.0000000000000044
+                    ],
+                    "visible": true
+                },
+                {
+                    "itm": "P",
+                    "text": "P",
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "name": "P",
+                    "font": "",
+                    "coors": [
+                        9,
+                        -40.000000000000064
+                    ],
+                    "visible": true
+                }
+            ]
+        }
+    ]
+}
