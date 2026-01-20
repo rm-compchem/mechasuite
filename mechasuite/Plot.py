@@ -662,7 +662,10 @@ class Plot(QWidget):
         if not ok or not newname:
             return
         self.gd.clone_plot(self.current_plot.name, newname)
-        self.update_data(self.current_plot.name)
+        #print("plot names: ", self.gd.get_plots_names())
+        #self.parent().gd = self.gd
+        #self.update_data(self.current_plot.name)
+        self.parent().update_data()
 
     def on_export_graph_to_excel(self):
         try:
