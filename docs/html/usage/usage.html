@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Usage &#8212; Mechasuite 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=cb25574f" />
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Installation" href="installation.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h1>
+<section id="using-mechasuite-modules">
+<h2>Using MechaSuite modules<a class="headerlink" href="#using-mechasuite-modules" title="Link to this heading">¶</a></h2>
+<p>If you have installed MechaSuite as a conda package, always activate the _ms_ environment first:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ conda activate ms
+</pre></div>
+</div>
+<p>Then, MechaData graphical user interface (GUI) can be open by:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mechadata.py
+# or opening directly a reaction mechanism from JSON file
+$ mechadata.py ${MS}/mechasuite/examples/example_2/fluorination.json
+</pre></div>
+</div>
+<p>Here, _${MS}_ denotes the path to the directory where mechasuite is installed.
+Likewise, MechaData GUI can be open by typing the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mechaedit
+# or opening directly a geometry file (CIF, XYZ, POSCAR or OUTCAR)
+$ mechaedit ${MS}/mechasuite/examples/example_2/SN2/SN2-TBAF.xyz
+</pre></div>
+</div>
+<p>For MechaKin usage, indicate the JSON with the reaction mechanism:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mechakinetics.py ${MS}/mechasuite/examples/example_1/rn.json
+</pre></div>
+</div>
+</section>
+<section id="preprocessing-scripts">
+<h2>Preprocessing scripts<a class="headerlink" href="#preprocessing-scripts" title="Link to this heading">¶</a></h2>
+<p>Importing individual calculations to an already created mechanism can be done by providing the corresponding calculation directory. However, some preprocessing is convenient to avoid errors in trying the determine the format of the output of such calculations. To that end, we provide sample scripts that create a file named <em>data</em> inside each calculation directory containing information about how <em>mechadata.py</em> should read the files in the directory. Each line in the <em>.data</em> file represents a configuration entry, specified as a <em>tag value</em> pair. The following shows that the program of the QM calculation is VASP, the file with the electronic energy is OSZICAR, unit for the energy is in eV, the multiplicity of the calculation is singlet, the file with the geometry is CONTCAR, and that this is an optimization calculation rather than a transition state.  Other possible values are provided after the # symbol:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">program</span> <span class="n">vasp</span>    <span class="c1"># gaussian, orca</span>
+<span class="n">energy</span>  <span class="n">OSZICAR</span> <span class="c1"># gaussian or orca output file name or even just numerical value</span>
+<span class="n">struct</span>  <span class="n">POSCAR</span>  <span class="c1"># any other xyz file</span>
+<span class="n">unit</span>    <span class="n">eV</span>      <span class="c1"># kcal, kJ, Ha</span>
+<span class="n">spin</span>    <span class="mi">0</span>       <span class="c1"># 1, 2, etc</span>
+<span class="n">tp</span>      <span class="nb">min</span>     <span class="c1"># ts, ref</span>
+<span class="n">pg</span>      <span class="n">solid</span>   <span class="c1"># C1, Cs, C2, C2v, C3v, C2h, Coov, D2h, D3h, D5h, Dooh, d3d, Td, Oh</span>
+</pre></div>
+</div>
+</section>
+<section id="mechadata-module">
+<h2>MechaData module<a class="headerlink" href="#mechadata-module" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>MechaData distinguishes itself through several design and functional advantages. Its key strengths include:</dt><dd><ul class="simple">
+<li><p>Spreadsheet-like interface: The column-based layout allows users to organize entire mechanisms, with each column representing a reaction mechanism (Figure S2a). This design offers a user-friendly interface that facilitates the analysis of reaction pathways, allowing users to focus their effort not on deciphering raw data, but on interpreting the underlying chemical processes and gaining meaningful mechanistic insight.</p></li>
+<li><p>Automatic reference energy calculations: The reliable generation and comparison of reaction pathways depend on the precise calculation of relative energies based on appropriate reference species (Figure S2b), a procedure that is often laborious and susceptible to human error. One of MechaData’s most distinctive features is its ability to automatically compute relative energies for all intermediates, aligning them to user-defined reference states. This reduces manual effort and ensures consistency across large datasets.</p></li>
+<li><p>Built-in thermochemical tools: Vibrational frequency data can be scaled, edited, and directly used to calculate entropies, enthalpies, and Gibbs free energies. The platform seamlessly supports post-processing of this data, its visualization via integrated plotting tools, and its application in microkinetic modeling, enabling users to transition effortlessly from thermochemical calculations to kinetic analysis.</p></li>
+<li><p>Integrated visualization: As another unique feature of MechaData, molecular struc-tures can be visualized directly within the interface (Figure S2d) or in the advanced MechaEdit module. This functionality enables users to easily inspect the system states at each step of the reaction pathway without the need to manage multiple geometry files or relying on external visualization packages. Such accessibility provides an intuitive, researcher-oriented experience that prioritizes the mechanistic understanding over manual file handling.</p></li>
+<li><p>No programming required: Unlike many comparable tools, MechaData provides a fully featured graphical user interface (GUI, Figure S2a-d), requiring no coding knowledge and making the platform accessible to a broader community of chemists, including experimentalists seeking mechanistic insights. At the same time, users who prefer to work programmatically can export the mechanisms in JSON, allowing further customization or integration into computational workflows. Also, the post-processed data can be easily exported in structured formats (csv and xlsx files), facilitating reproducibility, data sharing and further analysis.</p></li>
+<li><p>Direct plotting of free energy profiles: A key innovation of MechaData is its ability to generate free energy diagrams directly from the organized data, without the need for external plotting tools. This enables both reproducibility and customization as the diagrams can be visualized and readily adjusted (including style, formatting, labels and layout) before being exported as high-quality images using the Matplotlib python library.</p></li>
+</ul>
+</dd>
+</dl>
+<figure class="align-default" id="id1">
+<img alt="../_images/Fig2.png" src="../_images/Fig2.png" />
+<figcaption>
+<p><span class="caption-text">Figure 2: MechaData interface. a) Main spreadsheet for organizing reaction mechanisms. b) Relative energy panel and c) reaction energy panel. d) Embedded visualizer for molecular structures. e) MechaEdit interface.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mechasuite</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#using-mechasuite-modules">Using MechaSuite modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing-scripts">Preprocessing scripts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mechadata-module">MechaData module</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="installation.html" title="previous chapter">Installation</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2026, Reisel Millan, Miguel Rodenas, Alechania Misturini.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/usage/usage.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

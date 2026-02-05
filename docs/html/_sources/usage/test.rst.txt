@@ -1,0 +1,48 @@
+Supported File Formats
+######################
+
+.. rw.h
+
+State File
+==========
+
+json description
+JSON        *.json*        frame, traj    rw
+
+
+Geometries
+==========
+
+==========  =============  =============  ===== 
+File        Extension      Type           Mode
+==========  =============  =============  ===== 
+XYZ         *.xyz*         frame, traj    rw
+CIF         *.cif*         frame          rw
+XTL         *.xtl*         frame          rw
+SDF         *.sdf*         frame          r
+VASP        *.vasp*        frame          rw
+POSCAR      *.POSCAR*      frame          rw
+OUTCAR      *.OUTCAR*      frame          r
+XDATCAR     *.XDATCAR*     frame          rw
+GULP        *.gin*         frame          rw
+GULP        *.gout*        frame          r
+DLPOLY      *.CONFIG*      frame          rw
+DLPOLY      *.REVCON*      frame          rw
+PDB         *.pdb*         frame, traj    rw
+MOL2        *.mol2*        frame          r
+LMPTRAJ     *.lammpstrj*   frame, traj    r
+CP2K        *.cp2kinp*     frame          r
+ARC         *.arc, .car*   frame          r
+ASE_FREQ    *.asefreq*     frame          r
+MOLDEN      *.molden*      frame          r
+HIST        *.HISTORY*     frame, traj    r
+ORCA        *.inp*         frame          rw
+ZIP         *.zip*         frame, traj    r
+==========  =============  =============  ===== 
+
+
+..    FrameChooser(){
+      first = 1;
+      last = -1;
+      stride = 1;
+
