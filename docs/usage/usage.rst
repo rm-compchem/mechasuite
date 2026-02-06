@@ -60,4 +60,27 @@ MechaData distinguishes itself through several design and functional advantages.
 
 .. figure:: Fig2.png
 
-   Figure 2: MechaData interface. a) Main spreadsheet for organizing reaction mechanisms. b) Relative energy panel and c) reaction energy panel. d) Embedded visualizer for molecular structures. e) MechaEdit interface.
+   Figure 2. MechaData interface. a) Main spreadsheet for organizing reaction mechanisms. b) Relative energy panel and c) reaction energy panel. d) Embedded visualizer for molecular structures. e) MechaEdit interface.
+
+
+User interface and functionality
+---------------------------------
+
+The GUI of *mechadata* is designed to facilitate the setup, execution, and analysis of reaction network simulations through an intuitive, user-centric layout. It combines spreadsheet-style controls with interactive visual tools, while the menu structure is organized into logical categories for data management, visualization, plotting, and mechanistic editing. This section provides an overview of the main components of the GUI and describes the functionality of the available menus.
+
+File Menu
+-----------------------------------
+
+  * (1) **Import Mechanism From Folder:** Loads a reaction mechanism from a directory containing several folders (one per calculation) with quantum chemical output files. *mechasuite* automatically extracts relevant thermochemical and structural data for each intermediate and transition state. It is advisable to run the preprocessing scripts first, to ensure the QM software and filenames are set properly. 
+
+  * (2) **Import Mechanism From File:** Loads a reaction mechanism from a JSON file to the selected mechanism (column).
+  
+  * (3/4) **Save / Save As:** Saves the current workspace as a JSON file, including all mechanisms, structures, references, and calculated data. Useful for preserving project state.
+
+  * (5) **Export to Excel:** Exports the reaction data sheet to an Excel file for external analysis or reporting.
+
+  * (7-9) **Open / Close:** Opens an existing mechanism project or closes the current workspace.
+
+.. figure:: Fig3.png
+
+  Figure 3. Overview of *mechadata* GUI showing the available menus a–c) and the filtering options d), which allow to filter the calculations by temperature and type. 
