@@ -47,8 +47,10 @@ class KMC
 {
 public:
     map<string, int> surface_species;    // tracked surface species
+    map<string, std::vector<int>> species_evol;    // tracked surface species
     map<string, double> out_gas;         // counts desorbed molecules
     vector<Reaction> reactions;
+    vector<double> time_evol = {0.0};
 
     int N_sites = 0;    // total surface sites
     int n_empty = 0;    // empty sites
@@ -65,6 +67,7 @@ public:
     void addSurfaceSpecies(string name, int n)
     {
       surface_species[name] = n;
+      species_evol[name] = {n};
       n_empty -= n;
     }
 
@@ -135,10 +138,15 @@ public:
                 }
             }
 
+	    if(time > t_end) break;
+
             // Log
             cout << "t= " << time;
-            for (auto &sp : surface_species)
+	    time_evol.push_back(time);
+            for (auto &sp : surface_species){
                 cout << " " << sp.first << "= " << sp.second;
+		species_evol[sp.first].push_back(sp.second);
+	    }
             cout << " empty= " << n_empty;
 
             // optional: print desorbed gas counts
@@ -170,6 +178,9 @@ PYBIND11_MODULE(kmc, m)
 	  .def_readwrite("n_empty", &KMC::n_empty)
 	  .def_readwrite("temperature", &KMC::temperature)
 	  .def_readwrite("pressure", &KMC::pressure)
+	  .def_readwrite("surface_species", &KMC::surface_species)
+	  .def_readwrite("species_evol", &KMC::species_evol)
+	  .def_readonly("time_evol", &KMC::time_evol)
 
 	  ;
 
@@ -193,74 +204,3 @@ PYBIND11_MODULE(kmc, m)
 }
 
 
-
-/*
-// ---------------- main ----------------
-int main() {
-    ifstream f("input_ads.json");
-    json j;
-    f >> j;
-
-    KMC kmc;
-    kmc.temperature = j["temperature"];
-    double Ea_surface = j["activation_energy"];
-
-    // ---------------- surface sites ----------------
-    kmc.N_sites = j["surface"]["sites"];
-    kmc.n_empty = kmc.N_sites;
-
-    // ---------------- gas inlet pressure ----------------
-    kmc.pressure = j["gas"]["pressure"];
-
-    // ---------------- initial surface populations ----------------
-    for (auto it = j["initial_values"].begin(); it != j["initial_values"].end(); ++it) {
-        if (!it.value().is_number_integer()) {
-            cerr << "Error: initial value for species " << it.key() << " is not an integer\n";
-            return 1;
-        }
-        int n = it.value().get<int>();
-        kmc.surface_species[it.key()] = n;
-        kmc.n_empty -= n;
-    }
-
-    if (kmc.n_empty < 0) {
-        cerr << "Error: initial populations exceed number of sites\n";
-        return 1;
-    }
-
-    // ---------------- surface reactions ----------------
-    for (auto it = j["mec"].begin(); it != j["mec"].end(); ++it) {
-        string rxn = it.key();
-        size_t pos = rxn.find('=');
-        string A = rxn.substr(0,pos) + "*";
-        string B = rxn.substr(pos+1) + "*";
-
-        double kf298 = it.value()["298"][0];
-        double kr298 = it.value()["298"][1];
-
-        kmc.reactions.push_back({ReactionType::Surface, A, B, kf298, Ea_surface});
-        kmc.reactions.push_back({ReactionType::Surface, B, A, kr298, Ea_surface});
-    }
-
-    // ---------------- adsorption / desorption ----------------
-    if (j.contains("adsorption")) {
-        for (auto it = j["adsorption"].begin(); it != j["adsorption"].end(); ++it) {
-            string gas = it.key();
-            string surface = gas + "*";
-
-            double k_ads_298 = it.value()["k_ads_298"];
-            double k_des_298 = it.value()["k_des_298"];
-            double Ea_ads = it.value()["Ea_ads"];
-            double Ea_des = it.value()["Ea_des"];
-
-            kmc.reactions.push_back({ReactionType::Adsorption, surface, "", k_ads_298, Ea_ads});
-            kmc.reactions.push_back({ReactionType::Desorption, surface, "", k_des_298, Ea_des});
-        }
-    }
-
-    // ---------------- run simulation ----------------
-    kmc.run(10.0);
-
-    return 0;
-}
-*/

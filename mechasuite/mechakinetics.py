@@ -8,6 +8,7 @@ import matplotlib as mpl
 from cycler import cycler
 import sys
 import json
+from mechasuite.kmc import *
 
 
 class Step(object):
@@ -330,14 +331,9 @@ def mec_from_file(filename):
 
     return mec
 
-
-def main():
-    try:
-        f = sys.argv[1]
-    except IndexError:
-        f = "reaction_network.csv"
-
-    mec = mec_from_file(f)
+def run_microkinetics(indic):
+    #mec = mec_from_file(f)
+    mec = mec_from_dic(indic)
     mec.update_init_values()
     mec.simulate()
     mec.plot()
@@ -370,4 +366,65 @@ def main():
     # print(totalcont[0][-1])
     # mec.simulate()
 
-main()
+def run_kmc(data):
+    kmc = kMC()
+    kmc.temperature = data["temperature"]
+    kmc.pressure = data["pressure"]
+    
+    kmc.N_sites = data["surface"]["sites"]
+    kmc.n_empty = kmc.N_sites
+    
+    for k, v in data["initial_values"].items():
+        kmc.add_surface_species(k, v)
+    
+    for k, v in data["mec"].items():
+        ksp = k.split("=")
+        A, B = ksp[0]+"*", ksp[1]+"*"
+        kf = v["298"][0]
+        kr = v["298"][1]
+        kmc.add_reaction(Reaction(ReactionType.Surface, A, B, kf, 1))
+        kmc.add_reaction(Reaction(ReactionType.Surface, B, A, kr, 1))
+    
+    for k, v in data["adsorption"].items():
+        gas = k
+        surf = gas + "*"
+        kmc.add_reaction(Reaction(ReactionType.Adsorption, surf,"", v["kf"], 1))
+        kmc.add_reaction(Reaction(ReactionType.Desorption, surf,"", v["kr"], 1))
+    
+    simtime = data.get("simulation_time", 20) # seconds
+    kmc.run(simtime)
+    
+    for k, v in kmc.species_evol.items():
+        plt.plot(kmc.time_evol, v, label=k)
+    plt.legend()
+    #plt.xlim(0, simtime)
+    plt.show()
+
+def main():
+    try:
+        filename = sys.argv[1]
+    except IndexError:
+        print(f"Usage: python {sys.argv[0]} input_file")
+        sys.exit(0)
+
+    mec_dic = {}
+    if filename.endswith(".json"):
+        with open(filename) as f:
+            mec_dic = json.load(f)
+    else: # try yaml       
+        with open(filename) as f:
+            mec_dic = yaml.safe_load(f)
+
+    # default to kmc
+    runtype = mec_dic.get("solver", "kmc")
+    if runtype == "kmc":
+        run_kmc(mec_dic)
+    elif runtype in ["diff_eq", "microkinetics"]:
+        run_microkinetics(mec_dic)
+    else:
+        print("Bad solver. Please specify either kmc or microkinetics in input file")
+        sys.exit(0)
+
+    
+if __name__== "__main__":
+    main()

@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QApplication
 from mechasuite.Sheet import MainWindow
 import sys
 
-if __name__ == "__main__":
+def main():
     app = QApplication(sys.argv)
     try:
         infile = sys.argv[1]
@@ -14,3 +14,6 @@ if __name__ == "__main__":
     main = MainWindow(infile)
     main.showMaximized()
     app.exec_()
+
+if __name__ == "__main__":
+    main()
