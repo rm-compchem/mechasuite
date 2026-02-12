@@ -12,6 +12,9 @@ import copy
 
 # some constants here as per the NIST (CODATA 2014)
 
+def coth(x): # Hyperbolic cotangent
+    """Hyperbolic cotangent function."""
+    return (np.exp(x) + np.exp(-x)) / (np.exp(x) - np.exp(-x))
 
 
 
@@ -164,6 +167,9 @@ class PlotItm(object):
 
     def reacs(self):
         return self.itm.get_reacs()
+
+    def exc_states(self):
+        return self.itm.get_excited_states()
 
     def update_energy(self, etype="E", temp=None):
         if etype == "E":
@@ -1231,7 +1237,184 @@ class Reac(object):
         plt.plot(self.temps, predAs, "-")
         plt.show()
 
+class State_Conv(Reac):
+    def __init__(self, parent_itm, name, ref, df_value, process_type, *args, **kwargs):
+        super().__init__(parent_itm, name, ref, *args, **kwargs)
+        #self.parent_itm = parent_itm
+        #self.name = name
+        self.temps = []
+        print("Parent_itm is: ", parent_itm.name)
+        # refs are itm object that serve as referece
+        self.ref = ref
+        # energy relative to parent itm
+        self.energy = 0.0
+        # absolute energy calculated from self.coefs
+        self.abs_en = 0.0
+        self.abs_zpe = 0.0
+        self.zpe = 0.0
+        self.process_type = process_type
+        self.egap = 0.0
 
+        self.thermo = {
+            "g": {}, "h": {}, "stot": {},
+            "qtot": {}, "k": {}, "kq": {},
+            "a":{}, "ae":{}, "k(0)": {}
+        }
+
+        # State_Conv inherits from Reac class, but changes the way rate constants are calculated
+        print("Creating State Conversion process: ", name, " of type ", process_type)
+        self.df_mag = df_value  # Driving force magnitude for the process (in eV)
+        possible_processes = ["NR_decay", "RISC", "IC"]
+        if process_type not in possible_processes:
+            raise ValueError("process_type must be one of the following: "
+                             + ", ".join(possible_processes))
+        else:
+            self.process_type = process_type
+
+        # Define driving force attribute
+        if self.process_type == "NR_decay" or self.process_type == "RISC":
+            self.HR_factor = 0.1  # Huang-Rhys factor for the process (Weak coupling limit)
+            self.max_freq_GS = None # Maximum vibrational frequency of the ground state (in cm-1)
+
+        self.update2()
+
+    def update2(self):
+        self.set_e()
+        self.update_thermo_2()
+
+    def set_driving_force(self, df): # Establece el driving force para el proceso de conversion de estado
+        self.driving_force = df
+
+    def update_thermo_2(self, *args):  # Cálculo de constantes no radiativas
+        u = self.parent_itm.mech.unit
+        self.thermo["g"] = {}
+        self.thermo["h"] = {}
+        self.thermo["stot"] = {}
+        self.thermo["qtot"] = {}
+        self.thermo["k"] = {}
+        self.thermo["kq"] = {}
+        self.thermo["a"] = {}
+        self.thermo["ae"] = {}
+        self.thermo["k(0)"] = {}
+        self.thermo["k(T)"] = {}
+        self.thermo["Egap"] = {}
+        self.thermo["Type"] = self.process_type
+        self.thermo["DF"] = self.df_mag
+
+        self.update_temps()
+
+        keys = ["g", "h", "stot", "qtot"]
+
+        for T in self.temps:
+            self.thermo["k"][T] = 0.0
+            self.thermo["kq"][T] = 0.0
+            self.thermo["a"][T] = 0.0
+            self.thermo["ae"][T] = 0.0
+            self.thermo["k(0)"][T] = 0.0
+            for key in keys:
+                if self.relref:
+                    relp = self.parent_itm_ref.tkey(key, T) - self.ref_ref.tkey(key, T)
+                    self.thermo[key][T] = relp
+                else:
+                    relp = self.parent_itm.tkey(key, T) - self.ref.tkey(key, T)
+                    self.thermo[key][T] = relp
+
+            if self.parent_itm.tp == "min":
+                if self.process_type == "NR_decay" or self.process_type == "RISC":
+                    try:
+                        if self.parent_itm.energy < self.energy:
+                            lower_state = self.parent_itm
+                            upper_state = self.ref
+                        else:
+                            lower_state = self.ref
+                            upper_state = self.parent_itm
+                    except:
+                        lower_state = None
+                        upper_state = None
+                    print(lower_state.name, upper_state.name)
+                    # Get higher vibration of lower state
+                    if lower_state.freq_is_set:
+                        try:
+                            freqs_lower = lower_state.freqs.vibs
+                            if lower_state.freqs.unit == "cm-1":
+                                max_freq_lower = max(freqs_lower)
+                            elif lower_state.freqs.unit == "eV":
+                                max_freq_lower = max(freqs_lower) * 8065.54  # Convert eV to cm-1
+                            else:
+                                raise ValueError("Unknown frequency unit for lower state")
+                        except:
+                            max_freq_lower = None
+                    # Calculate gamma:
+                    if self.HR_factor and max_freq_lower:
+                        self.max_freq_GS = max_freq_lower
+                        gamma = np.log((upper_state.energy - lower_state.energy)*conv[u]["cm1"]/(self.HR_factor * self.max_freq_GS)) - 1  # unitless
+                        en_gap = (upper_state.energy - lower_state.energy)*conv[u]["cm1"]
+                        self.thermo["Egap"][T] = en_gap
+                    if self.process_type == "NR_decay":
+                        exp_factor = 1.0
+                    elif self.process_type == "RISC":
+                        try:
+                            # Calculate exponential factor
+                            exp_factor = np.e**(-abs(self.thermo["g"][T]) / (R[u] * T))
+                        except Exception as e:
+                            print("There was an error computing exponential factor for RISC", e)
+                            exp_factor = 1.0
+                    # Calclation of phonon count
+                    try: 
+                        p = en_gap / self.max_freq_GS
+                        if p > 5:
+                            print("WARNING: Phonon count is high (p=", p, "). Non-radiative rate approaches zero. Temperature dependance has a large error!")
+                    except Exception as e:
+                        p = None
+                    # Final calculation of non-radiative rate at 0 K:
+                    try:
+                        #print("Driving force magnitude (|ΔE|) for non-radiative decay: ", self.df_mag)
+                        preexponential_factor = ((self.df_mag**2) * np.sqrt(2*np.pi)) / (hbar["cm1"] * np.sqrt(self.max_freq_GS * en_gap))
+                        #print("Pre-exponential factor for non-radiative decay: ", preexponential_factor)
+                        #print("Calculating exponential factor with gamma: ", gamma, " and energy gap: ", en_gap)
+                        #print("exponential factor for non-radiative decay: ", (np.e**((-gamma*en_gap)/self.max_freq_GS)))
+                        k0 = (np.e**((-gamma*en_gap)/self.max_freq_GS)) * preexponential_factor * exp_factor # Temperature dependence from classical movement of nuclei but not from excited vibrational levels.
+                    except Exception as e:
+                        #print("There was an error computing preexponential factor", e)
+                        k0 = 0.0
+                    self.thermo["k(0)"][T] = k0
+                    # Final calculation of non-radiative rate at temperature T:
+                    try:
+                        x = self.max_freq_GS / (2 * R["cm1"] * T)
+                        temp_factor = (coth(x))**p
+                        self.thermo["k(T)"][T] = k0 * temp_factor
+                    except Exception as e:
+                        print("There was an error computing temperature factor", e)
+                        self.thermo["k(T)"][T] = k0
+
+                        
+                    try:
+
+                        # Calculate non-radiative decay rate in weak coupling limit (Englman and Jortner model)
+                        # Antes habría que coger el oscilador de la vibración más alta del estado fundamental
+                        lambda_reorg = 0.2  # Reorganization energy in eV (example value)
+                        delta_G = self.df_mag  # Driving force in eV
+                        #k_nr = (2 * np.pi / h[u]) * (self.HR_factor * self.max_freq_GS * 1.23981e-4) *
+                    except:
+                        pass
+                try:
+                    self.thermo["k"][T] = (Kb[u] * T / h[u]) * (np.e**(-self.thermo["g"][T] / (R[u] * T)))
+                except Exception as e:
+                    print("There was an error computing K", e)
+
+
+      
+            else:
+                # Non-radiative processes are only defined for minima
+                pass
+
+    def k0(self, T):
+        return self.thermo["k(0)"][T]
+    def kT(self, T):
+        return self.thermo["k(T)"][T]
+    def egap(self, T):
+        return self.thermo["Egap"][T]
+    
 
 class Itm(object):
     def __init__(self, name, *args, **kwargs):
@@ -1240,7 +1423,7 @@ class Itm(object):
         self.itms = []
         self.refs = OrderedDict()
         self.reacs = OrderedDict()
-
+        self.states = OrderedDict() # Excited states
         self.tp = None
 
         self.picture = {}
@@ -1371,6 +1554,7 @@ class Itm(object):
         selfdict["struct"] = self.struct.to_dit()
         selfdict["refs"] = [ref.to_dict() for ref in self.refs.values()]
         selfdict["reacs"] = [reac.to_dict() for reac in self.reacs.values()]
+        selfdict["states"] = [state.to_dict() for state in self.states.values()]
         selfdict["itms"] = [itm.name for itm in self.itms]
         selfdict["merged"] = self.merged
         selfdict["freqs"] = self.freqs.to_dict()
@@ -1450,6 +1634,8 @@ class Itm(object):
             ref.update()
         for reac in self.reacs.values():
             reac.update()
+        for state in self.states.values():
+            state.update2()
 
     def photo_from_files(self, photonames):
         databasedir = os.environ["HOME"] + "/.datamanager/photos/"
@@ -1601,9 +1787,34 @@ class Itm(object):
         return False
     
 
+    def add_excited_state(self, state, proc_type, df_value, relref=""):
+        # state is the itm object that serve
+        # as reaction reference
+        print("Adding excited state for item " + self.name + " with name " + state.name)
+        state.name = state.name# + "_" + proc_type
+        print("TOTAL STATES", self.states)
+        if self.states:
+            state_plus_types = [s.name+s.process_type for s in self.states.values()]
+            print("Existing states plus process types: ", state_plus_types)
+        else:
+            state_plus_types = []
+        if (state.name + proc_type) not in state_plus_types: # Aquí poner que se compare state name y process_type para permitir estados con mismo nombre pero diferente proceso de conversión
+            self.states[state.name + proc_type] = State_Conv(self,
+                                         state.name,
+                                         state,
+                                         relref=relref,
+                                         df_value=df_value,
+                                         process_type = proc_type)
+            return True
+        return False
 
     def get_reacs(self):
         return list(self.reacs.values())
+
+    def get_excited_states(self):
+        print("Getting excited states for item ", self.name)
+        print(self.states)
+        return list(self.states.values())
 
     def get_reac(self, reac):
         if reac in self.reacs:
@@ -1617,6 +1828,17 @@ class Itm(object):
             del self.reacs[reac]
         elif isinstance(reac, Reac) and reac in self.reacs:
             del self.reacs[reac.name]
+
+    def del_exc_state(self, exc_state, process_type):
+        # Parece que se está ejecutando dos veces, en otra parte del código
+        print(self.states)
+        print(exc_state)
+        print(process_type)
+        state_plus_process = exc_state + process_type
+        if type(exc_state) == str and state_plus_process in self.states:
+            del self.states[state_plus_process]
+        elif isinstance(exc_state, State_Conv) and exc_state.name + exc_state.process_type in self.states:
+            del self.states[exc_state.name + exc_state.process_type]
 
     def set_freqs(self, freqlist):
         if freqlist is None:
@@ -2629,6 +2851,14 @@ class Data(object):
                                     itmobj.add_reac(mecobj.get_itm(reac["ref"]), reac["relref"])
                                 except:
                                     pass
+
+                    for state in itm["states"]:
+                        # NO PONGO LO DE "refs" PORQUE NO SE QUE ES
+                        if "relref" in state:
+                            try:
+                                itmobj.add_excited_state(mecobj.get_itm(state["ref"]), state["thermo"]["Type"],  state["thermo"]["DF"] , state["relref"])
+                            except Exception as e:
+                                print("Error adding excited state for item " + itmobj.name+ " with reference " + state["ref"] + " and error: " + str(e))
 
                 if "refs" in mec:
                     message = mecobj.add_refs(mec["refs"])
