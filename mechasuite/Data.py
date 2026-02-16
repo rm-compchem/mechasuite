@@ -12,10 +12,6 @@ import copy
 
 # some constants here as per the NIST (CODATA 2014)
 
-def coth(x): # Hyperbolic cotangent
-    """Hyperbolic cotangent function."""
-    return (np.exp(x) + np.exp(-x)) / (np.exp(x) - np.exp(-x))
-
 
 
 class PlotLabel(object):
@@ -1381,7 +1377,7 @@ class State_Conv(Reac):
                     # Final calculation of non-radiative rate at temperature T:
                     try:
                         x = self.max_freq_GS / (2 * R["cm1"] * T)
-                        temp_factor = (coth(x))**p
+                        temp_factor = (np.e**(x)/(np.e**(x) - 1))**p  #Corrected temperature dependency
                         self.thermo["k(T)"][T] = k0 * temp_factor
                     except Exception as e:
                         print("There was an error computing temperature factor", e)
