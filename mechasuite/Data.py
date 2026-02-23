@@ -2847,14 +2847,15 @@ class Data(object):
                                     itmobj.add_reac(mecobj.get_itm(reac["ref"]), reac["relref"])
                                 except:
                                     pass
-
-                    for state in itm["states"]:
-                        # NO PONGO LO DE "refs" PORQUE NO SE QUE ES
-                        if "relref" in state:
-                            try:
-                                itmobj.add_excited_state(mecobj.get_itm(state["ref"]), state["thermo"]["Type"],  state["thermo"]["DF"] , state["relref"])
-                            except Exception as e:
-                                print("Error adding excited state for item " + itmobj.name+ " with reference " + state["ref"] + " and error: " + str(e))
+                    if itm.get("states"):
+                        
+                        for state in itm["states"]:
+                            # NO PONGO LO DE "refs" PORQUE NO SE QUE ES
+                            if "relref" in state:
+                                try:
+                                    itmobj.add_excited_state(mecobj.get_itm(state["ref"]), state["thermo"]["Type"],  state["thermo"]["DF"] , state["relref"])
+                                except Exception as e:
+                                    print("Error adding excited state for item " + itmobj.name+ " with reference " + state["ref"] + " and error: " + str(e))
 
                 if "refs" in mec:
                     message = mecobj.add_refs(mec["refs"])
