@@ -3,16 +3,15 @@
   "temperature": 298.0,
   "pressure": 1.0,
   "simulation_time": 40,
-
-  "surface": {
-    "sites": 1000
+  "closed": true,
+  "residence_time": 1.0,
+  
+  "gas_count": {
+    "R": 1000
   },
-
-
-  "initial_values": {
-    "R*": 1000,
-    "I*": 0,
-    "P*": 0
+  "surface_count": {
+    "I": 0,
+    "P": 0
   },
 
   "mec": {
@@ -22,21 +21,7 @@
     "I=P": {
       "298": [2.1757017831042536, 4.832099086983306e-15]
     }
-  },
-
-  "adsorption": {
-    "R": {
-      "kf": 0.0,
-      "kr": 0.0,
-      "Ea_ads": 10000.0,
-      "Ea_des": 80000.0
-    },
-    "P": {
-      "kf": 10000.0,
-      "kr": 10.0,
-      "Ea_ads": 10000.0,
-      "Ea_des": 80000.0
-    }
   }
+
 }
 

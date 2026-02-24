@@ -8,7 +8,9 @@ import matplotlib as mpl
 from cycler import cycler
 import sys
 import json
-from mechasuite.kmc import *
+import yaml
+import re
+from mechasuite import kmc as kmc_core
 
 
 class Step(object):
@@ -366,38 +368,81 @@ def run_microkinetics(indic):
     # print(totalcont[0][-1])
     # mec.simulate()
 
+def parse_reaction_kmc(eq, rdict, system):
+    rate = rdict["298"]
+    r1 = kmc_core.Reaction()
+    r2 = None
+    lhs, rhs = eq.split("=")
+
+    def counts(side):
+        d = {}
+        tokens = re.findall(r'(\d*)([A-Za-z_]\w*)', side)
+        for n,s in tokens:
+            nu = int(n) if n else 1
+            idx = system.getSpeciesIndex(s)
+            d[idx] = d.get(idx,0)+nu
+        return d
+
+    r1.reactants = counts(lhs)
+    r1.products = counts(rhs)
+    r1.rate = rate[0]
+    if len(rate) > 1:
+        r2 = kmc_core.Reaction()
+        r2.reactants = r1.products
+        r2.products = r1.reactants
+        r2.rate = rate[1]
+    print(rate[0], rate[1])
+    return r1, r2
+
 def run_kmc(data):
-    kmc = kMC()
-    kmc.temperature = data["temperature"]
-    kmc.pressure = data["pressure"]
-    
-    kmc.N_sites = data["surface"]["sites"]
-    kmc.n_empty = kmc.N_sites
-    
-    for k, v in data["initial_values"].items():
-        kmc.add_surface_species(k, v)
-    
-    for k, v in data["mec"].items():
-        ksp = k.split("=")
-        A, B = ksp[0]+"*", ksp[1]+"*"
-        kf = v["298"][0]
-        kr = v["298"][1]
-        kmc.add_reaction(Reaction(ReactionType.Surface, A, B, kf, 1))
-        kmc.add_reaction(Reaction(ReactionType.Surface, B, A, kr, 1))
-    
-    for k, v in data["adsorption"].items():
-        gas = k
-        surf = gas + "*"
-        kmc.add_reaction(Reaction(ReactionType.Adsorption, surf,"", v["kf"], 1))
-        kmc.add_reaction(Reaction(ReactionType.Desorption, surf,"", v["kr"], 1))
-    
-    simtime = data.get("simulation_time", 20) # seconds
-    kmc.run(simtime)
-    
-    for k, v in kmc.species_evol.items():
-        plt.plot(kmc.time_evol, v, label=k)
+    sys = kmc_core.System()
+
+    # add surface species
+    for s,v in data["surface_count"].items():
+        sys.addSpecies(s,v)
+
+    # add gas species
+    for s,v in data.get("gas_count",{}).items():
+        sys.addSpecies(s,v)
+
+    # reactor
+    reactor = kmc_core.Reactor()
+    gas_map = {sys.getSpeciesIndex(s): v for s,v in data.get("gas_count",{}).items()}
+    reactor.gas_species = gas_map
+    reservoir = {sys.getSpeciesIndex(s): v for s,v in data.get("reservoir",{}).items()}
+    reactor.reservoir = reservoir
+    reactor.closed_system = data.get("closed", True)
+    reactor.residence_time = data.get("residence_time", -1.0)
+    sys.reactor = reactor
+
+    # reactions
+    for equation, rdict in data["mec"].items():
+        r1, r2 = parse_reaction_kmc(equation, rdict, sys)
+        sys.addReaction(r1)
+        if r2 is not None:
+            sys.addReaction(r2)
+
+    # KMC engine
+    kmc = kmc_core.KMC(sys, 123)
+
+    #tau = data.get("tau", 0.1)
+    kmc.runSSA(data["simulation_time"], 100000)
+    # kmc.runTau(tau, data["t_end"])
+
+    # plotting
+    names = list(data["surface_count"].keys()) + list(data.get("gas_count",{}).keys())
+    hist = sys.history
+    times = sys.times
+
+    for i,name in enumerate(names):
+        idx = sys.getSpeciesIndex(name)
+        if idx in reactor.reservoir:
+            continue
+        plt.plot(times,[h[i] for h in hist], label=name)
+    plt.xlim(0, data["simulation_time"])
+    plt.xlabel("time")
+    plt.ylabel("population")
     plt.legend()
-    #plt.xlim(0, simtime)
     plt.show()
 
 def main():
