@@ -3,13 +3,13 @@ mec:
   I=P:
     '298':
     - 2.1757017831042536
-    - 4.832099086983306e-15
+    - 4.832099086983306e-2
   R=I:
     '298':
     - 4.1757017831042536
-    - 4.832099086983306e-15
+    - 4.832099086983306e-2
 pressure: 1.0
-residence_time: 1.0
+residence_time: 100000.0
 simulation_time: 10
 solver: kmc
 surface_count:
