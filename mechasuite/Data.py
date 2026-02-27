@@ -950,6 +950,7 @@ class Reference(object):
         self.thermo["k"] = {}
         self.thermo["kq"] = {}
         self.thermo["a"] = {}
+        self.thermo["prob"] = []
         self.update_temps()
 
         keys = ["g", "h", "stot", "qtot"]
@@ -992,6 +993,9 @@ class Reference(object):
     def qtot(self, T):
         return self.thermo["qtot"][T]
 
+    def prob(self):
+        return self.thermo["prob"]
+
     def tkey(self, k, T):
         return self.thermo[k][T]
 
@@ -1016,7 +1020,7 @@ class Reac(object):
         self.thermo = {
             "g": {}, "h": {}, "stot": {},
             "qtot": {}, "k": {}, "kq": {},
-            "a":{}, "ae":{}
+            "a":{}, "ae":{}, "prob":{}
         }
 
         if "relref" in kwargs and kwargs["relref"] != "":
@@ -1109,6 +1113,7 @@ class Reac(object):
         self.thermo["kq"] = {}
         self.thermo["a"] = {}
         self.thermo["ae"] = {}
+        self.thermo["prob"] = []
         self.update_temps()
 
         keys = ["g", "h", "stot", "qtot"]
@@ -1127,6 +1132,7 @@ class Reac(object):
                     self.thermo[key][T] = relp
 
             if self.parent_itm.tp == "ts":
+                self.thermo["prob"] = 1.0
                 try:
                     self.thermo["k"][T] = (Kb[u] * T / h[u]) * (np.e**(-self.thermo["g"][T] / (R[u] * T)))
                 except Exception as e:
@@ -1155,9 +1161,9 @@ class Reac(object):
                     print("prefactor data", (Kb[u] * T / h[u]))
                     if self.thermo["g"][T] < 0:
                         print("WARNING: Negative G value for MECP rate calculation")
-                        self.thermo["k"][T] = landau_zener_rate(0.0, self.parent_itm.SOC, self.parent_itm.diffgrad, self.parent_itm.redmass, T, u, model='double')
+                        self.thermo["k"][T], self.thermo["prob"] = landau_zener_rate(0.0, self.parent_itm.SOC, self.parent_itm.diffgrad, self.parent_itm.redmass, T, u, model='double')
                     else:
-                        self.thermo["k"][T] = landau_zener_rate(self.thermo["g"][T], self.parent_itm.SOC, self.parent_itm.diffgrad, self.parent_itm.redmass, T, u, model='double')
+                        self.thermo["k"][T], self.thermo["prob"] = landau_zener_rate(self.thermo["g"][T], self.parent_itm.SOC, self.parent_itm.diffgrad, self.parent_itm.redmass, T, u, model='double')
                     #self.thermo["k"][T] = (Kb[u] * T / h[u]) * (np.e**(-self.thermo["g"][T] / (R[u] * T))) #* 
                 except Exception as e:
                     print("There was an error computing K", e)
@@ -1196,6 +1202,10 @@ class Reac(object):
 
     def qtot(self, T):
         return self.thermo["qtot"][T]
+    
+    def prob(self):
+        #print("Probability of non-adiabatic transition: ", self.thermo["prob"])
+        return self.thermo["prob"]
 
     def tkey(self, k, T):
         return self.thermo[k][T]
@@ -1808,8 +1818,8 @@ class Itm(object):
         return list(self.reacs.values())
 
     def get_excited_states(self):
-        print("Getting excited states for item ", self.name)
-        print(self.states)
+        #print("Getting excited states for item ", self.name)
+        #print(self.states)
         return list(self.states.values())
 
     def get_reac(self, reac):

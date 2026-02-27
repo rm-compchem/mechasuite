@@ -2618,7 +2618,7 @@ class RefSheet(QTableWidget):
         self.parent = parent
         self.tp = tp
         if tp == "reac":
-            self.vlabels = [" \u0394E", " \u0394ZPE", " \u0394H", " \u0394G", " \u0394S", " k", " A"]
+            self.vlabels = [" \u0394E", " \u0394ZPE", " \u0394H", " \u0394G", " \u0394S", " k", " A", "κ"]
         elif tp == "exc":
             self.vlabels = [" \u0394E", " \u0394G", " DF", " Type", " k(0)", " k(T)"]
         else:
@@ -2817,8 +2817,9 @@ class RefSheet(QTableWidget):
                     self.setItem(4, col, QTableWidgetItem("{:.4f}".format(zobj.stot(T))))
                     self.setItem(5, col, QTableWidgetItem("{:.3e}".format(zobj.k(T))))
                     #self.setItem(6, col, QTableWidgetItem("{:.3e}".format(zobj.kq(T))))
-                    self.setItem(7, col, QTableWidgetItem("{:.3e}".format(zobj.a(T))))
+                    self.setItem(7, col, QTableWidgetItem("{:.3e}".format(zobj.prob())))
                     #self.setItem(8, col, QTableWidgetItem("{:.4f}".format(zobj.tkey("ae", T))))
+                    #self.setItem(8, col, QTableWidgetItem("{:.4f}".format(zobj.prob())))
                 else:
                     self.setItem(2, col, QTableWidgetItem(""))
                     self.setItem(3, col, QTableWidgetItem(""))
