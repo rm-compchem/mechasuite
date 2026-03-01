@@ -422,7 +422,7 @@ class Plot(QWidget):
         # dictionary with the grapths data
         self.gd = gd
         # self.parent = parent
-        # self.current_plot =
+        self.current_plot = {}
         self.qp = QPainter()
         self.xmargin_ratio, self.ymargin_ratio = 0.08, 0.05
         self.xmargin, self.ymargin = 50, 5
@@ -1096,6 +1096,8 @@ class Plot(QWidget):
         self.update()
 
     def on_parentcomboE(self, t):
+        # i should fix this by initilaizing self.current_plot 
+        if not self.current_plot: return 
         self.current_plot.update_type_en(t)
         if self.current_plot.etype == "G":
             self.parent().comboT.clear()
