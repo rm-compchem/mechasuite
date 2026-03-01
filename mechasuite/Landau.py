@@ -116,4 +116,4 @@ def landau_zener_rate(dG, H12, dF, mu, T, u, model="single"):
     k_LZ = k_TS * integral
     print("Landau Zener probability integral:", integral)
 
-    return k_LZ  # in s⁻¹
+    return k_LZ, integral

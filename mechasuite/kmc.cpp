@@ -1,206 +1,267 @@
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <map>
-#include <string>
-#include <random>
+#include "kmc.h"
 #include <cmath>
+#include <stdexcept>
+#include <numeric>
+#include <random>
+#include <iostream>
+#include <algorithm>
+#include <functional>
 
-//g++ kmc.cpp  $(python3 -m pybind11 --includes) -shared -fPIC  -o kmc$(python3-config --extension-suffix)
+// ----------------- Reactor -----------------
+// too agresive
+// void Reactor::applyFlow(std::vector<int>& sp, double dt) 
+// {
+//     if(closed_system || residence_time <= 0) return;
+//     for(auto& [idx,target] : gas_species){
+//         if (reservoir.count(idx)){
+//             sp[idx] = reservoir[idx];
+//             continue;
+//         }
 
-
-//#include "json.hpp"
-//using json = nlohmann::json;
-using namespace std;
-
-constexpr double Rgas = 8.314462618; // J/mol/K
-
-// ---------------- Reaction types ----------------
-enum class ReactionType 
+//         double relax = (target - sp[idx])*dt/residence_time;
+//         sp[idx] += static_cast<int>(relax);
+//         if(sp[idx]<0) sp[idx]=0;
+//     }
+// }
+void Reactor::applyFlow(std::vector<int>& sp,
+                        double dt,
+                        std::mt19937& rng)
 {
-    Surface,      // Surface reaction: R* -> I*
-    Adsorption,   // Gas -> Surface
-    Desorption    // Surface -> Gas (leaves reactor)
-};
+    // ---- 1. Closed system → nothing happens
+    if(closed_system) return;
 
-// ---------------- Reaction ----------------
-struct Reaction 
-{
-    ReactionType type;
-    string species;      // surface species
-    string product;      // only for surface reactions
-    double k;
-    double Ea;
-};
+    // ---- 2. Loop over gas species
+    for(const auto& [idx,target] : gas_species)
+    {
+        // ------------------------------------
+        // GRAND CANONICAL RESERVOIR MODE
+        // ------------------------------------
+        // Species population fixed externally
+        auto res = reservoir.find(idx);
+        if(res != reservoir.end())
+        {
+            sp[idx] = res->second;   // enforce constant population
+            continue;
+        }
 
-// ---------------- Arrhenius ----------------
-double arrhenius(double k298, double T, double Ea) 
-{
-    return k298 * exp(-Ea / Rgas * (1.0 / T - 1.0 / 298.0));
+        // ------------------------------------
+        // FLOW MODE (CSTR / PFR segment)
+        // ------------------------------------
+        if(residence_time <= 0) continue;
+
+        // Mean exchange with feed
+        double mean = std::abs(target - sp[idx]) * dt / residence_time;
+        if(mean <= 0.0) continue;
+
+        // Poisson stochastic transfer
+        std::poisson_distribution<int> P(mean);
+        int delta = P(rng);
+
+        if(sp[idx] < target)
+            sp[idx] += delta;   // inflow
+        else
+            sp[idx] -= delta;   // outflow
+
+        if(sp[idx] < 0) sp[idx] = 0;
+    }
 }
 
-// ---------------- KMC Engine ----------------
-class KMC 
+// ----------------- System -----------------
+int System::addSpecies(const std::string& name, int initial)
 {
-public:
-    map<string, int> surface_species;    // tracked surface species
-    map<string, std::vector<int>> species_evol;    // tracked surface species
-    map<string, double> out_gas;         // counts desorbed molecules
-    vector<Reaction> reactions;
-    vector<double> time_evol = {0.0};
+    if(name_to_idx.count(name)) return name_to_idx[name];
+    int idx = species.size();
+    species.push_back(initial);
+    names.push_back(name);
+    name_to_idx[name] = idx;
+    return idx;
+}
 
-    int N_sites = 0;    // total surface sites
-    int n_empty = 0;    // empty sites
-    double temperature;
-    double pressure = 1.0;  // gas inlet pressure (constant feed)
+int System::getSpeciesIndex(const std::string& name) const 
+{
+    auto it = name_to_idx.find(name);
+    if(it==name_to_idx.end())
+        throw std::runtime_error("Unknown species: " + name);
+    return it->second;
+}
 
-    KMC() : rng(12345), uni(0.0,1.0), time(0.0) {}
+void System::addReaction(const Reaction& r)
+{
+    reactions.push_back(r);
+}
 
-    void addReaction(Reaction r)
-    {
-      reactions.push_back(r);
+double System::binomial(unsigned n, unsigned k)
+{
+    if(k>n) return 0.0;
+    if(k==0 || k==n) return 1.0;
+    double res = 1.0;
+    for(unsigned i=1;i<=k;++i){
+        res *= (n - (k-i));
+        res /= i;
     }
+    return res;
+}
 
-    void addSurfaceSpecies(string name, int n)
-    {
-      surface_species[name] = n;
-      species_evol[name] = {n};
-      n_empty -= n;
+double System::computePropensity(const Reaction& r) const 
+{
+    double a = r.rate;
+    for(auto& [idx, nu] : r.reactants){
+        a *= binomial(species[idx], nu);
+        if(a==0.0) return 0.0;
     }
+    // backward rate for reversible
+    // if(r.reversible){
+    //     double prod = 1.0;
+    //     for(auto& [idx, nu] : r.products){
+    //         prod *= binomial(species[idx], nu);
+    //         if(prod==0.0) return 0.0;
+    //     }
+    //     a += r.rate_backward * prod / std::max(r.Keq,1e-12);
+    // }
+    return a;
+}
 
-    void run(double t_end) {
-        while (time < t_end) {
-            vector<double> rates;
-            double Rtot = 0.0;
+void System::computeAllPropensities()
+{
+    propensities.clear();
+    for(auto& r: reactions)
+        propensities.push_back(computePropensity(r));
+}
 
-            // Compute propensities
-            for (auto &r : reactions) {
-                //double k = arrhenius(r.k, temperature, r.Ea);
-                double k = r.k;
-                double a = 0.0;
-
-                if (r.type == ReactionType::Surface) {
-                    a = k * surface_species[r.species];
-                }
-                else if (r.type == ReactionType::Adsorption) {
-                    a = k * pressure * n_empty; // only empty sites limit adsorption
-                }
-                else if (r.type == ReactionType::Desorption) {
-                    a = k * surface_species[r.species];
-                }
-
-                rates.push_back(a);
-                Rtot += a;
-            }
-
-            if (Rtot <= 0.0) break;
-
-            // Gillespie time step
-            double dt = -log(uni(rng)) / Rtot;
-            time += dt;
-
-            // Select reaction
-            double rrand = uni(rng) * Rtot;
-            double cum = 0.0;
-            size_t chosen = 0;
-            for (size_t i=0;i<rates.size();++i){
-                cum += rates[i];
-                if (rrand < cum) {
-                    chosen = i;
-                    break;
-                }
-            }
-
-            // Fire reaction
-            Reaction &rxn = reactions[chosen];
-
-            if (rxn.type == ReactionType::Surface) {
-                if (surface_species[rxn.species] > 0) {
-                    surface_species[rxn.species]--;
-                    surface_species[rxn.product]++;
-                }
-            }
-            else if (rxn.type == ReactionType::Adsorption) {
-                if (n_empty > 0) {
-                    n_empty--;
-                    surface_species[rxn.species]++;
-                    // gas reservoir is constant
-                }
-            }
-            else if (rxn.type == ReactionType::Desorption) {
-                if (surface_species[rxn.species] > 0) {
-                    surface_species[rxn.species]--;
-                    n_empty++;
-                    out_gas[rxn.species] += 1.0; // track molecules leaving reactor
-                }
-            }
-
-	    if(time > t_end) break;
-
-            // Log
-            cout << "t= " << time;
-	    time_evol.push_back(time);
-            for (auto &sp : surface_species){
-                cout << " " << sp.first << "= " << sp.second;
-		species_evol[sp.first].push_back(sp.second);
-	    }
-            cout << " empty= " << n_empty;
-
-            // optional: print desorbed gas counts
-            for (auto &g : out_gas)
-                cout << " " << g.first << "_out= " << g.second;
-            cout << endl;
+void System::updatePropensities(const std::vector<int>& changed_species)
+{
+    std::set<size_t> to_update;
+    for(int s: changed_species){
+        auto it = dep_graph.species_to_reactions.find(s);
+        if(it!=dep_graph.species_to_reactions.end()){
+            to_update.insert(it->second.begin(),it->second.end());
         }
     }
+    for(size_t i: to_update){
+        propensities[i] = computePropensity(reactions[i]);
+    }
+}
 
-private:
-    mt19937_64 rng;
-    uniform_real_distribution<double> uni;
-    double time;
-};
+// ----------------- SSA -----------------
+bool System::stepSSA(double& time, std::mt19937& rng)
+{
+    computeAllPropensities();
+    double a0 = std::accumulate(propensities.begin(), propensities.end(),0.0);
+    if(a0<=0.0) return false;
 
+    std::uniform_real_distribution<double> U(0.0,1.0);
+    double r1 = U(rng), r2 = U(rng);
+    double dt = -std::log(r1)/a0;
+    time += dt;
+
+    double thresh = r2*a0;
+    double accum = 0.0;
+    size_t mu=0;
+    for(size_t i=0;i<propensities.size();++i){
+        accum += propensities[i];
+        if(accum>=thresh){ mu=i; break; }
+    }
+
+    Reaction& R = reactions[mu];
+    std::vector<int> changed;
+    for(auto& [idx,nu]:R.reactants){ species[idx]-=nu; changed.push_back(idx);}
+    for(auto& [idx,nu]:R.products){ species[idx]+=nu; changed.push_back(idx);}
+
+    reactor.applyFlow(species, dt, rng);
+    history.push_back(species);
+    times.push_back(time);
+
+    updatePropensities(changed);
+    return true;
+}
+
+// ----------------- Tau-leaping -----------------
+bool System::stepTau(double& time, double tau, std::mt19937& rng)
+{
+    computeAllPropensities();
+    std::poisson_distribution<int> pois;
+    bool any_event=false;
+    std::vector<int> changed;
+    for(size_t i=0;i<reactions.size();++i){
+        pois = std::poisson_distribution<int>(propensities[i]*tau);
+        int nfirings = pois(rng);
+        if(nfirings>0) any_event=true;
+        for(auto& [idx,nu]:reactions[i].reactants){ species[idx]-= nu*nfirings; changed.push_back(idx);}
+        for(auto& [idx,nu]:reactions[i].products){ species[idx]+= nu*nfirings; changed.push_back(idx);}
+    }
+    time += tau;
+    reactor.applyFlow(species,tau, rng);
+    history.push_back(species);
+    times.push_back(time);
+    updatePropensities(changed);
+    return any_event;
+}
+
+// ----------------- KMC -----------------
+void KMC::runSSA(double t_end, size_t max_steps)
+{
+    double time=0.0;
+    for(size_t i=0;i<max_steps && time<t_end;i++)
+        if(!system.stepSSA(time,rng)) break;
+}
+
+void KMC::runTau(double tau, double t_end){
+    double time=0.0;
+    while(time<t_end){
+        if(!system.stepTau(time,tau,rng)) break;
+    }
+}
+
+
+
+
+
+
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include "kmc.h"
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(kmc, m)
-{
-  py::class_<KMC>(m, "kMC")
-	  .def(py::init<>())
-	  .def("run", &KMC::run)
-	  .def("add_reaction", &KMC::addReaction)
-	  .def("add_surface_species", &KMC::addSurfaceSpecies)
-	  //.def("surface_species", &KMC::surface_species)
-	  //.def("out_gas", &KMC::out_gas)
-	  .def_readwrite("N_sites", &KMC::N_sites)
-	  .def_readwrite("n_empty", &KMC::n_empty)
-	  .def_readwrite("temperature", &KMC::temperature)
-	  .def_readwrite("pressure", &KMC::pressure)
-	  .def_readwrite("surface_species", &KMC::surface_species)
-	  .def_readwrite("species_evol", &KMC::species_evol)
-	  .def_readonly("time_evol", &KMC::time_evol)
+PYBIND11_MODULE(kmc, m) {
+    py::class_<Reaction>(m, "Reaction")
+        .def(py::init<>())
+        .def_readwrite("reactants", &Reaction::reactants)
+        .def_readwrite("products", &Reaction::products)
+        .def_readwrite("rate", &Reaction::rate)
+        // .def_readwrite("reversible", &Reaction::reversible)
+        .def_readwrite("adsorption", &Reaction::adsorption)
+        .def_readwrite("desorption", &Reaction::desorption)
+        .def_readwrite("Keq", &Reaction::Keq);
 
-	  ;
+    py::class_<Reactor>(m, "Reactor")
+        .def(py::init<>())
+        .def_readwrite("closed_system", &Reactor::closed_system)
+        .def_readwrite("residence_time", &Reactor::residence_time)
+        .def_readwrite("gas_species", &Reactor::gas_species)
+        .def_readwrite("reservoir", &Reactor::reservoir)
+        .def("applyFlow", &Reactor::applyFlow)
+        .def("isGas", &Reactor::isGas);
 
-    py::enum_<ReactionType>(m, "ReactionType")
-	  .value("Surface", ReactionType::Surface)
-	  .value("Adsorption", ReactionType::Adsorption)
-	  .value("Desorption", ReactionType::Desorption)
-	  .export_values()
-	  ;
+    py::class_<System>(m, "System")
+        .def(py::init<>())
+        .def_readwrite("species", &System::species)
+        .def_readwrite("reactions", &System::reactions)
+        .def_readwrite("reactor", &System::reactor)
+        .def_readwrite("history", &System::history)
+        .def_readwrite("times", &System::times)
+        .def("addSpecies", &System::addSpecies)
+        .def("getSpeciesIndex", &System::getSpeciesIndex)
+        .def("addReaction", &System::addReaction)
+        .def("computeAllPropensities", &System::computeAllPropensities)
+        .def("updatePropensities", &System::updatePropensities)
+        .def("stepSSA", &System::stepSSA)
+        .def("stepTau", &System::stepTau)
+        .def_static("binomial", &System::binomial);
 
-  py::class_<Reaction>(m, "Reaction")
-          .def(py::init<>())
-          .def(py::init<ReactionType,string, string, double, double >())
-	  .def_readwrite("type", &Reaction::type)
-	  .def_readwrite("species", &Reaction::species)
-	  .def_readwrite("product", &Reaction::product)
-	  .def_readwrite("k", &Reaction::k)
-	  .def_readwrite("Ea", &Reaction::Ea)
-	  ;
-
+    py::class_<KMC>(m, "KMC")
+        .def(py::init<System&, unsigned>(), py::arg("system"), py::arg("seed")=42)
+        .def_property_readonly("system", [](KMC &self) -> System& { return self.system; })
+        .def("runSSA", &KMC::runSSA)
+        .def("runTau", &KMC::runTau);
 }
-
-
