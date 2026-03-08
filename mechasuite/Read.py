@@ -12,7 +12,7 @@ def read_oszicar_energy(oszicar):
             if len(line.split()) >= 10:
               spin = round(float(line.split()[9]))
               #print("reading spin ", spin, energy)
-    print(oszicar, energy, spin)
+    #print(oszicar, energy, spin)
     return energy, spin
 
 def read_orca_pg(outfile):
@@ -70,7 +70,7 @@ def read_mfreq(mfreqfile, vibfile):
         #print(line)
         if "Frequencies" in line: # skip first line
             while lines[i+1].split()[0] != "The":
-                print(line.split())
+                #print(line.split())
                 i += 1
                 line = lines[i]
             # now read frequencies until blank line

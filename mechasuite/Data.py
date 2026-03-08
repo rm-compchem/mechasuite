@@ -898,7 +898,7 @@ class Reference(object):
         # zero if it was not considered in the calculation of the ref
         for index in zeroindices:
             self.coefs.insert(index, 0)
-        print("Final Coefficients for reference ", self.coefs)
+        #print("Final Coefficients for reference ", self.coefs)
 
     def update(self):
         self.set_e()
@@ -2482,7 +2482,7 @@ class Mechanism(object):
             if os.path.isfile(folder + "/" + en_file):
                 try:
                     energy, spin = read_oszicar_energy(folder + "/" + en_file)
-                    print("energy: ", energy)
+                    #print("energy: ", energy)
                 except ValueError as e:
                     energy = 0.0
                     cm = "ERROR READING ENERGY FROM: " + en_file + "\n"

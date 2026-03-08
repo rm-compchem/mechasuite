@@ -3226,11 +3226,19 @@ class MainWindow(QMainWindow):
         with open(fname) as f:
             datadict = yaml.safe_load(f)
 
+        # get path relative to the fname so that it can be loaded
+        # from any other directory. Ex. mechadata ../input.yaml
+        relpath_to_yaml = os.path.dirname(fname)
+
         for mecname, mecinfo in datadict.items():
             allitems = mecinfo.get("ts_items", []) + mecinfo.get("min_items", []) + mecinfo.get("ref_items", [])
+            # prepend path relative to input yaml so that these can found from any execution directory
+            allitems = [os.path.join(relpath_to_yaml, item_i) for item_i in allitems]
+           
             mecobj = self.data.mec_from_folders(allitems, mecname)
             if mecobj is None:
                 continue
+
             # update types
             for itmname in mecinfo.get("ts_items", []):
                 itmobj = mecobj.get_itm(itmname)
@@ -3245,7 +3253,10 @@ class MainWindow(QMainWindow):
                 itmobj.tp = "min"
 
             for itmname in mecinfo.get("ref_items", []):
-                itmobj = mecobj.get_itm(itmname)
+                # process itm location to extract name of folder
+                itm_name_correct = os.path.basename(itmname)
+                itmobj = mecobj.get_itm(itm_name_correct)
+                
                 if itmobj is None:
                     continue
                 itmobj.tp = "ref"    
@@ -3259,7 +3270,8 @@ class MainWindow(QMainWindow):
                 continue
 
             for refname, refinfo in mecinfo["refs"].items():
-                mecobj.add_ref(refname, refinfo) # refinfo should be a list
+                ref = mecobj.add_ref(refname, refinfo) # refinfo should be a list
+                print("created ref ", ref, "with name ", refname, "infor ", refinfo)
 
             # apply refs
             # print(mecinfo.get("apply_refs_coefs"))
@@ -3269,7 +3281,7 @@ class MainWindow(QMainWindow):
                 if refobjs is None:
                     continue
                 for itm_name, coefs in refvalue.items(): # every element in refvalue is a dictionary
-                    print("adding ref: ", refname, " to ", itm_name)
+                    # print("adding ref: ", refname, " to ", itm_name)
                     if len(coefs) != len(refobjs):
                         print("Number of coefficients are not equal to the number of reference items in Reference ", refname)
                         continue
@@ -3279,7 +3291,7 @@ class MainWindow(QMainWindow):
                     if itmobj.tp == "ref": continue
                     try:
                         ref = itmobj.add_ref(refname, refobjs, coefs) 
-                        print("added ref: ", ref.name, ref.energy, ref.coefs)
+                        #print("added ref: ", ref.name, ref.energy, ref.coefs)
                     except Exception as e:
                         print("Could not add reference ", refname, " to item ", itm_name, str(e), " with coefs ", coefs)
 
