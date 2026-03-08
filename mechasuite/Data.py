@@ -1123,6 +1123,7 @@ class Reac(object):
             self.thermo["kq"][T] = 0.0
             self.thermo["a"][T] = 0.0
             self.thermo["ae"][T] = 0.0
+            self.thermo["prob"] = 0.0
             for key in keys:
                 if self.relref:
                     relp = self.parent_itm_ref.tkey(key, T) - self.ref_ref.tkey(key, T)
