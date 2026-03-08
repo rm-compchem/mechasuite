@@ -10,9 +10,17 @@ from mechasuite.Landau import *
 import yaml, json
 import copy
 
-# some constants here as per the NIST (CODATA 2014)
+PROGRAM_ENERGY_MAP = {
+    "gaussian": read_energy_gaussian,
+    "orca": read_energy_orca,
+    "vasp": read_energy_vasp
+        }
 
-
+PROGRAM_FREQ_MAP = {
+    "gaussian": read_freq_gaussian,
+    "orca": read_freq_orca,
+    "vasp": read_freq_vasp
+        }
 
 class PlotLabel(object):
     def __init__(self, name, itm, **kwargs):
@@ -1435,10 +1443,17 @@ class Itm(object):
 
         self.picture = {}
 
+        # full path to calculation folder
+        if "calc_path" in kwargs:
+            self.calc_path = kwargs["calc_path"]
+        else:
+            self.calc_path = ""
+
         if "name_font" in kwargs:
             self.name_font = kwargs["name_font"]
         else:
-            self.name_font = "Arial,11,-1,0,100,0,0,0,0,0,Regular"  # family, psize, ?, ?, bold,italic,underline,stroke,?,?
+            # family, psize, ?, ?, bold,italic,underline,stroke,?,?
+            self.name_font = "Arial,11,-1,0,100,0,0,0,0,0,Regular"  
 
         if "energy_font" in kwargs:
             self.energy_font = kwargs["energy_font"]
@@ -1551,6 +1566,7 @@ class Itm(object):
     def to_dict(self):
         selfdict = OrderedDict()
         selfdict["name"] = self.name
+        selfdict["calc_path"] = self.calc_path
         selfdict["energy"] = self.energy
         selfdict["zpe"] = self.zpe
         selfdict["tp"] = self.tp
@@ -1667,6 +1683,10 @@ class Itm(object):
         Si no hay nada que leer no da error, simplemente initializa las
         variables en cero
         """
+        if not os.path.isfile(infile):
+            self.cm += infile + " DOES NOT EXISTS \n"
+            return False
+
         nat, labels, coors, celda = 0, [], [], []
         if infile.endswith(".xyz"):
             nat, labels, coors = read_xyz(infile)
@@ -1874,35 +1894,27 @@ class Itm(object):
                 self.freqs.unit = unit
                 return True
 
-    def freqs_from_file(self, f, format=""):
-        if format == "vasp" or "OUTCAR" in f:
-            try:
-                vibs, unit = read_outcar_freqs(f)
-            except Exception as e:
-                self.cm += "COULD NOT FIND VIBS IN FILE: " + f + "\n"
-                return False
-            else:
-                self.freqs.set_vibs(vibs[:])
-                self.freqs.unit = unit
-                return True
-        elif format == "gaussian":
-            vibs = read_freqs_gaussian(f)
-            if not vibs:
-                self.cm += "COULD NOT FIND VIBS IN FILE: " + f + "\n"
-                return False
-            self.freqs.set_vibs(vibs[:])
-            self.freqs.unit = "cm-1"
-            return True
-        elif "job.out" in f:
-            vibs = read_orca_freqs(f)
-            if not vibs:
-                self.cm += "COULD NOT FIND VIBS IN FILE: " + f + "\n"
-                return False
-            self.freqs.set_vibs(vibs[:])
-            self.freqs.unit = "cm-1"
-            return True
-        else:
+    def freqs_from_file(self, f, program=""):
+        """
+        Reads the frequencies from file
+        """
+        if not os.path.isfile(f):
+            self.cm += "\nFile " + f + " for frequencies do not exists\n"
             return False
+        
+        if program not in PROGRAM_FREQ_MAP:
+            print(program, " not implemented for frequency reading")
+            return False
+
+        func_reader = PROGRAM_FREQ_MAP[program]
+        try:
+            vibs, unit = func_reader(f)
+        except:
+            self.cm += "COULD NOT FIND VIBS IN FILE: " + f + "\n"
+            return False
+
+        self.freqs.set_vibs(vibs[:])
+        self.freqs.unit = "cm-1"
     
     def pg_from_orca_file(self, infile):
         pg = None
@@ -2045,13 +2057,21 @@ class Itm(object):
 class Mechanism(object):
     def __init__(self, name, *args, **kwargs):
         self.name = name
+
         # every element of the dictionary is a list of Itm objects
         self.refs = {}
+
         # every element of the dict is an Itm object
         self.itms = OrderedDict()
+
         # list of Itm objects, same nature of the elements of
         # the self.refs attribute
         self.def_basis_ref = []
+
+        # program used for the calculation
+        self.program = None
+        if "program" in kwargs:
+            self.program = kwargs["program"]
 
         if "unit" in kwargs:
             self.unit = kwargs["unit"]
@@ -2068,6 +2088,7 @@ class Mechanism(object):
         selfdict = OrderedDict()
         selfdict["name"] = self.name
         selfdict["unit"] = self.unit
+        selfdict["program"] = self.program
         selfdict["def_basis_ref"] = [ref.name for ref in self.def_basis_ref]
         selfdict["refs"] = dict([(refname, [obj.name for obj in objlist]) for refname, objlist in self.refs.items()])
         selfdict["itms"] = [itm.to_dict() for itm in self.itms.values()]
@@ -2091,8 +2112,8 @@ class Mechanism(object):
 
         itmobjs = self.get_itms()
         for itmobj in itmobjs:
-            print(conv[self.unit][unit])
-            print(itmobj.energy)
+            #print(conv[self.unit][unit])
+            #print(itmobj.energy)
             itmobj.energy *= conv[self.unit][unit]
             itmobj.zpe *= conv[self.unit][unit]
             for prop in itmobj.thermo.keys():
@@ -2408,127 +2429,112 @@ class Mechanism(object):
         newitm.merge_structs(itmobjs)
         newitm.set_temps()
 
-    def itm_from_folder_custom(self, folder, add=True):
+    def itm_from_folder_custom(self, folder: str, data: dict, add=True):
+        """
+        Creates an Itm object from a folder using the info from data
+        Parameters:
+        ----------
+        folder: directory pointing the the calculation
+        data: dictionary with info on how to read energy, freqs, etc
+              it is provided by yaml file or .data inside the directory
+        add (bool) if the Itm will be added to the mechanism or not
+
+        Returns:
+        -------
+        the created Itm object
+        """
+        # init so that they are in scope
+        unit, spin, pg, cm  = None, None, None, ""
+
         itmname = os.path.basename(folder)
-        energy = 0
-        unit = "eV"
-        structfile = ""
-        en_file = ""
-        freqs_file = ""
-        pg = ""
-        spin = ""
-        tp = ""
-        cm = ""
+        program = data.get("program")
+        if program is None:
+            print("itm_from_folder_custom: Unkown program")
+            return 
 
-        with open(folder+"/.data") as f:
-            lines = f.readlines()
-        program = lines[0].split()[0]
+        # get read energy function and read energy
+        # read energy provided and default to 0
+        energy = data.get("energy", 0.0) # yaml should handle float
 
-        for line in lines:
-            if not line: continue
-
-            if "program" in line.lower():
-                try:
-                    program = line.split()[1]
-                except IndexError:
-                    pass
-            if "energy" in line.lower():
-                try:
-                    en_file = line.split()[1]
-                except IndexError:
-                    pass
-            if "freq" in line.lower():
-                try:
-                    freqs_file = line.split()[1]
-                except IndexError:
-                    pass
-            if "struct" in line:
-                try:
-                    structfile = line.split()[1]
-                except IndexError:
-                    pass
-            if "pg" in line:
-                try:
-                    pg = line.split()[1]
-                except IndexError:
-                    pass
-            if "spin" in line:
-                try:
-                    spin = float(line.split()[1])
-                except IndexError:
-                    pass
-                except ValueError:
-                    pass
-            if "tp" in line:
-                try:
-                    tp = line.split()[1]
-                except IndexError:
-                    pass
-            if "unit" in line:
-                try:
-                    unit = line.split()[1]
-                except IndexError:
-                    pass
-
-        if program.lower() == "gaussian":
-            unit = "Ha"
-            if os.path.isfile(folder + "/" + en_file):
-                try:
-                    energy = read_energy_from_gaussian(folder + "/" + en_file)
-                except ValueError:
-                    energy = 0.0
-                    cm = "ERROR READING ENERGY FROM: " + en_file+"\n"
-        elif program.lower() == "vasp":
-            unit = "eV"
-            if os.path.isfile(folder + "/" + en_file):
-                try:
-                    energy, spin = read_oszicar_energy(folder + "/" + en_file)
-                    #print("energy: ", energy)
-                except ValueError as e:
-                    energy = 0.0
-                    cm = "ERROR READING ENERGY FROM: " + en_file + "\n"
-                    print(e)
-
-        if not energy:
+        if program in PROGRAM_ENERGY_MAP and "energy_file" in data:
+            read_en_func = PROGRAM_ENERGY_MAP[program]
+            en_file = data.get("energy_file")
             try:
-                energy = float(en_file)
-            except ValueError:
-                energy = 0.0
-                cm = "ERROR READING ENERGY FROM .data."
-                cm += str(en_file) + " IS NOT A NUMBER\n"
-
-        if unit != self.unit:
+                energy, spin, pg, unit = read_en_func(os.path.join(folder, en_file))
+                #print(energy, spin, pg, unit)
+            except ValueError as e:
+                print(e)
+                cm = "\nERROR READING ENERGY FROM: " + en_file+"\n"
+        
+        if unit is None:
+            print("unit is not defined for ", folder)
+        elif unit != self.unit:
             energy *= conv[unit][self.unit]
         itmobj = Itm(itmname, energy=energy, spin=spin)
         if add:
             itmobj = self.add_itm(itmname, energy=energy, spin=spin)
         if itmobj is None:
+            print("Could not make the mechanims itm: ", folder)
             return None
 
-        if os.path.isfile(folder + "/" + freqs_file):
-            itmobj.freqs_from_file(folder + "/" + freqs_file, program)
-        else:
-            itmobj.cm += "FILE " + freqs_file + " TO READ FREQUENCIES DOES NOT EXIST\n"
+        # try to read freqs
+        freq_path = os.path.join(folder, data.get("freq_file", ""))
+        itmobj.freqs_from_file(freq_path, program)
+       
+        # try to read struct
+        struct_path = os.path.join(folder, data.get("struct_file", ""))
+        itmobj.struct_from_file(struct_path)
+        
+        itmobj.set_tp(data.get("tp", "min")) # default is min
 
-        #print(folder + "/" + structfile)
-        if os.path.isfile(folder + "/" + structfile):
-            itmobj.struct_from_file(folder + "/" + structfile)
-        else:
-            itmobj.cm += structfile + " DOES NOT EXISTS \n"
-        if pg:
-            itmobj.pg = pg
-        if tp:
-            itmobj.set_tp(tp)
-        if spin:
-            itmobj.spin = spin
-        if cm:
-            itmobj.cm += cm
+        # take the provided pg if the one return by energy reader fails
+        if pg is None: pg = data.get("pg")
+        itmobj.pg = pg
+
+        # take the provided spin if the one return by energy reader fails
+        if spin is None: spin = data.get("spin")
+        itmobj.spin = spin
+
+        # update comment
+        itmobj.cm += cm
+
         return itmobj
 
-    def itm_from_folder(self, folder, add=True):
-        if os.path.isfile(folder+"/.data"):
-            return self.itm_from_folder_custom(folder, add=add)
+    def itm_from_folder(self, folder, data={}, add=True):
+        """
+        Creates an Itm object from a folder using the info from data
+        data is optional. If it is empty we try to set up a new dictionary
+        by autodetecting the calculation program and setting defaults. 
+        It .data file exits the data dict is updated.
+        Parameters:
+        ----------
+        folder: directory pointing the the calculation
+        data: dictionary with info on how to read energy, freqs, etc
+              it is provided by yaml file or .data inside the directory
+        add (bool) if the Itm will be added to the mechanism or not
 
+        Returns:
+        -------
+        the created Itm object
+        """
+
+        data_file = os.path.join(folder, ".data")
+        if os.path.isfile(data_file):
+            with open(data_file) as fd:
+                local_data = yaml.safe_load(fd)
+                # update with loaded info
+                data.update(local_data)
+                return self.itm_from_folder_custom(folder, data, add=add)
+        
+        # detect program is data is empty
+        if not data:
+            # should return a dict with info or empty
+            data = detect_program(folder)
+
+        return self.itm_from_folder_custom(folder, data, add=add)
+
+        # THIS BELOW HAS TO BE DELETED  ------------
+        # THE FUNCTIONALITY HAS BEEN MIGRATED TO Read.py
         itmname = os.path.basename(folder)
         # Try VASP, if not try ORCA.
         energy = None
@@ -2551,13 +2557,6 @@ class Mechanism(object):
         if energy is None:
             print("No energy file found for: " + itmname)
             return None
-        
-#        try:
-#            energy = read_oszicar_energy(folder + "/OSZICAR.opt")
-#        except Exception as e:
-#            print("Error reading energy for: " + itmname)
-#            print(e)
-#            return None
 
         if unit != self.unit:
             energy *= conv[unit][self.unit]
@@ -2620,14 +2619,6 @@ class Mechanism(object):
                 itmobj.freqs.set_vibs(freqs[:])
                 itmobj.freqs.unit = unit
                 break
-        #try:
-        #    freqs, unit = read_outcar_freqs(folder + "/OUTCAR.freq")
-        #except Exception as e:
-        #    print("Error reading frequencies for: " + itmname)
-        #    print(e)
-        #else:
-        #    itmobj.freqs.set_vibs(freqs[:])
-        #    itmobj.freqs.unit = unit
 #
         poss_files = ["POSCAR.opt", "poscar.xyz", "job.xyz", "CONTCAR.opt", "CONTCAR", "POSCAR"]
         for pfile in poss_files:
@@ -2643,6 +2634,7 @@ class Mechanism(object):
 
         return itmobj
 
+        # THIS ABOVE HAS TO BE DELETED  ------------
 
 class Data(object):
     def __init__(self):
@@ -2737,6 +2729,10 @@ class Data(object):
         return list(self.mechs.keys())
 
     def mec_from_folder(self, folder):
+        """
+        Take the mec name from folder and
+        list subfolders and create Itms from subfolders
+        """
         listdirs = os.listdir(folder)
         mecname = os.path.basename(folder)
         mecobj = self.add_m(mecname)
@@ -2749,6 +2745,9 @@ class Data(object):
         return mecobj
     
     def mec_from_folders(self, listdirs, mecname):
+        """
+        Create Itms objects over every folder in listdirs
+        """
         mecobj = self.add_m(mecname)
         if mecobj is None:
             print(mecname + " That Mechanism alredy exists")

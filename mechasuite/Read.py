@@ -1,43 +1,58 @@
 from mechasuite.pyposcar import *
+import os
 
+# FREQ READER FUNCTION MUST RETURN freqs, units
+# ENERGY READER FUNCTION MUST RETURN energy, spin, pg, unit
 
-def read_oszicar_energy(oszicar):
+def read_energy_vasp(vaspfile):
     energy = 0.0
-    spin = 0
-    with open(oszicar) as f:
-        lineas = f.readlines()
-    for line in lineas:
-        if "F=" in line:
-            energy = float(line.split()[4])
-            if len(line.split()) >= 10:
-              spin = round(float(line.split()[9]))
-              #print("reading spin ", spin, energy)
-    #print(oszicar, energy, spin)
-    return energy, spin
-
-def read_orca_pg(outfile):
+    spin = None
     pg = None
-    with open(outfile) as f:
-        lines = f.readlines()
-    for line in lines:
-        if "Point Group" in line:
-            pg = line.split()[2][:-1]
-    if pg == "C(inf)v":
-        pg = "Coov"
-    elif pg == "D(inf)h":
-        pg = "Dooh"
-    return pg
+    unit = "eV"
+    with open(vaspfile) as f:
+        lineas = f.readlines()
 
-def read_orca_energy(outfile):
+    if "OSZICAR" in vaspfile:
+        for line in lineas:
+            if "F=" in line:
+                energy = float(line.split()[4])
+                if len(line.split()) >= 10:
+                  spin = round(float(line.split()[9]))
+    # assume OUTCAR
+    else:
+        for line in lineas:
+            if "entropy=" in line and "energy(sigma->0)" in line:
+                energy = float(line.split()[-1])
+    return energy, spin, pg, unit
+
+def read_energy_orca(outfile):
     energy = 0.0
+    spin = None
+    pg = None
+    unit = "Ha"
     with open(outfile) as f:
         lines = f.readlines()
     for line in lines:
         if "FINAL SINGLE POINT ENERGY" in line:
             energy = float(line.split()[-1])
-    return energy
+    return energy, spin, pg, unit
 
-def read_outcar_freqs(outcar):
+def read_energy_gaussian(ef):
+    energy = 0
+    spin = None
+    pg = None
+    unit = "Ha"
+    with open(ef) as f:
+        for line in f:
+            if "HF=" in line:
+                ls = line.split('\\')
+                for i in ls:
+                    if "HF=" in i:
+                        E = i.replace("HF=", "")
+                        E = float(E)
+    return energy, spin, pg, unit
+
+def read_freq_vasp(outcar):
     freqs = []
     unit = None
     rf = False
@@ -58,48 +73,7 @@ def read_outcar_freqs(outcar):
     unit = "cm-1"
     return freqs, unit
 
-def read_mfreq(mfreqfile, vibfile):
-    freqs = []
-    try:
-        with open(mfreqfile) as f:
-            lines = f.readlines()
-    except FileNotFoundError:
-        return []
-
-    for i, line in enumerate(lines):
-        #print(line)
-        if "Frequencies" in line: # skip first line
-            while lines[i+1].split()[0] != "The":
-                #print(line.split())
-                i += 1
-                line = lines[i]
-            # now read frequencies until blank line
-                freqs += [float(f) for f in line.split()]
-
-        elif "The Reduced Mass orthogonal to the seam of crossing is" in line:
-            redmass = float(lines[i+1].split()[0])
-            #print("Red mass: ", redmass)
-        elif "The geometric mean of the norms of the two" in line:
-            grad = float(lines[i+1].split()[0])
-            #print("Geom mean: ", geommean)
-        elif "The norm of the difference gradient" in line:
-            grad_diff =float(lines[i+1].split()[0])
-            #print("Geom mean: ", geommean)
-    unit = "cm-1"
-    if vibfile:
-        try:
-            with open(vibfile) as f:
-                lines = f.readlines()
-        except FileNotFoundError:
-            return freqs, unit, redmass, grad, grad_diff
-
-
-        
-
-    return freqs, unit, redmass, grad, grad_diff
-
-
-def read_orca_freqs(outfile):
+def read_freq_orca(outfile):
     freqs = []
     import re
     float_re = re.compile(r'[-+]?\d*\.\d+|[-+]?\d+')
@@ -141,7 +115,67 @@ def read_orca_freqs(outfile):
         if freqs:
             break
 
-    return freqs
+    return freqs, "cm-1"
+
+def read_freq_gaussian(ef):
+    vibs = []
+    with open(ef) as f:
+        for line in f:
+            if "Frequencies --" in line:
+                freqs = line.split()[2:]
+                for freq in freqs:
+                    vibs.append(float(freq))
+    return vibs, "cm-1"
+
+def read_orca_pg(outfile):
+    pg = None
+    with open(outfile) as f:
+        lines = f.readlines()
+    for line in lines:
+        if "Point Group" in line:
+            pg = line.split()[2][:-1]
+    if pg == "C(inf)v":
+        pg = "Coov"
+    elif pg == "D(inf)h":
+        pg = "Dooh"
+    return pg
+
+def read_mfreq(mfreqfile, vibfile):
+    freqs = []
+    try:
+        with open(mfreqfile) as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        return []
+
+    for i, line in enumerate(lines):
+        #print(line)
+        if "Frequencies" in line: # skip first line
+            while lines[i+1].split()[0] != "The":
+                #print(line.split())
+                i += 1
+                line = lines[i]
+            # now read frequencies until blank line
+                freqs += [float(f) for f in line.split()]
+
+        elif "The Reduced Mass orthogonal to the seam of crossing is" in line:
+            redmass = float(lines[i+1].split()[0])
+            #print("Red mass: ", redmass)
+        elif "The geometric mean of the norms of the two" in line:
+            grad = float(lines[i+1].split()[0])
+            #print("Geom mean: ", geommean)
+        elif "The norm of the difference gradient" in line:
+            grad_diff =float(lines[i+1].split()[0])
+            #print("Geom mean: ", geommean)
+    unit = "cm-1"
+    if vibfile:
+        try:
+            with open(vibfile) as f:
+                lines = f.readlines()
+        except FileNotFoundError:
+            return freqs, unit, redmass, grad, grad_diff
+
+    return freqs, unit, redmass, grad, grad_diff
 
 def read_tp_from_outcar(outcar):
     with open(outcar) as f:
@@ -182,7 +216,6 @@ def read_xyz(infile):
 
     return nat, labels, coors
 
-
 def read_poscar(poscar):
     p = Poscar()
     try:
@@ -199,7 +232,6 @@ def read_poscar(poscar):
         p.xyz = p.coor
 
     return p.totalat, p.label_extended, p.xyz, list(p.celda)
-
 
 def mult_split(string):
     if "-" not in string:
@@ -233,7 +265,6 @@ def mult_split(string):
     temps.append(endtemp)
     return temps
 
-
 def unfold_temps(tstring):
     temps = []
     if tstring == "":
@@ -256,7 +287,6 @@ def unfold_temps(tstring):
 
     return temps
 
-
 def read_thermo_input():
     modes = 0
     ts = False
@@ -276,26 +306,104 @@ def read_thermo_input():
 
     return temps, pg, int(modes), ts
 
+def detect_orca(fpath, filenames):
+    """
+    Check files and create data dict
+    """
+    d = {} # data dict that will be used by the readers
+    for filename in filenames:
+        if filename == "MECP.info.molden":
+            d["tp"] = "mecp"
+        if filename == "OUTCAR.fake":
+            d["diffgrad_file"] = filename
+            continue
 
-def read_energy_from_gaussian(ef):
-    E = 0
-    with open(ef) as f:
-        for line in f:
-            if "HF=" in line:
-                ls = line.split('\\')
-                for i in ls:
-                    if "HF=" in i:
-                        E = i.replace("HF=", "")
-                        E = float(E)
-    return E
+        with open(os.path.join(fpath, filename)) as f:
+            for n, line in enumerate(f):
+                if "* O   R   C   A *" in line:
+                    d["program"] = "orca"
+                    d["energy_file"] = filename
 
+                if "VIBRATIONAL FREQUENCIES" in line:
+                    d["freq_file"] = filename
+    # implement here also the transition state detection
+    return d
 
-def read_freqs_gaussian(ef):
-    vibs = []
-    with open(ef) as f:
-        for line in f:
-            if "Frequencies --" in line:
-                freqs = line.split()[2:]
-                for freq in freqs:
-                    vibs.append(float(freq))
-    return vibs
+def detect_gaussian(fpath, filenames):
+    """
+    Check files and create data dict
+    """
+    d = {} # data dict that will be used by the readers
+    for filename in filenames:
+        with open(os.path.join(fpath, filename)) as f:
+            for n, line in enumerate(f):
+                if "Gaussian" in line:
+                    d["program"] = "gaussian"
+                    d["energy_file"] = filename
+
+                #if "VIBRATIONAL FREQUENCIES" in line:
+                #    d["freq_file"] = filename
+    # implement here also the transition state detection
+    return d
+
+def detect_vasp(fpath, filenames):
+    """
+    Check files and create data dict
+    """
+    d = {"program": "vasp"} # data dict that will be used by the readers
+
+    for filename in filenames:
+        if filename in ["OUTCAR.opt", "OUTCAR"]:
+            d["energy_file"] = filename
+
+        if filename in ["OUTCAR.freq"] :
+            d["freq_file"] = filename
+
+        if filename in ["POSCAR.opt", "CONTCAR"]:
+            d["struct_file"] = filename
+
+        if "DIMCAR" in filename:
+            d["tp"] = "ts"
+
+    # check for freqs
+    if d.get("freq_file") is None:
+        for filename in filenames:
+            if not "OUTCAR" in filename:
+                continue
+
+            with open(os.path.join(fpath, filename)) as f:
+                for line in f:
+                    if "cm-1" in line:
+                        d["freq_file"] = filename
+                        break
+            if "freq_file" in d:
+                break
+    return d
+
+def detect_program(fpath):
+    """
+    Tries to detect the software that was used to run the calculation
+    First looking into known fixed files
+    Then, if not successull, by reading the headers of files
+    """
+    
+    files = os.listdir(fpath)
+    # detect vasp
+    for filename in files:
+        # this is undoubtly a vasp calc so i return
+        if "POSCAR" in  filename or "KPOINTS" in filename:
+            return detect_vasp(fpath, files)
+
+    # detect orca
+    infodic = detect_orca(fpath, files)
+    if info_dic:
+        return info_dic
+
+    # detect gaussian
+    infodic = detect_gaussian(fpath, files)
+    if info_dic:
+        return info_dic
+
+    # no program detected return empty dic
+    return {}
+
