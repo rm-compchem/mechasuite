@@ -3,6 +3,7 @@
         {
             "name": "example1",
             "unit": "kcal",
+            "program": null,
             "def_basis_ref": [],
             "refs": {
                 "global_ref": [
@@ -12,10 +13,11 @@
             "itms": [
                 {
                     "name": "TS1",
+                    "calc_path": "/home/reisel/github_rm-compchem/mechasuite/examples/example_1/TS1",
                     "energy": 17.00000000000003,
                     "zpe": 0.0,
                     "tp": "ts",
-                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "cm": "\nFile TS1/ for frequencies do not exists\n",
                     "mech": "example1",
                     "temps": [],
                     "thermo": {
@@ -108,7 +110,8 @@
                                 "qtot": {},
                                 "k": {},
                                 "kq": {},
-                                "a": {}
+                                "a": {},
+                                "prob": []
                             }
                         }
                     ],
@@ -125,11 +128,13 @@
                                 "k": {},
                                 "kq": {},
                                 "a": {},
-                                "ae": {}
+                                "ae": {},
+                                "prob": []
                             },
                             "relref": ""
                         }
                     ],
+                    "states": [],
                     "itms": [],
                     "merged": false,
                     "freqs": {
@@ -138,15 +143,16 @@
                     },
                     "freq_is_set": false,
                     "pg": null,
-                    "spin": 0,
+                    "spin": null,
                     "photos": []
                 },
                 {
                     "name": "TS2",
+                    "calc_path": "/home/reisel/github_rm-compchem/mechasuite/examples/example_1/TS2",
                     "energy": -3.0000000000000044,
                     "zpe": 0.0,
                     "tp": "ts",
-                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "cm": "\nFile TS2/ for frequencies do not exists\n",
                     "mech": "example1",
                     "temps": [],
                     "thermo": {
@@ -239,7 +245,8 @@
                                 "qtot": {},
                                 "k": {},
                                 "kq": {},
-                                "a": {}
+                                "a": {},
+                                "prob": []
                             }
                         }
                     ],
@@ -256,11 +263,13 @@
                                 "k": {},
                                 "kq": {},
                                 "a": {},
-                                "ae": {}
+                                "ae": {},
+                                "prob": []
                             },
                             "relref": ""
                         }
                     ],
+                    "states": [],
                     "itms": [],
                     "merged": false,
                     "freqs": {
@@ -269,15 +278,16 @@
                     },
                     "freq_is_set": false,
                     "pg": null,
-                    "spin": 0,
+                    "spin": null,
                     "photos": []
                 },
                 {
                     "name": "R",
+                    "calc_path": "/home/reisel/github_rm-compchem/mechasuite/examples/example_1/R",
                     "energy": 0.0,
                     "zpe": 0.0,
                     "tp": "min",
-                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "cm": "\nFile R/ for frequencies do not exists\n",
                     "mech": "example1",
                     "temps": [],
                     "thermo": {
@@ -370,11 +380,13 @@
                                 "qtot": {},
                                 "k": {},
                                 "kq": {},
-                                "a": {}
+                                "a": {},
+                                "prob": []
                             }
                         }
                     ],
                     "reacs": [],
+                    "states": [],
                     "itms": [],
                     "merged": false,
                     "freqs": {
@@ -383,15 +395,16 @@
                     },
                     "freq_is_set": false,
                     "pg": null,
-                    "spin": 0,
+                    "spin": null,
                     "photos": []
                 },
                 {
                     "name": "I",
+                    "calc_path": "/home/reisel/github_rm-compchem/mechasuite/examples/example_1/I",
                     "energy": -20.000000000000032,
                     "zpe": 0.0,
                     "tp": "min",
-                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "cm": "\nFile I/ for frequencies do not exists\n",
                     "mech": "example1",
                     "temps": [],
                     "thermo": {
@@ -484,7 +497,8 @@
                                 "qtot": {},
                                 "k": {},
                                 "kq": {},
-                                "a": {}
+                                "a": {},
+                                "prob": []
                             }
                         }
                     ],
@@ -501,11 +515,13 @@
                                 "k": {},
                                 "kq": {},
                                 "a": {},
-                                "ae": {}
+                                "ae": {},
+                                "prob": []
                             },
                             "relref": ""
                         }
                     ],
+                    "states": [],
                     "itms": [],
                     "merged": false,
                     "freqs": {
@@ -514,15 +530,16 @@
                     },
                     "freq_is_set": false,
                     "pg": null,
-                    "spin": 0,
+                    "spin": null,
                     "photos": []
                 },
                 {
                     "name": "P",
+                    "calc_path": "/home/reisel/github_rm-compchem/mechasuite/examples/example_1/P",
                     "energy": -40.000000000000064,
                     "zpe": 0.0,
                     "tp": "min",
-                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "cm": "\nFile P/ for frequencies do not exists\n",
                     "mech": "example1",
                     "temps": [],
                     "thermo": {
@@ -615,7 +632,8 @@
                                 "qtot": {},
                                 "k": {},
                                 "kq": {},
-                                "a": {}
+                                "a": {},
+                                "prob": []
                             }
                         }
                     ],
@@ -632,11 +650,13 @@
                                 "k": {},
                                 "kq": {},
                                 "a": {},
-                                "ae": {}
+                                "ae": {},
+                                "prob": []
                             },
                             "relref": ""
                         }
                     ],
+                    "states": [],
                     "itms": [],
                     "merged": false,
                     "freqs": {
@@ -645,15 +665,16 @@
                     },
                     "freq_is_set": false,
                     "pg": null,
-                    "spin": 0,
+                    "spin": null,
                     "photos": []
                 },
                 {
                     "name": "ref_item1",
+                    "calc_path": "/home/reisel/github_rm-compchem/mechasuite/examples/example_1/ref_item1",
                     "energy": 0.0,
                     "zpe": 0.0,
                     "tp": "ref",
-                    "cm": "FILE  TO READ FREQUENCIES DOES NOT EXIST\n",
+                    "cm": "\nFile ref_item1/ for frequencies do not exists\n",
                     "mech": "example1",
                     "temps": [],
                     "thermo": {
@@ -731,6 +752,7 @@
                     },
                     "refs": [],
                     "reacs": [],
+                    "states": [],
                     "itms": [],
                     "merged": false,
                     "freqs": {
@@ -739,7 +761,7 @@
                     },
                     "freq_is_set": false,
                     "pg": null,
-                    "spin": 0,
+                    "spin": null,
                     "photos": []
                 }
             ]

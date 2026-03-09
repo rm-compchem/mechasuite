@@ -2455,6 +2455,7 @@ class Mechanism(object):
         # get read energy function and read energy
         # read energy provided and default to 0
         energy = data.get("energy", 0.0) # yaml should handle float
+        unit = data.get("units") # in case the energy was provided directly
 
         if program in PROGRAM_ENERGY_MAP and "energy_file" in data:
             read_en_func = PROGRAM_ENERGY_MAP[program]
@@ -2497,6 +2498,9 @@ class Mechanism(object):
 
         # update comment
         itmobj.cm += cm
+
+        # add abs path for later update the Itm if needed
+        itmobj.calc_path = os.path.abspath(folder)
 
         return itmobj
 
@@ -2728,7 +2732,7 @@ class Data(object):
     def get_mechs_names(self):
         return list(self.mechs.keys())
 
-    def mec_from_folder(self, folder):
+    def mec_from_folder(self, folder, data:dict={}):
         """
         Take the mec name from folder and
         list subfolders and create Itms from subfolders
@@ -2741,10 +2745,10 @@ class Data(object):
             return None
 
         for subfolder in listdirs:
-            mecobj.itm_from_folder(os.path.join(folder, subfolder))
+            mecobj.itm_from_folder(os.path.join(folder, subfolder), data)
         return mecobj
     
-    def mec_from_folders(self, listdirs, mecname):
+    def mec_from_folders(self, listdirs, mecname, data:dict={}):
         """
         Create Itms objects over every folder in listdirs
         """
@@ -2754,7 +2758,7 @@ class Data(object):
             return None
 
         for subfolder in listdirs:
-            mecobj.itm_from_folder(subfolder)
+            mecobj.itm_from_folder(subfolder, data)
         return mecobj
 
     def add_from_data(self, data):

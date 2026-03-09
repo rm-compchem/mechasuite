@@ -2196,7 +2196,8 @@ class MainSheet(QTableWidget):
     def add_zero(self):
         set_def_ref = False
         # dictionary of references from mech
-        # every element of the dic is a list of Itm objects with which the ref is made up
+        # every element of the dic is a list of Itm objects with which 
+        # the ref is made up
         refs_from_mec = {}
         newreflist = []  # list of ref itms to make a new reference
         newrefname = ""
@@ -2216,9 +2217,10 @@ class MainSheet(QTableWidget):
 
         # show dialog with the ref itms and references of the mechanism
         #  and the default referece
-        refsnames = mecobj.get_itms_names(tp="ref")
-        refsnames += list(mecobj.refs.keys())
-        refsnames += ["Default Reference"]
+        #refsnames = mecobj.get_itms_names(tp="ref")
+        refsnames = []
+        refsnames += list(mecobj.refs.keys()) # this line commented will disable the code below associated with newreflist
+        #refsnames += ["Default Reference"]
         dialog = MultipleChoiceDialog(refsnames)
         dialog.exec()
         if not dialog.ok:
@@ -2235,12 +2237,12 @@ class MainSheet(QTableWidget):
                 newreflist.append(ref)
         # ---------------------------------------------------------------
 
-        # -----------------Build the ref with newreflist ------------------------------------------
+        # -----------------Build the ref with newreflist --------------------
         refs = []
         if newreflist:
             newrefname, ok = QInputDialog.getText(self, "Enter Name", "New Reference Name")
             if ok and newrefname:
-                #  build and add new ref from list of unclassified items-----------------------------
+                #  build and add new ref from list of unclassified items----------
                 for ref in newreflist:
                     ref = self.data.get_mech(colname).get_itm(ref)
                     if len(ref.struct.atoms) == 0:
@@ -3232,12 +3234,24 @@ class MainWindow(QMainWindow):
 
         for mecname, mecinfo in datadict.items():
             allitems = mecinfo.get("ts_items", []) + mecinfo.get("min_items", []) + mecinfo.get("ref_items", [])
-            # prepend path relative to input yaml so that these can found from any execution directory
+            # prepend path relative to input yaml so that these can 
+            # found from any execution directory
             allitems = [os.path.join(relpath_to_yaml, item_i) for item_i in allitems]
-           
-            mecobj = self.data.mec_from_folders(allitems, mecname)
+            
+            # create data dict to pass to itm_from_folder function
+            # this dict can be overrided by .data file in each subfolder
+            data_dict = { keyword: mecinfo.get(keyword) 
+                            for keyword in ["energy_file", "freq_file" ]
+                            if mecinfo.get(keyword) is not None
+                         }
+            
+            mecobj = self.data.mec_from_folders(allitems, mecname, data_dict)
             if mecobj is None:
                 continue
+
+            # set units
+            unit = mecinfo.get("units")  
+            mecobj.chg_unit(unit)
 
             # update types
             for itmname in mecinfo.get("ts_items", []):
@@ -3271,7 +3285,6 @@ class MainWindow(QMainWindow):
 
             for refname, refinfo in mecinfo["refs"].items():
                 ref = mecobj.add_ref(refname, refinfo) # refinfo should be a list
-                print("created ref ", ref, "with name ", refname, "infor ", refinfo)
 
             # apply refs
             # print(mecinfo.get("apply_refs_coefs"))
@@ -3280,7 +3293,8 @@ class MainWindow(QMainWindow):
                 refobjs = mecobj.get_ref(refname)
                 if refobjs is None:
                     continue
-                for itm_name, coefs in refvalue.items(): # every element in refvalue is a dictionary
+                # every element in refvalue is a dictionary
+                for itm_name, coefs in refvalue.items(): 
                     # print("adding ref: ", refname, " to ", itm_name)
                     if len(coefs) != len(refobjs):
                         print("Number of coefficients are not equal to the number of reference items in Reference ", refname)
@@ -3318,11 +3332,6 @@ class MainWindow(QMainWindow):
                         itmobj.add_ref(refname, refobjs) 
                     except Exception as e:
                         print("Could not add reference ", refname, " to item ", itmname, str(e))
-
-            # change units
-            unit = mecinfo.get("units") # can be None
-            mecobj.chg_unit(unit) # if None chg_unit does nothing
-
 
         # make plots
         for mecname, mecinfo in datadict.items():

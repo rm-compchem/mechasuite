@@ -1,5 +1,4 @@
-program xxx
-energy 0
-struct opt.xyz
-tp min
-unit kcal
+program: xxx
+energy: 0
+struct_file: opt.xyz
+units: kcal

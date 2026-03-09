@@ -1,23 +1,24 @@
 example1:
-  units: kcal
-  min_items:
+  units: kcal # final units to which all energies will be converted
+  min_items:  # minima items
   - R
   - I
   - P
-  ts_items:
+  ts_items:   # transition states
   - TS1
   - TS2
-  ref_items:
+
+  ref_items:  # calculation to use to make up the references
   - ref_item1
 
   refs:
-    global_ref:
+    global_ref: # create a reference
     - ref_item1
 
   apply_refs:
-    global_ref: .* # all items
+    global_ref: .* # apply references to all items
 
-  plots:
+  plots:           # create plot names 'plot1'
     plot1:
       path1:
       - R

@@ -461,10 +461,10 @@ def main():
             mec_dic = yaml.safe_load(f)
 
     # default to kmc
-    runtype = mec_dic.get("solver", "kmc")
+    runtype = mec_dic.get("solver", "mk")
     if runtype == "kmc":
         run_kmc(mec_dic)
-    elif runtype in ["diff_eq", "microkinetics"]:
+    elif runtype in ["diff_eq", "microkinetics", "mk"]:
         run_microkinetics(mec_dic)
     else:
         print("Bad solver. Please specify either kmc or microkinetics in input file")

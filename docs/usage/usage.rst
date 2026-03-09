@@ -1,45 +1,43 @@
 Usage
 #####
 
-Using MechaSuite modules
+Getting Started
 ========================
-If you have installed MechaSuite as a conda package, always activate the _ms_ environment first::
+If you have installed MechaSuite as a conda package, always activate the *ms* environment first::
 
   $ conda activate ms
 
 
 Then, MechaData graphical user interface (GUI) can be open by::
 
-  $ mechadata.py
+  $ mechadata
   # or opening directly a reaction mechanism from JSON file
   $ mechadata.py ${MS}/mechasuite/examples/example_2/fluorination.json
 
 
-Here, _${MS}_ denotes the path to the directory where \mechasuite is installed. 
+Here, *${MS}* denotes the path to the directory where MechaSuite is installed. 
 Likewise, MechaData GUI can be open by typing the following command::
 
   $ mechaedit
   # or opening directly a geometry file (CIF, XYZ, POSCAR or OUTCAR)
   $ mechaedit ${MS}/mechasuite/examples/example_2/SN2/SN2-TBAF.xyz
 
-
 For MechaKin usage, indicate the JSON with the reaction mechanism::
 
-  $ mechakinetics.py ${MS}/mechasuite/examples/example_1/rn.json
+  $ mechakinetics ${MS}/mechasuite/examples/example_1/rn.json
 
 
 Preprocessing scripts
 =====================
+Importing individual calculations to an already created mechanism can be done by providing the corresponding calculation directory. However, some preprocessing is convenient to avoid errors in trying the determine the format of the output of such calculations. To that end, we provide sample scripts that create a file named *data* inside each calculation directory containing information about how *mechadata* should read the files in the directory. Each line in the *.data* file represents a configuration entry, specified as a *tag: value* pair, interpreted as a \href{https://yaml.org/}{yaml} file. The following shows that the program of the QM calculation is VASP, the file with the electronic energy is OSZICAR, unit for the energy is in eV, the multiplicity of the calculation is singlet, the file with the geometry is CONTCAR, and that this is an optimization calculation rather than a transition state.  Other possible values are provided after the \# symbol::
 
-Importing individual calculations to an already created mechanism can be done by providing the corresponding calculation directory. However, some preprocessing is convenient to avoid errors in trying the determine the format of the output of such calculations. To that end, we provide sample scripts that create a file named *data* inside each calculation directory containing information about how *mechadata.py* should read the files in the directory. Each line in the *.data* file represents a configuration entry, specified as a *tag value* pair. The following shows that the program of the QM calculation is VASP, the file with the electronic energy is OSZICAR, unit for the energy is in eV, the multiplicity of the calculation is singlet, the file with the geometry is CONTCAR, and that this is an optimization calculation rather than a transition state.  Other possible values are provided after the \# symbol::
-
-  program vasp    # gaussian, orca
-  energy  OSZICAR # gaussian or orca output file name or even just numerical value
-  struct  POSCAR  # any other xyz file
-  unit    eV      # kcal, kJ, Ha
-  spin    0       # 1, 2, etc
-  tp      min     # ts, ref
-  pg      solid   # C1, Cs, C2, C2v, C3v, C2h, Coov, D2h, D3h, D5h, Dooh, d3d, Td, Oh
+  program:      vasp    # gaussian, orca
+  energy_file:  OSZICAR # gaussian or orca output file name or even just numerical value
+  struct_file:  POSCAR  # any other xyz file
+  unit:         eV      # kcal, kJ, Ha
+  spin:         0       # 1, 2, etc
+  tp:           min     # ts, ref
+  pg:           solid   # C1, Cs, C2, C2v, C3v, C2h, Coov, D2h, D3h, D5h, Dooh, d3d, Td, Oh
 
 
 MechaData module
@@ -339,19 +337,17 @@ Notes
 Most menu actions operate on the currently selected atoms. Atom selection is performed directly in the drawing canvas using mouse and keyboard controls. Available visualization, animation, and analysis features depend on the data present in the loaded structure.
 
 
-Mechakin module
-===============
+Mechakinetics module
+=====================
 
-The *Mechakin* module accepts input data in JSON format, which defines the chemical reactions, temperature-dependent rate data, simulation time parameters, and initial species concentrations. The input file can be generated in the \mechadata plotting interface (right-click and \textit{export reaction network}) and customized as needed.  As shown in \Cref{fig:json-input}, it has the following sections:
+The *Mechakinetics* module accepts input data in JSON format, which defines the chemical reactions, temperature-dependent rate data, simulation time parameters, and initial species concentrations. The input file can be generated in the *mechadata* plotting interface (right-click and *export reaction network*) and customized as needed.  As shown in \Cref{fig:json-input}, it has the following sections:
 
-..   label{fig:json-input} 
 
-a
-  * Reaction Data: The \texttt{"mec"} field contains the chemical reactions and their kinetic parameters. Each key corresponds to a reaction, that is written in the general format  \texttt{"aA+bB=cC+dD"}.  Within each reaction, the rates are provided as a dictionary of temperatures (in Kelvin) and a list containing two numbers, e.g: \texttt{"298": [2.17, 4.83e-15]}. The first number is the forward reaction rate and the second the reverse reaction rate (both in s$^{-1}$), calculated using Eyring's equation. Multiple temperatures can be included if the reaction rate needs to be evaluated across a temperature range.
+  * Reaction Data: The *"mec"* field contains the chemical reactions and their kinetic parameters. Each key corresponds to a reaction, that is written in the general format  *"aA+bB=cC+dD"*.  Within each reaction, the rates are provided as a dictionary of temperatures (in Kelvin) and a list containing two numbers, e.g: *"298": [2.17, 4.83e-15]*. The first number is the forward reaction rate and the second the reverse reaction rate (both in s^{-1}), calculated using Eyring's equation. Multiple temperatures can be included if the reaction rate needs to be evaluated across a temperature range.
   
-  * Simulation Time: The texttt{"time"} field defines the time span (in seconds) for the kinetics simulation as a string of three values: \texttt{"time": "t\_start t\_end t\_step"}.
+  * Simulation Time: The *"time"* field defines the time span (in seconds) for the kinetics simulation as a string of three values: *"time": "t\_start t\_end t\_step"*.
   
-  * Initial Values: The \texttt{"initial\_values"} field defines the starting concentrations of reacting species, for example, \texttt{"initial\_values": \{   "A": 1, "B": 1   \}}.
+  * Initial Values: The *"initial_values"* field defines the starting concentrations of reacting species, for example, *"initial_values": \{   "A": 1, "B": 1   \}*.
 
 Here, A and B start with a concentration of 1 (in arbitrary units consistent across all species). All other species are assumed to start at zero unless explicitly specified.
 \end{itemize}
@@ -362,22 +358,20 @@ The user is encouraged to see other examples of these input files in the \href{h
 Example: General workflow in *MechaSuite*
 ==========================================
 
-This example illustrates the general environment of \echadata. The hypothetical reaction is a simple two-step mechanism occurring in a batch reactor, where the concentration of reactants changes over time until reaching an equilibrium. The reaction network is defined as follows:
-\begin{chemequation}
-\ce{R <=>>[k_{1,f}][k_{1,r}] I}
-\end{chemequation}
-\begin{chemequation}
-\ce{I <=>>[k_{2,f}][k_{2,r}] P}
-\end{chemequation}
+This example illustrates the general environment of Mechadata. The hypothetical reaction is a simple two-step mechanism occurring in a batch reactor, where the concentration of reactants changes over time until reaching an equilibrium. The reaction network is defined as follows:
 
-where $R$, $I$ and $P$ are the hypothetical reactant, intermediate and product, respectively. The rate constants for both steps are set to be equal by assigning identical forward Gibbs free energies of activation, such as $\Delta G_{1,f} ^\ddagger = \Delta G_{2,f} ^\ddagger = 17$ kcal/mol. Using Eyring's equation, the corresponding forward rate constants at 298 K are $k_{1,f} = k_{2,f} = 2.17$ s$^{-1}$. To make the steps irreversible, the reverse constants are deliberately chosen to be small, $k_{1,r} = k_{2,r} \sim 10^{-15}$ s$^{-1}$. This can be achieved by setting the $\Delta G ^\ddagger$ for the reverse steps considerably higher than the forward ones, like $\Delta G_{1,r} ^\ddagger = \Delta G_{2,r} = 57$ kcal/mol.
+R <=> I
 
-\Cref{fig:example1}a illustrates the main interface of \mechadata, displaying the central spreadsheet that lists the hypothetical minima species ($R$, $I$, and $P$) together with the corresponding transition states ($TS1$ and $TS2$) and their associated hypothetical energies. Their relative energies with respect to the global reference (denoted as \textit{global\_ref}), along with the corresponding activation and reaction energies, are displayed in the smaller spreadsheets on the right (relative energy and reaction energy panels in \Cref{fig:Mechadata}b,c). In this example, the \textit{global\_ref} serves merely as an arbitrary zero-energy reference for illustration.
+I <=> P
+
+where *R*, *I* and *P* are the hypothetical reactant, intermediate and product, respectively. The rate constants for both steps are set to be equal by assigning identical forward Gibbs free energies of activation, such as ΔG_act1_f  =  ΔG_act2_f = 17 kcal/mol. Using Eyring's equation, the corresponding forward rate constants at 298 K are k1f = k2f = 2.17 s^-1. To make the steps irreversible, the reverse constants are deliberately chosen to be small, k1r = k2r  10^-15 s^-1. This can be achieved by setting the ΔG for the reverse steps considerably higher than the forward ones, like ΔG_act1_r = ΔG_act2_r = 57 kcal/mol.
+
+\Cref{fig:example1}a illustrates the main interface of mechadata, displaying the central spreadsheet that lists the hypothetical minima species (*R*, *I*, and *P*) together with the corresponding transition states (*TS1* and *TS2*) and their associated hypothetical energies. Their relative energies with respect to the global reference (denoted as *global_ref*), along with the corresponding activation and reaction energies, are displayed in the smaller spreadsheets on the right (relative energy and reaction energy panels in \Cref{fig:Mechadata}b,c). In this example, the *global_ref* serves merely as an arbitrary zero-energy reference for illustration.
 
  .. %Fig 4 - fig:example1
 
 The interactive plotting interface displaying the corresponding energy profile derived from the reaction mechanism is shown in \Cref{fig:example1}b. The graphical elements representing minima and transition states, as well as their labels, can be customized in terms of style, color, line width, and position. Once the desired settings have been defined, a publication-ready version of the plot can be generated using Matplotlib (see the second example in the manuscript).
 
-The concentration profiles in \Cref{fig:example1}c were obtained by numerically solving the system of differential equations using \mechakin. The results illustrate that the concentration of $R$ decreases over time, the intermediate $I$ first increases and then declines after approximately 0.1 seconds, and the product $P$ increases exponentially, behavior characteristic of a first-order reaction with respect to $R$.
+The concentration profiles in \Cref{fig:example1}c were obtained by numerically solving the system of differential equations using *mechakinetics*. The results illustrate that the concentration of *R* decreases over time, the intermediate *I* first increases and then declines after approximately 0.1 seconds, and the product *P* increases exponentially, behavior characteristic of a first-order reaction with respect to *R*.
 
 Beyond their illustrative role, this and many other hypothetical examples provide a valuable framework for educational purposes. By systematically varying kinetic and thermodynamic parameters, users can explore how individual elementary steps influence the overall behavior of a reaction network. Such interactive exploration facilitates an intuitive understanding of reaction kinetics, sensitivity to model parameters, and the interplay between mechanism and observable rates, making these examples particularly well suited for teaching and training in microkinetic modeling.
