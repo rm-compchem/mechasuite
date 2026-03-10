@@ -69,6 +69,6 @@ public:
     System& system;
     std::mt19937 rng;
     KMC(System& sys, unsigned seed=42) : system(sys), rng(seed) {}
-    void runSSA(double t_end, size_t max_steps=1e7);
+    void runSSA(double t_end, size_t max_steps);
     void runTau(double tau, double t_end);
 };

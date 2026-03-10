@@ -201,8 +201,15 @@ bool System::stepTau(double& time, double tau, std::mt19937& rng)
 void KMC::runSSA(double t_end, size_t max_steps)
 {
     double time=0.0;
-    for(size_t i=0;i<max_steps && time<t_end;i++)
+    size_t count = 0;
+    while(time<t_end){
         if(!system.stepSSA(time,rng)) break;
+	if(max_steps > 0 && count > max_steps) break;
+
+	count ++;
+    }
+    //for(size_t i=0;i<max_steps && time<t_end;i++)
+    //    if(!system.stepSSA(time,rng)) break;
 }
 
 void KMC::runTau(double tau, double t_end){
