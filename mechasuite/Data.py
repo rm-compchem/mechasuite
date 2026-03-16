@@ -562,13 +562,13 @@ class Plot(object):
                     #    key = f"{second_min.name}"
                     key = f"{first_min.name}={second_min.name}"
                     paths_dic[key] = [first_min, second_min, itmo] # ts goes to the end
-                elif itmo.itm.tp == "min":
-                    if first_min.tp != "ts":
-                        key = f"{first_min.name}={itmo.name}"
-                        paths_dic[key] = [first_min, itmo] # no TS
-                    if second_min.itm.tp != "ts":
-                        key = f"{itmo.name}={second_min.name}"
-                        paths_dic[key] = [itmo, second_min] # no TS
+                #elif itmo.itm.tp == "min":
+                #    if first_min.tp != "ts":
+                #        key = f"{first_min.name}={itmo.name}"
+                #        paths_dic[key] = [first_min, itmo] # no TS
+                #    if second_min.itm.tp != "ts":
+                #        key = f"{itmo.name}={second_min.name}"
+                #        paths_dic[key] = [itmo, second_min] # no TS
         return paths_dic, init_val
     
     def update_reaction_network_dic(self, outdic, paths_dic, T:float): 
@@ -616,6 +616,7 @@ class Plot(object):
         paths_dic, init_val = {}, {}
         for itmo in self.get_itms():
             paths_dic, init_val = self.update_export_step_dic(itmo, paths_dic, init_val)
+        print(paths_dic)
 
         T = 298
         network_str = []

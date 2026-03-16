@@ -6,9 +6,12 @@ import os
 
 def read_energy_vasp(vaspfile):
     energy = 0.0
-    spin = None
+    spin = 0 # set to zero. None gives problems when summing various spins: None + int
     pg = None
     unit = "eV"
+    if not os.path.isfile(vaspfile):
+        return energy, spin, pg, unit
+
     with open(vaspfile) as f:
         lineas = f.readlines()
 
@@ -27,9 +30,12 @@ def read_energy_vasp(vaspfile):
 
 def read_energy_orca(outfile):
     energy = 0.0
-    spin = None
+    spin =  0 # set to zero. None gives problems when summing various spins: None + int
     pg = None
     unit = "Ha"
+    if not os.path.isfile(vaspfile):
+        return energy, spin, pg, unit
+
     with open(outfile) as f:
         lines = f.readlines()
     for line in lines:
@@ -39,9 +45,12 @@ def read_energy_orca(outfile):
 
 def read_energy_gaussian(ef):
     energy = 0
-    spin = None
+    spin = 0 # set to zero. None gives problems when summing various spins: None + int
     pg = None
     unit = "Ha"
+    if not os.path.isfile(vaspfile):
+        return energy, spin, pg, unit
+
     with open(ef) as f:
         for line in f:
             if "HF=" in line:
@@ -56,6 +65,9 @@ def read_freq_vasp(outcar):
     freqs = []
     unit = None
     rf = False
+    if not os.path.isfile(vaspfile):
+        return freqs, unit
+
     with open(outcar) as f:
         lineas = f.readlines()
 
@@ -82,7 +94,7 @@ def read_freq_orca(outfile):
         with open(outfile, 'r') as f:
             lines = f.readlines()
     except FileNotFoundError:
-        return []
+        return [], "cm-1"
 
     started = False
     for line in lines:
@@ -119,13 +131,17 @@ def read_freq_orca(outfile):
 
 def read_freq_gaussian(ef):
     vibs = []
+    unit = "cm-1"
+    if not os.path.isfile(ef):
+        return vibs, unit
+
     with open(ef) as f:
         for line in f:
             if "Frequencies --" in line:
                 freqs = line.split()[2:]
                 for freq in freqs:
                     vibs.append(float(freq))
-    return vibs, "cm-1"
+    return vibs, unit
 
 def read_orca_pg(outfile):
     pg = None
