@@ -15,8 +15,8 @@
     },
     "time": "0 500. 30",
     "initial_values": {
-        "CH3CH2Br": 1,
-        "TBAF": 1
+        "CH3CH2Br": 0.5,
+        "TBAF": 0.5
     }
 }
 

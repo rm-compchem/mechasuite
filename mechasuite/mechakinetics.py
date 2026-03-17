@@ -10,8 +10,10 @@ import sys
 import json
 import yaml
 import re
+import os
 from mechasuite import kmc as kmc_core
 
+INPUTFILE = ""
 
 class Step(object):
     def __init__(self):
@@ -81,6 +83,7 @@ class Mechanim(object):
         self.conc = []
         self.rates = []
         self.orders = []
+        self.inputfile = ""
 
     def set_t(self, ti=0, tf=1, p=100):
         self.t = np.linspace(ti, tf, p)
@@ -187,9 +190,20 @@ class Mechanim(object):
         # print("------------------------------------------------------------------------")
         return dxs
 
+    def write(self):
+        out = os.path.splitext(INPUTFILE)[0]
+        out += ".out"
+        header = "t(s) "
+        for spec in self.species:
+                header += f"  {spec}  "
+        
+        arr = np.hstack((self.t.reshape(-1, 1), self.conc))
+        np.savetxt(out,  arr, header=header)
+
     def simulate(self):
         self.conc = odeint(self.solve, self.v0, self.t)
         self.rates = [self.solve(i, 0) for i in self.conc]
+
 
     def plot(self):
         plt.rcParams["font.size"] = 14
@@ -338,35 +352,8 @@ def run_microkinetics(indic):
     mec = mec_from_dic(indic)
     mec.update_init_values()
     mec.simulate()
+    mec.write()
     mec.plot()
-    #mec.get_app_ae()
-    #mec.get_order()
-    # print("species: ", mec.species)
-    # print(mec.temps)
-    # print(mec.init_values)
-    # for step in mec.steps:
-    #     print("reacs", step.reacs)
-    #     print("reacs coef", step.reac_coefs)
-    #     print("prods", step.prods)
-    #     print("prod coef", step.prod_coefs)
-    #     print("kf", step.kfs)
-    #     print("kr", step.krs)
-
-    # totalcont = []
-    # for i in range(len(mec.species)):
-    #     totalcont.append([])
-    # t0 = 0
-    # span = 10
-    # for i in range(1):
-    #     mec.set_t(t0, t0+span, 10000)
-    #     mec.simulate()
-    #     t0 += span
-    #     for i, c in enumerate(mec.concenctrations):
-    #         mec.v0[i] = c[-1]
-    #         totalcont[i] += list(c)
-    #
-    # print(totalcont[0][-1])
-    # mec.simulate()
 
 def parse_reaction_kmc(eq, rdict, system):
     rate = rdict["298"]
@@ -446,11 +433,14 @@ def run_kmc(data):
     plt.show()
 
 def main():
+    global INPUTFILE
     try:
         filename = sys.argv[1]
     except IndexError:
         print(f"Usage: python {sys.argv[0]} input_file")
         sys.exit(0)
+
+    INPUTFILE = filename
 
     mec_dic = {}
     if filename.endswith(".json"):
