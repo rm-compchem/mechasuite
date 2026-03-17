@@ -1,0 +1,6 @@
+#Reverse rate constants of reactions
+
+0.000000e+00    CH3CH2Br + TBAF => CH3CH2F + TBABr
+0.000000e+00    CH3CH2F + TBABr => CH3CH2Br + TBAF
+0.000000e+00    CH3CH2Br + TBAF => C2H4 + HF + TBABr
+0.000000e+00    C2H4 + HF + TBABr => CH3CH2Br + TBAF

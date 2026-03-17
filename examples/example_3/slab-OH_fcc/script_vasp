@@ -1,0 +1,48 @@
+#! /bin/bash
+#
+#########################################
+# MareNostrum submition script for VASP #
+# (working on /gpfs/scratch filesystem) #
+#########################################
+#
+#SBATCH --job-name=prueba
+#SBATCH --output=serial_%j.out
+#SBATCH --error=serial_%j.err
+#SBATCH --ntasks=16
+#SBATCH --time=72:00:00
+#######SBATCH --qos=res_a
+ 
+#ENVIRONMENT SETTINGS---
+ulimit -s unlimited
+module purge
+module load intel/2017.7.259 impi/2017.7.259 mkl/2017.7.259
+EXE=/storage/apps/VASP/5.2/IMPI/bin/vasp.complex.vtst
+DIR=$SLURM_SUBMIT_DIR
+WORKDIR=/storage/scratch/vlc37/$USER/${PWD#$HOME/}
+mkdir -p ${WORKDIR} 
+cd ${WORKDIR} 
+
+cp ${DIR}/POSCAR ./POSCAR
+cp ${DIR}/INCAR ./
+cp ${DIR}/KPOINTS ./KPOINTS
+cp ${DIR}/POTCAR ./POTCAR
+#cp ${DIR}/MODECAR ./
+
+tinfo $DIR &
+
+srun ${EXE}   
+
+cp ./CONTCAR ${DIR}/
+cp ./OSZICAR ${DIR}/
+cp ./OUTCAR ${DIR}/
+#cp ./DIMCAR ${DIR}/
+#cp ./NEWMODECAR ${DIR}/
+exit
+
+#cd ..
+#rm -rf ./${WORKDIR}  
+
+
+ 
+
+

@@ -1,0 +1,27 @@
+{
+  "solver": "kmc",
+  "temperature": 298.0,
+  "pressure": 1.0,
+  "simulation_time": 40,
+  "closed": true,
+  "residence_time": 1.0,
+  
+  "gas_count": {
+    "R": 1000
+  },
+  "surface_count": {
+    "I": 0,
+    "P": 0
+  },
+
+  "mec": {
+    "R=I": {
+      "298": [4.1757017831042536, 4.832099086983306e-15]
+    },
+    "I=P": {
+      "298": [2.1757017831042536, 4.832099086983306e-15]
+    }
+  }
+
+}
+

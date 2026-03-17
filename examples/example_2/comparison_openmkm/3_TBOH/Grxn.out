@@ -1,0 +1,6 @@
+#Dimensionless Gibbs Energies of reactions (G/RT) at Reactor & Ref. Pressure (1bar)
+
+-5.360644e+02   -5.360644e+02   CH3CH2Br + TBAF => CH3CH2F + TBABr
+5.360644e+02    5.360644e+02    CH3CH2F + TBABr => CH3CH2Br + TBAF
+-3.440087e+02   -3.440087e+02   CH3CH2Br + TBAF => C2H4 + HF + TBABr
+3.440087e+02    3.440087e+02    C2H4 + HF + TBABr => CH3CH2Br + TBAF

@@ -1,0 +1,7 @@
+Species_name	Phase	Surf_cov	H	C	O	N	F	Br
+CH3CH2Br	Gas	0	5	2	0	0	0	1
+TBAF	Gas	0	36	16	0	1	1	0
+CH3CH2F	Gas	0	5	2	0	0	1	0
+TBABr	Gas	0	36	16	0	1	0	1
+C2H4	Gas	0	4	2	0	0	0	0
+HF	Gas	0	1	0	0	0	1	0

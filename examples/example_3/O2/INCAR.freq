@@ -1,0 +1,28 @@
+
+DOS 
+ISMEAR = 2 
+SIGMA = 0.2 
+POTIM = 0.02 
+
+ionicrelax 
+NBLOCK = 1 
+IBRION = 5 
+EDIFFG = -0.01 
+NSW = 500 
+
+electrelax 
+EDIFF = 0.000001 
+NELM = 60 
+LREAL = Auto 
+ENCUT = 450.0 
+ALGO = FAST 
+
+startparam 
+NWRITE = 2 
+GGA = PE 
+ISTART = 1 
+ISPIN = 2 
+NPAR = 4 
+LVDW = .TRUE. 
+
+DIMER 

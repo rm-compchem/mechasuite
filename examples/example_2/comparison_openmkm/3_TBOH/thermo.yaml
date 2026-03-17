@@ -1,0 +1,77 @@
+description: |-
+  Surface mechanism of Ammonia dehydrogenation on Pt catalyst
+
+generator: ctml2yaml
+cantera-version: 2.5.0a4
+date: Tue, 05 May 2020 19:41:58 -0400
+#input-files: [NH3_input.xml]
+
+phases:
+- name: gas
+  elements: [H, C, O, N, F, Br]
+  species: [ CH3CH2Br, TBAF, CH3CH2F, TBABr, C2H4, HF]
+  thermo: ideal-gas
+  state: {T: 373.15 K, P: 1.01325e+05 Pa}
+  kinetics: gas
+  reactions: all
+
+species:
+- name: TBAF
+  composition: {H: 36, C: 16, N: 1, F: 1}
+  note: '20190315'
+  thermo:
+    model: constant-cp
+    T0: 373.15 K
+    h0: 0.0
+    s0: 0.0
+- name: CH3CH2Br
+  composition: {H: 5, C: 2, Br: 1}
+  note: '20190315'
+  thermo:
+    model: constant-cp
+    T0: 373.15 K
+    h0: -43.0557 kcal/mol
+    s0: -0.7990 kcal/mol/K
+- name: CH3CH2F
+  composition: {H: 5, C: 2, F: 1}
+  note: '20190315'
+  thermo:
+    model: constant-cp
+    T0: 373.15 K
+    h0: -413.1718 kcal/mol
+    s0: -0.7256 kcal/mol/K
+- name: TBABr
+  composition: {H: 36, C: 16, N: 1, Br: 1}
+  note: '20190315'
+  thermo:
+    model: constant-cp
+    T0: 373.15 K
+    h0: 0.0
+    s0: 0.0
+- name: C2H4
+  composition: {H: 4, C: 2}
+  note: '20190315'
+  thermo:
+    model: constant-cp
+    T0: 373.15 K
+    h0: 0.0
+    s0: 0.0
+- name: HF
+  composition: {H: 1, F: 1}
+  note: '20190315'
+  thermo:
+    model: constant-cp
+    T0: 373.15 K
+    h0: 0.0
+    s0: 0.0
+
+reactions:
+- equation: CH3CH2Br + TBAF => CH3CH2F + TBABr
+  rate-constant: {A: 2.768E+12, b: 0.0, Ea: 23.5660 kcal/mol}
+- equation: CH3CH2F + TBABr => CH3CH2Br + TBAF
+  rate-constant: {A: 6.383E-14, b: 0.0, Ea: -5.6850 kcal/mol}
+- equation: CH3CH2Br + TBAF => C2H4 + TBABr + HF
+  rate-constant: {A: 1.394E+13, b: 0.0, Ea: 31.2347 kcal/mol}
+- equation: C2H4 + TBABr + HF => CH3CH2Br + TBAF
+  rate-constant: {A: 4.337E-20, b: 0.0, Ea: -15.9332 kcal/mol}
+

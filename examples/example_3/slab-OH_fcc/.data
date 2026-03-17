@@ -1,0 +1,6 @@
+program: vasp
+energy_file: OSZICAR.opt
+struct_file:  POSCAR.opt
+freq_file: OUTCAR.freq
+tp: min
+pg: solid

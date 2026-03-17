@@ -1,0 +1,6 @@
+#Dimensionless entropies of reactions (S/R) at Reactor & Ref. Pressure (1bar)
+
+3.693631e+01    3.693631e+01    CH3CH2Br + TBAF => CH3CH2F + TBABr
+-3.693631e+01   -3.693631e+01   CH3CH2F + TBABr => CH3CH2Br + TBAF
+4.020724e+02    4.020724e+02    CH3CH2Br + TBAF => C2H4 + HF + TBABr
+-4.020724e+02   -4.020724e+02   C2H4 + HF + TBABr => CH3CH2Br + TBAF

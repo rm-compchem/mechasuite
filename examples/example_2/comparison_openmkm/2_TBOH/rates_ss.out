@@ -1,0 +1,5 @@
+Fwd_Rate        Rev_Rate        Net_Rate        PEI             Reaction_string                 
+2.823139e-05    0.000000e+00    2.823139e-05    1.000000e+00    CH3CH2Br + TBAF => CH3CH2F + TBABr
+8.860690e-11    0.000000e+00    8.860690e-11    1.000000e+00    CH3CH2F + TBABr => CH3CH2Br + TBAF
+1.993908e-07    0.000000e+00    1.993908e-07    1.000000e+00    CH3CH2Br + TBAF => C2H4 + HF + TBABr
+2.009018e-15    0.000000e+00    2.009018e-15    1.000000e+00    C2H4 + HF + TBABr => CH3CH2Br + TBAF

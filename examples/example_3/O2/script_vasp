@@ -1,0 +1,123 @@
+# /bin/bash
+#
+#########################################
+#    submision script for VASP mpi      #
+#########################################
+#
+#PBS -S /bin/bash
+##PBS -m be
+#PBS -k eo
+
+#PBS -l nodes=itqcalc12:ppn=48
+
+# -- Cambiar Vasp_mpi (más abajo) por el nombre que se desee.
+# -- El nombre no debe tener espacios ni signos raros.
+#PBS -N  freq
+
+# -- cambiar TestVASP_MPI por el nombre deseado
+
+
+#####  CARGAMOS LIBRERIAS
+export PATH=$PATH:/soft/intel/Compiler/11.1/064/mkl/lib/em64t/:/soft/openmpi/lib/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/soft/intel/Compiler/11.1/064/mkl/lib/em64t/:/soft/openmpi/lib/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/soft/openmpi/lib:/soft/intel/Compiler/11.1/064/lib/intel64
+export PATH=$PATH:/soft/openmpi/lib:/soft/intel/Compiler/11.1/064/bin/intel064
+source /soft/openmpi/bin/mpivars.sh
+export MKL_NUM_THREADS=1
+
+
+#---------------------------------------------------
+# no cambiar nada a partir de aquí a menos que se
+# sepa lo que se hace
+#ENVIRONMENT SETTINGS---
+############# DEFINIENDO ALGUNAS VARIABLES #############################################
+NUMNODES=$(grep -m 1 'nodes=itqcalc' $0)
+NUMNODES=${NUMNODES#*ppn=}
+NUMNODES=$(( $NUMNODES/2  ))
+
+INPUTSDIR=$PBS_O_WORKDIR
+OUTDIR=$PBS_O_WORKDIR
+WORKDIR=/scr${PBS_O_WORKDIR#/home}
+EXE=/soft/VASP/5.2.12-vtst/vasp.5.2/vasp
+ERRORFILE=$HOME/$PBS_JOBNAME.e$PBS_JOBID
+ERRORFILE=${ERRORFILE%.itqmaster}
+OUTPUTFILE=$HOME/$PBS_JOBNAME.o$PBS_JOBID
+OUTPUTFILE=${OUTPUTFILE%.itqmaster}
+############# DEFINIENDO ALGUNAS VARIABLES #############################################
+
+ulimit -s unlimited
+cd $INPUTSDIR
+ln -s $ERRORFILE $PBS_JOBNAME.e${PBS_JOBID%.itqmaster}
+ln -s $OUTPUTFILE $PBS_JOBNAME.o${PBS_JOBID%.itqmaster}
+
+mkdir -p ${WORKDIR} 
+cd ${WORKDIR} 
+
+cp ${INPUTSDIR}/POSCAR ./
+cp ${INPUTSDIR}/INCAR ./
+cp ${INPUTSDIR}/KPOINTS ./
+cp ${INPUTSDIR}/POTCAR ./
+
+if [ -s WAVECARbackup ]; then
+    cp WAVECARbackup WAVECAR
+    tinfo $OUTDIR &
+    /soft/openmpi/bin/mpirun -np $NUMNODES  ${EXE}   
+   
+    grep -q "writing wavefunctions" OUTCAR
+
+    if [ "$?" = "0" ]; then
+        cp WAVECAR WAVECARbackup
+    fi
+    cp ./CONTCAR ${OUTDIR}/CONTCAR
+    cp ./OSZICAR ${OUTDIR}/OSZICAR
+    cp ./OUTCAR ${OUTDIR}/OUTCAR
+    cp ./CHGCAR ${OUTDIR}/CHGCAR
+    exit
+elif [ -s WAVECAR ]; then     
+    tinfo $OUTDIR &
+    /soft/openmpi/bin/mpirun -np $NUMNODES  ${EXE}   
+    
+    grep -q "writing wavefunctions" OUTCAR
+
+    if [ "$?" = "0" ]; then
+        cp WAVECAR WAVECARbackup
+    fi
+    cp ./CONTCAR ${OUTDIR}/CONTCAR
+    cp ./OSZICAR ${OUTDIR}/OSZICAR
+    cp ./OUTCAR ${OUTDIR}/OUTCAR
+    cp ./CHGCAR ${OUTDIR}/CHGCAR
+    exit
+else
+    tinfo $OUTDIR &
+    cp INCAR INCARbackup
+    sed -i "s/.*IBRION.*/IBRION = -1/g" INCAR
+    sed -i "s/.*NSW.*/NSW = 2/g" INCAR
+    sed -i "s/.*NELM.*/NELM= 100/g" INCAR
+    sed -i "/IOPT/d" INCAR
+
+    /soft/openmpi/bin/mpirun -np $NUMNODES ${EXE}   
+   
+    grep -q "writing wavefunctions" OUTCAR
+
+    if [ "$?" = "0" ]; then
+        cp WAVECAR WAVECARbackup
+        mv INCARbackup INCAR
+
+        tinfo $OUTDIR &
+        /soft/openmpi/bin/mpirun -np $NUMNODES  ${EXE}   
+       
+        grep -q "writing wavefunctions" OUTCAR
+
+        if [ "$?" = "0" ]; then
+            cp WAVECAR WAVECARbackup
+        fi
+        cp ./CONTCAR ${OUTDIR}/CONTCAR
+        cp ./OSZICAR ${OUTDIR}/OSZICAR
+        cp ./OUTCAR ${OUTDIR}/OUTCAR
+        cp ./CHGCAR ${OUTDIR}/CHGCAR
+        exit
+    fi 
+fi
+
+mv $ERRORFILE $PBS_O_WORKDIR/
+mv $OUTPUTFILE $PBS_O_WORKDIR/

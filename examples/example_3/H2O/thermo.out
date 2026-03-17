@@ -1,0 +1,35 @@
+                 Thermo script output (2.0 version)                 
+--------------------------------------------------------------------
+                           Input summary                            
+--------------------------------------------------------------------
+ Selected pressure(atm): 1
+ Selected point group: C2v
+   NON-LINEAR molecule
+ Number of vibrational modes: 3
+ Frequencies(cm-1): 
+    3846.4077     
+    3731.2550     
+    1583.0050     
+ 
+--------------------------------------------------------------------
+                          Thermochemistry                           
+--------------------------------------------------------------------
+ (Temperatures in K, energies in kcal/mol and entropies in kcal/mol-K)
+ 
+ Electronic energy: -327.90275
+ ZPVE: 13.09583  
+ (ZPVE included in Uvib below)
+ 
+ Translational, rotational and vibrational contributions to U and S:
+ 
+     T       Utrans     Urot      Uvib     Strans    Srot      Svib      Selec   
+  298.00    0.88828   0.88828   13.09800  0.03461   0.01054   0.00001   0.00000  
+ 
+     ----------------------------------------------------------     
+     |   Total values of U and S and corresponding H and G:   |     
+     ----------------------------------------------------------     
+                (Enthalpies calculated as Utot + RT)                
+ 
+     T           Utot         Stot          H             G       
+   298.00     -313.02819    0.04515     -312.43600    -325.89153  
+ 

@@ -1,0 +1,67 @@
+script_vasp opt  
+---------------
+Submitted batch job 6874
+---------------
+
+DOS 
+ISMEAR = 0
+SIGMA = 0.05 
+POTIM = 0.0 
+
+ionicrelax 
+NBLOCK = 1 
+IBRION = -1
+EDIFFG = -0.01 
+NSW = 2
+
+electrelax 
+EDIFF = 0.000001 
+NELM = 60 
+LREAL = Auto 
+ENCUT = 450.0 
+ALGO = FAST 
+
+startparam 
+ISTART = 1 
+NWRITE = 2 
+ISPIN = 0
+GGA = PE
+LVDW = .TRUE. 
+NPAR  = 4
+-------------
+mié jul  4 18:47:05 CEST 2018
+----------------------------------------------------------------------------------------
+script_vasp opt  
+---------------
+Submitted batch job 6876
+---------------
+
+DOS 
+ISMEAR = 0
+SIGMA = 0.05 
+POTIM = 0.0 
+
+ionicrelax 
+NBLOCK = 1 
+IBRION = 3
+IOPT = 1
+EDIFFG = -0.01 
+NSW = 500
+
+electrelax 
+EDIFF = 0.000001 
+NELM = 60 
+LREAL = Auto 
+ENCUT = 450.0 
+ALGO = FAST 
+
+startparam 
+ISTART = 1 
+NWRITE = 2 
+ISPIN = 0
+GGA = PE
+LVDW = .TRUE. 
+NPAR  = 4
+-------------
+mié jul  4 18:56:01 CEST 2018
+----------------------------------------------------------------------------------------

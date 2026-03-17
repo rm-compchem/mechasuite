@@ -1,0 +1,22 @@
+closed: false
+mec:
+  I=P:
+    '298':
+    - 2.1757017831042536
+    - 4.832099086983306e-2
+  R=I:
+    '298':
+    - 4.1757017831042536
+    - 4.832099086983306e-2
+pressure: 1.0
+residence_time: 100000.0
+simulation_time: 10
+solver: kmc
+surface_count:
+  I: 0
+  P: 0
+gas_count:
+  R: 1000
+#reservoir:
+  #  R: 1000
+temperature: 298.0

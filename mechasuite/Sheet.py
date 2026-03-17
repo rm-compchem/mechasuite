@@ -2818,7 +2818,7 @@ class RefSheet(QTableWidget):
                     self.setItem(3, col, QTableWidgetItem("{:.4f}".format(zobj.g(T))))
                     self.setItem(4, col, QTableWidgetItem("{:.4f}".format(zobj.stot(T))))
                     self.setItem(5, col, QTableWidgetItem("{:.3e}".format(zobj.k(T))))
-                    #self.setItem(6, col, QTableWidgetItem("{:.3e}".format(zobj.kq(T))))
+                    self.setItem(6, col, QTableWidgetItem("{:.3e}".format(zobj.a(T))))
                     self.setItem(7, col, QTableWidgetItem("{:.3e}".format(zobj.prob())))
                     #self.setItem(8, col, QTableWidgetItem("{:.4f}".format(zobj.tkey("ae", T))))
                     #self.setItem(8, col, QTableWidgetItem("{:.4f}".format(zobj.prob())))

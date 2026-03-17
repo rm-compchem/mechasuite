@@ -1,0 +1,26 @@
+reactor:                
+    type: batch       
+    mode: "isothermal"
+    volume: "1 cm3"
+    temperature:  373.15   
+    pressure:  "1 atm"  
+#    cat_abyv: "1500 /cm"
+
+#inlet_gas:              
+#    flow_rate: "1 cm3/s" 
+
+simulation:
+    end_time: 30.
+    transient: true
+    stepping: "logarithmic"
+    init_step: 1e-8
+    solver:
+        atol: 1e-12        
+        rtol: 1e-8          
+        max_steps: 700000
+
+phases:                     
+    gas: 
+        name: gas            
+        initial_state: "TBAF:1.0,CH3CH2Br:1.0,CH3CH2F:0.0,HF:0.0,TBABr:0.0,C2H4:0.0"
+

@@ -1,0 +1,6 @@
+#Forward rate constants of reactions
+
+2.847253e+02    CH3CH2Br + TBAF => CH3CH2F + TBABr
+1.840974e-06    CH3CH2F + TBABr => CH3CH2Br + TBAF
+2.004224e+01    CH3CH2Br + TBAF => C2H4 + HF + TBABr
+5.447061e-04    C2H4 + HF + TBABr => CH3CH2Br + TBAF

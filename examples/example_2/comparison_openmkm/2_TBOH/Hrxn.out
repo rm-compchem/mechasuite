@@ -1,0 +1,6 @@
+#Dimensionless enthalpies of reactions (H/RT) at Reference Pressure 1bar
+
+-4.991281e+02   CH3CH2Br + TBAF => CH3CH2F + TBABr
+4.991281e+02    CH3CH2F + TBABr => CH3CH2Br + TBAF
+5.806370e+01    CH3CH2Br + TBAF => C2H4 + HF + TBABr
+-5.806370e+01   C2H4 + HF + TBABr => CH3CH2Br + TBAF

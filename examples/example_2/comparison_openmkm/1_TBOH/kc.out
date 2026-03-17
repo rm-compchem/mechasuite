@@ -1,0 +1,6 @@
+#Equilibrium constants of reactions
+
+6.453831e+232   CH3CH2Br + TBAF => CH3CH2F + TBABr
+1.549467e-233   CH3CH2F + TBABr => CH3CH2Br + TBAF
+8.223993e+147   CH3CH2Br + TBAF => C2H4 + HF + TBABr
+1.215954e-148   C2H4 + HF + TBABr => CH3CH2Br + TBAF

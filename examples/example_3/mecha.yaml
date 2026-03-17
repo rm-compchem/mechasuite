@@ -1,0 +1,50 @@
+H2O: # name of the mechanism
+  # request that final energies are converted to electron-volts
+  unit: eV
+
+  # tell mechadata that vibrational frequencies are to be found in the file OUTCAR.freq inside each calculation directory.
+  freq_file: OUTCAR.freq
+
+  # list with name of directories that will be used as minima
+  min_items:
+  - slab-O_fcc
+  - slab-OH_fcc
+    #- slab-O_H_1NN_fcc
+  - slab-H2O
+  - H2O
+  
+  # list with names of directories that will be used as transition states
+  ts_items: 
+  - ts1
+  - ts2
+
+  # list with name of directories that will be used as reference
+  ref_items: 
+  - slab
+  - H2
+  - O2
+
+  # create references using items listed in "ref_items"
+  refs:
+    # the reference named "ref1" using the following configurations as basis
+    ref1:
+    - slab
+    - H2
+    - O2
+
+  # request to apply the reference 
+  # (calculate relative energy with respect to ref1) 
+  # to all intermediates
+  apply_refs:
+    ref1: .*
+
+  # create plots
+  plots:
+    plot1: # create a plot named "plot1" with one path "path1"
+      path1:
+      - slab-O_fcc
+      - ts1
+      - slab-OH_fcc
+      - ts2
+      - slab-H2O
+      - H2O
