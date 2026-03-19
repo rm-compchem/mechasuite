@@ -20,8 +20,12 @@ research context. The graphical user interface (GUI) is shown in **Figure 1**.
 **Figure 1.** MechaData interface. **a)** Main spreadsheet for organizing reaction mechanisms. **b)** Relative 
 energy panel and **c)** reaction energy panel. **d)** Embedded visualizer for molecular structures.
 
+
 |
+
+
 MechaData distinguishes itself through several design and functional advantages. Its key strengths include:
+
 
 -- **Spreadsheet-like interface:** The column-based layout allows users to organize entire mechanisms, 
 with each column representing a reaction mechanism (**Figure 1a**). This design offers a user-friendly 
@@ -63,7 +67,10 @@ This enables both reproducibility and customization as the diagrams can be visua
 (including style, formatting, labels and layout) before being exported as high-quality images using the 
 Matplotlib python library.
 
+
 |
+
+
 User interface and functionality
 ====================================
 
@@ -73,7 +80,10 @@ interactive visual tools, while the menu structure is organized into logical cat
 visualization, plotting, and mechanistic editing. This section provides an overview of the main components 
 of the GUI and describes the functionality of the available menus.
 
+
 |
+
+
 File Menu
 ----------
 
@@ -83,7 +93,9 @@ All the options available in MechaData file menu are shown in **Figure 2**, and 
 
 **Figure 2**. File menu in MechaData GUI.
 
+
 |
+
 **(1) Import Mechanism From Folder:** Loads a reaction mechanism from a directory containing several 
 folders (one per calculation) with quantum chemical output files. MechaSuite automatically extracts 
 relevant thermochemical and structural data for each intermediate and transition state. It is advisable 
@@ -100,7 +112,9 @@ or reporting.
 
 **(7-9) Open / Close:** Opens an existing mechanism project or closes the current workspace.
 
+
 |
+
 Edit Menu
 ---------
 
@@ -110,12 +124,16 @@ MechaData edit menu is shown in **Figure 3**, with corresponding description bel
 
 **Figure 3**. Edit menu in MechaData GUI.
 
+
 |
+
 **(10) New Mechanism:** Creates a new reaction mechanism column within the workspace. Each column 
 represents an independent mechanism and serves as a container for intermediates, transition states, 
 and references.
 
+
 |
+
 View Menu 
 ---------
 
@@ -125,13 +143,16 @@ MechaData view menu is shown in **Figure 4**, with corresponding description bel
 
 **Figure 4**. Edit menu in MechaData GUI.
 
+
 |
+
 **(11) Plot:** Generates plots of energy profiles or kinetic trends based on the currently selected 
 mechanism and data. Users can visualize free energy diagrams, reaction coordinates, or custom 
 thermodynamic plots.
 
 
 |
+
 Data filters 
 --------------
 
@@ -141,15 +162,18 @@ Results imported in MechaData can be filtered by different criteria, as illustra
 
 **Figure 5**. Data filters in MechaData GUI.
 
+
 |
+
 **(12) Set temperature:** Sets the temperature of the values shown in the relative energy panel (**Figure 1c**) and reaction panel (**Figure 1d**).
 
 **(13) Filter by:** Filter the items shown in the spreadsheet.
 
 
 |
+
 Right-Click Options on Columns (Mechanism-Level Controls)
----------------------------------------------------------
+------------------------------------------------------------
 
 Several options are shown when right-clicking on a given column (options 14--22 in **Figure 6**).
 
@@ -159,6 +183,7 @@ Several options are shown when right-clicking on a given column (options 14--22 
 
 
 |
+
 **(14) New Item:** Adds a new row to the current mechanism for a structure, intermediate, or 
 transition state.
   
@@ -181,6 +206,7 @@ the mechanism.
 
 
 |
+
 Right side panels
 ------------------------
 
@@ -191,7 +217,9 @@ the system and relative energy values (**Figure 7**).
 
 **Figure 7**. Right-click options on rows in MechaData GUI.
 
+
 |
+
 **(23) System Information:** summarizes important information about the selected item, such as 
 the energy unit, type of calculation, number of vibrational frequencies, number of atoms,
 symmetry and total spin moment set for the calculation, as well as a comment set by the user.
@@ -203,14 +231,18 @@ the selected item at a given temperature.
 **(25) Reaction Panel:** Display calculated quantities for a given reaction, such as the reaction 
 energy (|dE|), ZPE-corrected reaction energy (|dZPE|), reaction enthalpy (|dH|), 
 reaction Gibbs free energy (|dG|), reaction entropy  (|dS|), reaction rate constant (k) and 
-pre-exponential factor (A) from TST theory (see the theoretical background for further details).
+pre-exponential factor (A) from TST theory.
+
+.. (see the theoretical background for further details).
 
 **(26) Structure Vizualizer:** Integrated geometry visualization for efficient inspection and 
 validation of computed structures.
 
+
 |
+
 Right-Click Options on Row Entries (Species-Level Controls)
-------------------------------------------------------------
+--------------------------------------------------------------
 
 Several options are shown when right-clicking on a given row (**Figures 8--10**).
 
@@ -218,25 +250,35 @@ Several options are shown when right-clicking on a given row (**Figures 8--10**)
 
 **Figure 8**. Right-click options on rows in MechaData GUI.
 
+
 |
+
 **(27-30) Frequencies:** Opens a panel to load, view, scale, or edit vibrational frequencies 
 from quantum chemical calculations.
 
+
 |
+
 .. figure:: fig09.png
 
 **Figure 9**. Right-click options on rows in MechaData GUI (continuation).
 
+
 |
+
 **(31-33) Thermochemical Analysis:** Computes thermodynamic parameters (G, H, S) based on 
 vibrational and structural data.
 
+
 |
+
 .. figure:: fig10.png
 
 **Figure 10**. Right-click options on rows in MechaData GUI (continuation).
 
+
 |
+
 **(34-36) Plot:** Generates energy profiles or add selected intermediates to existing free energy 
 profiles.
 
@@ -289,6 +331,7 @@ for detailed modification or inspection.
 
 
 |
+
 MechaEdit
 ********************
 Although the basic geometry visualization capabilities are integrated into MechaData, MechaEdit is 
@@ -296,12 +339,16 @@ specifically designed for detailed structural analysis and editing. In addition 
 (**Figure 11a**), the GUI is composed of a toolbar (**Figure 11b**), the main drawing canvas 
 (**Figure 11c**), and a side panel (**Figure 11d**). The most relevant options are described below.
 
+
 |
+
 .. figure:: fig11.png
 
 **Figure 11**. Overview MechaEdit GUI.
 
+
 |
+
 Toolbar
 ========
 
@@ -336,7 +383,9 @@ updated in the bottom bar of MechaEdit window.
 defined before image rendering and export. It is useful for controlling the size and which part of 
 the structure will be included in the saved image.
 
+
 |
+
 Drawing canvas
 ================
 
@@ -346,7 +395,9 @@ moving the mouse. Individual atoms can be selected using Ctrl + left click, whil
 atoms can be selected by holding Ctrl and dragging with the left mouse button. Selected atoms 
 can be deleted using the Delete key. Selected atoms can be hidden with Ctrl + H shortcut.
 
+
 |
+
 Side panel
 ============
 
@@ -357,7 +408,9 @@ coordinates individually. In addition, a frequency and frames listbox can be add
 panel. The frequency listbox can be enabled/disabled from the tool menu. The frames listbox is 
 automatically enabled if the opened file is a trajectory.
 
+
 |
+
 Menu Options
 ==============
 
@@ -382,6 +435,7 @@ The File menu contains options for loading, saving, and exporting chemical struc
 
 
 |
+
 Edit Menu
 -----------
 
@@ -396,8 +450,9 @@ The Edit menu provides basic editing operations for selected atoms.
 
 
 |
+
 Selection Menu
------------
+----------------
 
 The Selection menu provides tools to create and modify atom selections.
 
@@ -413,7 +468,9 @@ selected atom.
 
 -- **Select groups:** selects previously created groups (in tools menu).
 
+
 |
+
 View Menu
 -----------
 
@@ -436,8 +493,9 @@ control how far the structure is visualized.
 
 
 |
+
 Insert Menu
------------
+---------------
 
 The Insert menu allows the insertion of structures in the current representation.
 
@@ -449,8 +507,9 @@ The Insert menu allows the insertion of structures in the current representation
 
 
 |
+
 Tools Menu
------------
+---------------
 
 The Tools menu provides interactive analysis and measurement features.
 
@@ -477,29 +536,38 @@ and manipulations.
 
 
 |
+
 Crystallography
 -------------------
 
+
 -- **Set Unit Cell:** opens a dialog to define or modify unit cell parameters.
 
+
 |
+
 Animation Menu
 -----------------
+
 
 The Animation menu allows playback of dynamic structural data.
 
 
 -- **Play:** plays an available animation or trajectory.
 
+
 -- **Play Frequencies:** animates vibrational modes, typically obtained from 
 frequency calculations.
+
 
 -- **Time Delay:** adjusts the delay between animation frames to control playback speed.
 
 
 |
+
 Notes
 -----------
+
 
 Most menu actions operate on the currently selected atoms. Atom selection is performed 
 directly in the drawing canvas using mouse and keyboard controls. Available visualization, 
@@ -507,6 +575,7 @@ animation, and analysis features depend on the data present in the loaded struct
 
 
 |
+
 MechaKinetics 
 ***********************
 
@@ -517,11 +586,17 @@ interface (right-click and *export reaction network*) and customized as needed.
 
 
 |
+
 .. figure:: fig12.png
    :scale: 70 %
+
+
 **Figure 12**. Input structure of JSON input file for MechaKinetics.
 
+
 |
+
+
 As shown in **Figure 12**, it has the following sections:
 
 
@@ -533,11 +608,14 @@ The first number is the forward reaction rate and the second the reverse reactio
 (both in 1/s}), calculated using Eyring's equation. Multiple temperatures can be included 
 if the reaction rate needs to be evaluated across a temperature range.
 
+
 -- **Simulation Time:** The *"time"* field defines the time span (in seconds) for the kinetics 
 simulation as a string of three values: *"time": "t\_start t\_end t\_step"*.
 
+
 -- **Initial Values:** The *"initial_values"* field defines the starting concentrations of 
 reacting species, for example, *"initial_values": \{   "A": 1, "B": 1   \}*.
+
 
 Here, A and B start with a concentration of 1 (in arbitrary units consistent across all 
 species). All other species are assumed to start at zero unless explicitly specified.
