@@ -4,16 +4,20 @@ Installation
 Using conda
 ===========
 The root directory contains the conda recipe for building and installing the conda package. As MechaSuite is distributed as a conda package, it can be used across Windows, macOS, and Linux systems.
-With [miniconda](https://www.anaconda.com/docs/getting-started/miniconda/main)  already installed, MechaSuite can be build and installed using the following commands::
+
+With `miniconda <https://www.anaconda.com/docs/getting-started/miniconda/main>`_  already installed, MechaSuite can be build using the following commands::
 
  
-  # Building MechaSuite
   $ conda activate base
   $ conda install conda-build
   $ git clone git@github.com:rm-compchem/mechasuite.git
   $ cd mechasuite
   $ conda-build conda-recipe -c conda-forge
-  # Create a conda environment called 'ms' and install MechaSuite
+
+
+Then, create a conda environment called *ms* and install MechaSuite::
+
+
   $ conda create -n ms
   $ conda activate ms
   $ conda install mechasuite --use-local
@@ -23,9 +27,9 @@ Installing only python modules
 ==============================
 If you are only interested in installing and using the python base modules, mechadata.py and mechakinetics.py, execute the following commands::
 
-  git clone git@github.com:rm-compchem/mechasuite.git
-  cd mechasuite
-  pip install -r requirements.txt
-  pip install .
+  $ git clone git@github.com:rm-compchem/mechasuite.git
+  $ cd mechasuite
+  $ pip install -r requirements.txt
+  $ pip install .
 
 

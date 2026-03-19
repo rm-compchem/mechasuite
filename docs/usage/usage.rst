@@ -11,16 +11,24 @@ If you have installed MechaSuite as a conda package, always activate the *ms* en
 Then, MechaData graphical user interface (GUI) can be open by::
 
   $ mechadata
-  # or opening directly a reaction mechanism from JSON file
-  $ mechadata.py ${MS}/mechasuite/examples/example_2/fluorination.json
+
+
+Or by directly opening a reaction mechanism from JSON file::
+
+  $ mechadata ${MS}/mechasuite/examples/example_2/fluorination.json
 
 
 Here, *${MS}* denotes the path to the directory where MechaSuite is installed. 
+
 Likewise, MechaData GUI can be open by typing the following command::
 
   $ mechaedit
-  # or opening directly a geometry file (CIF, XYZ, POSCAR or OUTCAR)
+
+
+Or by directly opening a geometry file (CIF, XYZ, POSCAR or OUTCAR)::
+
   $ mechaedit ${MS}/mechasuite/examples/example_2/SN2/SN2-TBAF.xyz
+
 
 For MechaKin usage, indicate the JSON with the reaction mechanism::
 
@@ -29,11 +37,25 @@ For MechaKin usage, indicate the JSON with the reaction mechanism::
 
 Preprocessing scripts
 =====================
-Importing individual calculations to an already created mechanism can be done by providing the corresponding calculation directory. However, some preprocessing is convenient to avoid errors in trying the determine the format of the output of such calculations. To that end, we provide sample scripts that create a file named *data* inside each calculation directory containing information about how *mechadata* should read the files in the directory. Each line in the *.data* file represents a configuration entry, specified as a *tag: value* pair, interpreted as a \href{https://yaml.org/}{yaml} file. The following shows that the program of the QM calculation is VASP, the file with the electronic energy is OSZICAR, unit for the energy is in eV, the multiplicity of the calculation is singlet, the file with the geometry is CONTCAR, and that this is an optimization calculation rather than a transition state.  Other possible values are provided after the \# symbol::
+Importing individual calculations to an already created mechanism can be done by providing the corresponding calculation directory. 
+
+However, some preprocessing is convenient to avoid errors in trying the determine the format of the output of such calculations. 
+
+To that end, we provide sample scripts that create a file named *.data* inside each calculation directory containing information about how *mechadata* should read the files in the directory. 
+
+Each line in the *.data* file represents a configuration entry, specified as a *tag: value* pair, interpreted as a `yaml <https://yaml.org/>`_ file. 
+
+The following shows that the program of the QM calculation is VASP, where the file with the electronic energy is OSZICAR, or the energy can be manually set with *energy* option.
+The file with the geometry is CONTCAR, and the calculated vibrational frequencies in OUTCAR file.
+The unit for the energy is in eV, the total spin moment of the calculation is zero, this is an optimization calculation rather than a transition state, and that the point group is for a solid.
+
+Other possible values are provided after the \# symbol::
 
   program:      vasp    # gaussian, orca
   energy_file:  OSZICAR # gaussian or orca output file name or even just numerical value
-  struct_file:  POSCAR  # any other xyz file
+  energy:       -25.3   # define energy manually
+  struct_file:  CONTCAR # any other xyz file
+  freq_file:    OUTCAR  # output with vibrational frequency     
   unit:         eV      # kcal, kJ, Ha
   spin:         0       # 1, 2, etc
   tp:           min     # ts, ref
