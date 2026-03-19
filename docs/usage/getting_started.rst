@@ -41,6 +41,7 @@ Example1: Hypothetical sytem. First-order reaction
 This example illustrates the general environment of Mechadata. To explore the example please enter corresponding directory::
 
 $ cd examples/example_1
+$ mechadata mechanism.json
 
 The directory contains folders R, I, P, TS1, TS2, ref_item1 representing hypthetical calculation directories. Examples 2 and 3 (below) ilustrate real calculations.
 
@@ -61,6 +62,50 @@ The interactive plotting interface displaying the corresponding energy profile d
 The concentration profiles in \Cref{fig:example1}c were obtained by numerically solving the system of differential equations using *mechakinetics*. The results illustrate that the concentration of *R* decreases over time, the intermediate *I* first increases and then declines after approximately 0.1 seconds, and the product *P* increases exponentially, behavior characteristic of a first-order reaction with respect to *R*.
 
 Beyond their illustrative role, this and many other hypothetical examples provide a valuable framework for educational purposes. By systematically varying kinetic and thermodynamic parameters, users can explore how individual elementary steps influence the overall behavior of a reaction network. Such interactive exploration facilitates an intuitive understanding of reaction kinetics, sensitivity to model parameters, and the interplay between mechanism and observable rates, making these examples particularly well suited for teaching and training in microkinetic modeling.
+
+Example 2: Nucleophilic fluorination. Comparison with OpenMKM
+=============================================================
+The second example illustrates competing reaction channels as studied by `Lisboa and Pliego Jr. <https://link.springer.com/article/10.1007/s00894-022-05160-5>`_, in which microsolvation effects on the selectivity between SN2 and E2 pathways were examined. The system involves nucleophilic fluorination of ethyl bromide by tetrabutylammonium fluoride (TBAF), with tert-butanol (TBOH) acting as an explicit microsolvating agent.
+All necessary files and folders are found in examples directory::
+
+$ cd examples/example_2
+$ mechadata fluorination.json
+
+Opening fluorination.json in MechaData displays a four-column spreadsheet, where each column corresponds to either the SN2 or E2 mechanism for systems containing between zero and three TBOH molecules.
+Each row represents a specific intermediate or transition state, corresponding to optimized stationary points on the potential energy surface.
+
+Within the interface, structure types are visually distinguished by color: reference species are highlighted in light purple, transition states in light red, and local minima in black. Selecting any entry provides its relative energy in the designated panel (spreadsheets on the right). For example, the SN2 transition state has a relative energy of 7.3 kcal/mol.
+Reaction and activation energies can also be evaluated between any pair of intermediates sharing a consistent reference or atomic composition.
+In this case, the activation barrier for the SN2 transition state relative to the REACTANT is likewise 7.3 kcal/mol, since the REACTANT is defined to have zero relative energy.
+
+.. Further details on the energy referencing scheme are provided in Section :ref:`relative_energy_section`. 
+
+Now, we compare the results of the fluorination reaction with the open source
+microkinetics software OpenMKM . To that end, MechaSuite is very convenient because
+it provides directly the activation energies and the pre-exponential factor requested by
+OpenMKM. The input of OpenMKM are different, two files are required reactor.yaml and
+thermo.yaml. The first contains general reactor and simulation settings, while the second
+defines more concretely the reaction network. In the directory examples/example_2 in the
+source code, there is a subfolder named “comparison openmkm” which contains the input
+files created with the reaction network information calculated from the MechaData inter-
+face. 
+The example directory contains a python script “compare.py” to generate  :ref:`Figure 1 <figure-compare-openmkm>`.
+
+.. _figure-compare-openmkm:
+
+.. figure:: ../../examples/example_2/compare.png
+
+    Figure 1: Comparison of the concentration profiles of microkinetics simulations with (fromleft to right) 0 to 4 TBOH molecules using MechaKinetics (top row) and OpenMKM (bottom row).
+
+Because OpenMKM simulations and MechaKinetics use mean-field approximation, both
+simulations can be compared directly. In addition, for OpenMKM we have assumed ideal
+gas behavior and a batch model reactor, which is what MechaKinetics currently supports.
+Other reactor models will be included in a future release. More information on OpenMKM
+input structure can be found in the literature. 
+Figure 1 shows the concentration profiles of the species involved in the fluorination
+reaction using MechaKinetics (top) and OpenMKM (bottom).
+Both software exhibit matching concentration evolutions and reach similar equilibrium
+points, leading to equivalent results.
 
 Example 3: Water formation on the Co(111) surface.
 ==================================================
