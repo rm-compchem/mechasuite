@@ -38,7 +38,13 @@ For MechaKin usage, indicate the JSON with the reaction mechanism::
 Example1: Hypothetical sytem. First-order reaction 
 ===================================================
 
-This example illustrates the general environment of Mechadata. The hypothetical reaction is a simple two-step mechanism occurring in a batch reactor, where the concentration of reactants changes over time until reaching an equilibrium. The reaction network is defined as follows:
+This example illustrates the general environment of Mechadata. To explore the example please enter corresponding directory::
+
+$ cd examples/example_1
+
+The directory contains folders R, I, P, TS1, TS2, ref_item1 representing hypthetical calculation directories. Examples 2 and 3 (below) ilustrate real calculations.
+
+In this example, the hypothetical reaction is a simple two-step mechanism occurring in a batch reactor, where the concentration of reactants changes over time until reaching an equilibrium. The reaction network is defined as follows:
 
 R <=> I
 
@@ -56,7 +62,59 @@ The concentration profiles in \Cref{fig:example1}c were obtained by numerically 
 
 Beyond their illustrative role, this and many other hypothetical examples provide a valuable framework for educational purposes. By systematically varying kinetic and thermodynamic parameters, users can explore how individual elementary steps influence the overall behavior of a reaction network. Such interactive exploration facilitates an intuitive understanding of reaction kinetics, sensitivity to model parameters, and the interplay between mechanism and observable rates, making these examples particularly well suited for teaching and training in microkinetic modeling.
 
+Example 3: Water formation on the Co(111) surface.
+==================================================
 
+Example 3 describes the formation and desorption of a water molecule on the 111 surface of Co covered with O* adatoms.
+
+The reaction was studied in the literature `R. Millán et al.: J. Catal. 364, 19 (2018) <https://www.sciencedirect.com/science/article/abs/pii/S002195171830188X>`_. 
+
+This example illustrates the calculation of relative free energies of all species, the resulting free energy profiles (FEP) and microkinetics simulations at different temperatures.
+
+For illustration purposes we will only consider one adsorption site, namely, the fcc site and will ignore the lateral interactions among O*, OH* and H*.
+The rationale behind this choice is that H* species will be abundant because there is a continuous stream of H2 gas and its dissociation on the 111 Co surface is spontaneous (activation energies are less than 1 kcal/mol).
+The reaction mechanism is the following:
+
+H* + O* = OH*
+
+OH* + H* = H2O*
+
+H2O* = H2O (g) + *
+
+To explore the example please enter corresponding directory::
+
+$ cd examples/example_3
+
+The directory contains density functional theory (DFT) calculations performed with VASP for a set of reference structures and reaction configurations. These include reference molecules (files named H2, O2, and the clean slab), adsorption minima (files named slab-O_fcc, slab-OH_fcc, slab-H₂O, and isolated H2O), and transition states (files named ts1 and ts2). We have specified “slab” for surface instead of the common “*” symbol because of the  meaning of * in linux regex. 
+
+You can also find the file mecha.json with a mechanism (column) named “H2O” with all intermediates included, free energies calculated at 300, 400, 500, and 600 K, and the FEP created. Open the file with mechadata::
+
+$ mechadata mecha.json
+
+Click on the intermediates to see how the relative quantities are updated on the right panels (relative energy panel and reaction panel). In particular, right-click on ts1 and ts2, select frequencies-> show frequencies from the menu to verify that they contain only one imaginary frequency.
+
+To visualize the FEPs just go to the menu: “view -> Show plot window” or just press “control+g”.
+
+The first plot that appears is the electronic energy plot (option “E” is selected in the “plot type” combobox) but you can switch to the free energy profiles at different temperatures by selecting “G”. Furthermore, you can select the temperatures in the “Temperature” combobox. If you compare the profiles at 300 and 600 K, it is clear how the stability of the desorbed water molecule (last item in the FEP) increases (decrease of relative free energy with increase of temperature). 
+
+The directory also contains two input files for MechaKinetics: rn_300.json and rn_600.json. They provide the input with rate constants at 300 K and 600 K respectively. If you run mechakinetics with these input file you will see interesting differences::
+
+$ mechakinetics rn_300.json
+$ mechakinetics rn_600.json
+
+In the first case you will see that the system does not completely reach equilibrium after 10 s of simulation and the most abundant species is slab_OH. If you check again the FEP you will notice that slab_OH is the most stable species. In the second case (600 K) the system reaches equilibrium long before only 1 s of simulation reflecting the faster reaction rate. Moreover, the most abundant species is the gas water molecule which is in line with the fact that at 600K water is the most stable species in the FEP.
+
+Now, the user is encouraged to recreate the contents of the mecha.json file by playing with the mecha.yaml input file which provides sections to read the calculator directories and create a mechanism. The specification of energy units, which plots are to be created, the classification of intermediates in reference, minima and transition state, etc. can be specified in the mecha.yaml input file which contains comments explaining these options.
+
+Upon opening the input file mecha.yaml with mechadata::
+
+$ mechadata mecha.yaml
+
+we should see the following environment of mechadata containing the one column corresponding to the mechanism “H2O”:
+
+As in the example_1 the free energy profile is automatically created because we specified the “plot” section in mecha.yaml and can be visualized by pressing control+g. Notice that now, there is no FEP with free energies, only with electronic energy because we have not calculated yet the free energies. To do so, we can go to the MechaData main window and select all items in the spreadsheet (or directly the whole “H2O” column), then right-click on any cell on the spreadsheet and select “thermochemical analysis -> calculate” from the popup menu. This will open a window allowing us to select the parameters to calculate the free energy for the selected intermediates. Type the following in the “300-600:100” in the “T(K)” energy. With this we will calculate the free energies at from 300 to 600 every 100 values of temperature. Now go to the FEPs and check if these temperatures become available in the “temperature” combobox after selecting “G” on the “plot type” combobox.
+
+Exporting the reaction mechanism as an input json file can be achieved by right-clicking on the plotting window and selecting “Export Reaction Network”. This will allow creating an input file for mechakinetics to run microkinetics analysis. 
 
 
 Preprocessing scripts
