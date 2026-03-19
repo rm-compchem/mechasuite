@@ -152,14 +152,14 @@ defines more concretely the reaction network. In the directory *examples/example
 source code, there is a subfolder named *comparison_openmkm* which contains the input
 files created with the reaction network information calculated from the MechaData inter-
 face. 
-The example directory contains a python script “compare.py” to generate  :ref:`Figure 1 
+The example directory contains a python script “compare.py” to generate  :ref:`Figure 2 
 <figure-compare-openmkm>`.
 
 .. _figure-compare-openmkm:
 
 .. figure:: ../../examples/example_2/compare.png
 
-**Figure 1**: Comparison of the concentration profiles of microkinetics simulations with (from left 
+**Figure 2**: Comparison of the concentration profiles of microkinetics simulations with (from left 
 to right) 0 to 4 TBOH molecules using MechaKinetics (top row) and OpenMKM (bottom row). Label CH3CH2Br 
 always overlaps with TBAF, and C2H4 always overlaps with HF.
 
@@ -168,7 +168,7 @@ simulations can be compared directly. In addition, for OpenMKM we have assumed i
 gas behavior and a batch model reactor, which is what MechaKinetics currently supports.
 Other reactor models will be included in a future release. More information on OpenMKM
 input structure can be found in the literature. 
-Figure 1 shows the concentration profiles of the species involved in the fluorination
+**Figure 2** shows the concentration profiles of the species involved in the fluorination
 reaction using MechaKinetics (top) and OpenMKM (bottom).
 Both software exhibit matching concentration evolutions and reach similar equilibrium
 points, leading to equivalent results.
@@ -221,9 +221,9 @@ $ mechadata mecha.json
 
 Click on the intermediates to see how the relative quantities are updated on the right panels 
 (relative energy panel and reaction panel). In particular, right-click on ts1 and ts2, select 
-frequencies-> show frequencies from the menu to verify that they contain only one imaginary frequency.
+frequencies → show frequencies from the menu to verify that they contain only one imaginary frequency.
 
-To visualize the FEPs just go to the menu: “view -> Show plot window” or just press “Ctrl+g”.
+To visualize the FEPs just go to the menu: “view → Show plot window” or just press “Ctrl+g”.
 
 The first plot that appears is the electronic energy plot (option “E” is selected in the “plot type” 
 combobox) but you can switch to the free energy profiles at different temperatures by selecting “G”. 
@@ -262,7 +262,7 @@ As in the example_1 the free energy profile is automatically created because we 
 in *mecha.yaml* and can be visualized by pressing Ctrl+g. Notice that now, there is no FEP with free energies, 
 only with electronic energy because we have not calculated yet the free energies. To do so, we can go to the 
 MechaData main window and select all items in the spreadsheet (or directly the whole “H2O” column), then 
-right-click on any cell on the spreadsheet and select “thermochemical analysis -> calculate” from the popup 
+right-click on any cell on the spreadsheet and select “thermochemical analysis → calculate” from the popup 
 menu. This will open a window allowing us to select the parameters to calculate the free energy for the selected 
 intermediates. Type the following in the “300-600:100” in the “T(K)” energy. With this we will calculate the free 
 energies at from 300 to 600 every 100 values of temperature. Now go to the FEPs and check if these temperatures 
