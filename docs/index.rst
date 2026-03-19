@@ -13,7 +13,8 @@ MechaSuite documentation
    usage/installation
    usage/getting_started
    usage/modules
-   usage/theory
+   usage/how2cite
+   .. usage/theory
    .. usage/tutorials
 
 
