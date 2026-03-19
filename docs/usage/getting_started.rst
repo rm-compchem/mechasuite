@@ -77,8 +77,7 @@ Each row represents a specific intermediate or transition state, corresponding t
 Within the interface, structure types are visually distinguished by color: reference species are highlighted in light purple, transition states in light red, and local minima in black. Selecting any entry provides its relative energy in the designated panel (spreadsheets on the right). For example, the SN2 transition state has a relative energy of 7.3 kcal/mol.
 Reaction and activation energies can also be evaluated between any pair of intermediates sharing a consistent reference or atomic composition.
 In this case, the activation barrier for the SN2 transition state relative to the REACTANT is likewise 7.3 kcal/mol, since the REACTANT is defined to have zero relative energy.
-
-.. Further details on the energy referencing scheme are provided in Section :ref:`relative_energy_section`. 
+Further details on the energy referencing scheme are provided in Section  :ref:`Calculation of relative energies <relative-energy-section>`. 
 
 Now, we compare the results of the fluorination reaction with the open source
 microkinetics software OpenMKM . To that end, MechaSuite is very convenient because
@@ -95,7 +94,7 @@ The example directory contains a python script “compare.py” to generate  :re
 
 .. figure:: ../../examples/example_2/compare.png
 
-    Figure 1: Comparison of the concentration profiles of microkinetics simulations with (fromleft to right) 0 to 4 TBOH molecules using MechaKinetics (top row) and OpenMKM (bottom row).
+**Figure 1**: Comparison of the concentration profiles of microkinetics simulations with (fromleft to right) 0 to 4 TBOH molecules using MechaKinetics (top row) and OpenMKM (bottom row).
 
 Because OpenMKM simulations and MechaKinetics use mean-field approximation, both
 simulations can be compared directly. In addition, for OpenMKM we have assumed ideal
