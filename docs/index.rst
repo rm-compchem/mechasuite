@@ -11,7 +11,10 @@ Welcome to MechaSuite's documentation!
    :caption: Contents:
 
    usage/installation
-   usage/usage
+   usage/getting_started
+   usage/modules
+   usage/theory
+   usage/tutorials
 
 
 Indices and tables
