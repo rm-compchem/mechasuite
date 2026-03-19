@@ -36,8 +36,11 @@ For MechaKin usage, indicate the JSON with the reaction mechanism::
   $ mechakinetics ${MS}/mechasuite/examples/example_1/rn.json
 
 
-Example 1: Hypothetical sytem. First-order reaction 
+|
+
+Example 1: Hypothetical system. First-order reaction 
 **********************************************************
+
 
 This example illustrates the general environment of Mechadata. To explore the example 
 please enter corresponding directory::
@@ -77,7 +80,7 @@ with the corresponding transition states (*TS1* and *TS2*) and their associated
 hypothetical energies. Their relative energies with respect to the global reference 
 (denoted as *global_ref*), along with the corresponding activation and reaction energies, 
 are displayed in the smaller spreadsheets on the right (relative energy and reaction energy 
-panels in \Cref{fig:Mechadata}b,c). In this example, the *global_ref* serves merely as an 
+panels). In this example, the *global_ref* serves merely as an 
 arbitrary zero-energy reference for illustration.
 
 .. figure:: FIG01.png
@@ -107,38 +110,58 @@ model parameters, and the interplay between mechanism and observable rates, maki
 particularly well suited for teaching and training in microkinetic modeling.
 
 
+|
+
 Example 2: Nucleophilic fluorination. Comparison with OpenMKM
 ***************************************************************
-The second example illustrates competing reaction channels as studied by `Lisboa and Pliego Jr. <https://link.springer.com/article/10.1007/s00894-022-05160-5>`_, in which microsolvation effects on the selectivity between SN2 and E2 pathways were examined. The system involves nucleophilic fluorination of ethyl bromide by tetrabutylammonium fluoride (TBAF), with tert-butanol (TBOH) acting as an explicit microsolvating agent.
+
+
+The second example illustrates competing reaction channels as studied by `Lisboa and Pliego Jr. 
+<https://link.springer.com/article/10.1007/s00894-022-05160-5>`_, in which microsolvation effects 
+on the selectivity between SN2 and E2 pathways were examined. The system involves nucleophilic 
+fluorination of ethyl bromide by tetrabutylammonium fluoride (TBAF), with tert-butanol (TBOH) 
+acting as an explicit microsolvating agent.
+
 All necessary files and folders are found in examples directory::
 
 $ cd examples/example_2
 $ mechadata fluorination.json
 
-Opening fluorination.json in MechaData displays a four-column spreadsheet, where each column corresponds to either the SN2 or E2 mechanism for systems containing between zero and three TBOH molecules.
-Each row represents a specific intermediate or transition state, corresponding to optimized stationary points on the potential energy surface.
+Opening fluorination.json in MechaData displays a four-column spreadsheet, where each column 
+corresponds to either the SN2 or E2 mechanism for systems containing between zero and three TBOH 
+molecules. Each row represents a specific intermediate or transition state, corresponding to 
+optimized stationary points on the potential energy surface.
 
-Within the interface, structure types are visually distinguished by color: reference species are highlighted in light purple, transition states in light red, and local minima in black. Selecting any entry provides its relative energy in the designated panel (spreadsheets on the right). For example, the SN2 transition state has a relative energy of 7.3 kcal/mol.
-Reaction and activation energies can also be evaluated between any pair of intermediates sharing a consistent reference or atomic composition.
-In this case, the activation barrier for the SN2 transition state relative to the REACTANT is likewise 7.3 kcal/mol, since the REACTANT is defined to have zero relative energy.
-Further details on the energy referencing scheme are provided in Section  :ref:`Calculation of relative energies <relative-energy-section>`. 
+Within the interface, structure types are visually distinguished by color: reference species are 
+highlighted in light purple, transition states in light red, and local minima in black. Selecting 
+any entry provides its relative energy in the designated panel (spreadsheets on the right). For 
+example, the SN2 transition state has a relative energy of 7.3 kcal/mol.
+Reaction and activation energies can also be evaluated between any pair of intermediates sharing a 
+consistent reference or atomic composition.
+In this case, the activation barrier for the SN2 transition state relative to the REACTANT is 
+likewise 7.3 kcal/mol, since the REACTANT is defined to have zero relative energy.
+Further details on the energy referencing scheme are provided in Section  :ref:`Calculation of 
+relative energies <relative-energy-section>`. 
 
 Now, we compare the results of the fluorination reaction with the open source
 microkinetics software OpenMKM . To that end, MechaSuite is very convenient because
 it provides directly the activation energies and the pre-exponential factor requested by
 OpenMKM. The input of OpenMKM are different, two files are required reactor.yaml and
 thermo.yaml. The first contains general reactor and simulation settings, while the second
-defines more concretely the reaction network. In the directory examples/example_2 in the
-source code, there is a subfolder named “comparison openmkm” which contains the input
+defines more concretely the reaction network. In the directory *examples/example_2* in the
+source code, there is a subfolder named *comparison_openmkm* which contains the input
 files created with the reaction network information calculated from the MechaData inter-
 face. 
-The example directory contains a python script “compare.py” to generate  :ref:`Figure 1 <figure-compare-openmkm>`.
+The example directory contains a python script “compare.py” to generate  :ref:`Figure 1 
+<figure-compare-openmkm>`.
 
 .. _figure-compare-openmkm:
 
 .. figure:: ../../examples/example_2/compare.png
 
-**Figure 1**: Comparison of the concentration profiles of microkinetics simulations with (fromleft to right) 0 to 4 TBOH molecules using MechaKinetics (top row) and OpenMKM (bottom row).
+**Figure 1**: Comparison of the concentration profiles of microkinetics simulations with (from left 
+to right) 0 to 4 TBOH molecules using MechaKinetics (top row) and OpenMKM (bottom row). Label CH3CH2Br 
+always overlaps with TBAF, and C2H4 always overlaps with HF.
 
 Because OpenMKM simulations and MechaKinetics use mean-field approximation, both
 simulations can be compared directly. In addition, for OpenMKM we have assumed ideal
@@ -150,75 +173,128 @@ reaction using MechaKinetics (top) and OpenMKM (bottom).
 Both software exhibit matching concentration evolutions and reach similar equilibrium
 points, leading to equivalent results.
 
+|
 
 Example 3: Water formation on the Co(111) surface.
 ******************************************************
 
-Example 3 describes the formation and desorption of a water molecule on the 111 surface of Co covered with O* adatoms.
 
-The reaction was studied in the literature `R. Millán et al.: J. Catal. 364, 19 (2018) <https://www.sciencedirect.com/science/article/abs/pii/S002195171830188X>`_. 
+Example 3 describes the formation and desorption of a water molecule on the 111 surface 
+of Co covered with O* adatoms.
 
-This example illustrates the calculation of relative free energies of all species, the resulting free energy profiles (FEP) and microkinetics simulations at different temperatures.
+The reaction was studied in the literature `R. Millán et al.: J. Catal. 364, 19 (2018) 
+<https://www.sciencedirect.com/science/article/abs/pii/S002195171830188X>`_. 
 
-For illustration purposes we will only consider one adsorption site, namely, the fcc site and will ignore the lateral interactions among O*, OH* and H*.
-The rationale behind this choice is that H* species will be abundant because there is a continuous stream of H2 gas and its dissociation on the 111 Co surface is spontaneous (activation energies are less than 1 kcal/mol).
+This example illustrates the calculation of relative free energies of all species, the 
+resulting free energy profiles (FEP) and microkinetics simulations at different temperatures.
+
+For illustration purposes we will only consider one adsorption site, namely, the fcc site 
+and will ignore the lateral interactions among O*, OH* and H*.
+The rationale behind this choice is that H* species will be abundant because there is a 
+continuous stream of H2 gas and its dissociation on the 111 Co surface is spontaneous 
+(activation energies are less than 1 kcal/mol).
+
 The reaction mechanism is the following:
 
-H* + O* = OH*
+H* + O* ⇋ OH*
 
-OH* + H* = H2O*
+OH* + H* ⇋ H2O*
 
-H2O* = H2O (g) + *
+H2O* ⇋ H2O\ :sub:`(g)` + *
+
 
 To explore the example please enter corresponding directory::
 
 $ cd examples/example_3
 
-The directory contains density functional theory (DFT) calculations performed with VASP for a set of reference structures and reaction configurations. These include reference molecules (files named H2, O2, and the clean slab), adsorption minima (files named slab-O_fcc, slab-OH_fcc, slab-H₂O, and isolated H2O), and transition states (files named ts1 and ts2). We have specified “slab” for surface instead of the common “*” symbol because of the  meaning of * in linux regex. 
+The directory contains density functional theory (DFT) calculations performed with VASP for 
+a set of reference structures and reaction configurations. These include reference molecules 
+(files named *H2*, *O2*, and the clean slab), adsorption minima (files named slab-O_fcc, slab-OH_fcc, 
+slab-H2O, and isolated H2O), and transition states (files named ts1 and ts2). We have specified 
+“slab” for surface instead of the common “*” symbol because of the  meaning of * in linux regex. 
 
-You can also find the file mecha.json with a mechanism (column) named “H2O” with all intermediates included, free energies calculated at 300, 400, 500, and 600 K, and the FEP created. Open the file with mechadata::
+You can also find the file mecha.json with a mechanism (column) named “H2O” with all intermediates 
+included, free energies calculated at 300, 400, 500, and 600 K, and the FEP created. Open the 
+file with mechadata::
 
 $ mechadata mecha.json
 
-Click on the intermediates to see how the relative quantities are updated on the right panels (relative energy panel and reaction panel). In particular, right-click on ts1 and ts2, select frequencies-> show frequencies from the menu to verify that they contain only one imaginary frequency.
+Click on the intermediates to see how the relative quantities are updated on the right panels 
+(relative energy panel and reaction panel). In particular, right-click on ts1 and ts2, select 
+frequencies-> show frequencies from the menu to verify that they contain only one imaginary frequency.
 
-To visualize the FEPs just go to the menu: “view -> Show plot window” or just press “control+g”.
+To visualize the FEPs just go to the menu: “view -> Show plot window” or just press “Ctrl+g”.
 
-The first plot that appears is the electronic energy plot (option “E” is selected in the “plot type” combobox) but you can switch to the free energy profiles at different temperatures by selecting “G”. Furthermore, you can select the temperatures in the “Temperature” combobox. If you compare the profiles at 300 and 600 K, it is clear how the stability of the desorbed water molecule (last item in the FEP) increases (decrease of relative free energy with increase of temperature). 
+The first plot that appears is the electronic energy plot (option “E” is selected in the “plot type” 
+combobox) but you can switch to the free energy profiles at different temperatures by selecting “G”. 
+Furthermore, you can select the temperatures in the “Temperature” combobox. If you compare the profiles 
+at 300 and 600 K, it is clear how the stability of the desorbed water molecule (last item in the FEP) 
+increases (decrease of relative free energy with increase of temperature). 
 
-The directory also contains two input files for MechaKinetics: rn_300.json and rn_600.json. They provide the input with rate constants at 300 K and 600 K respectively. If you run mechakinetics with these input file you will see interesting differences::
+The directory also contains two input files for MechaKinetics: rn_300.json and rn_600.json. They provide 
+the input with rate constants at 300 K and 600 K respectively. If you run mechakinetics with these input 
+file you will see interesting differences::
 
 $ mechakinetics rn_300.json
 $ mechakinetics rn_600.json
 
-In the first case you will see that the system does not completely reach equilibrium after 10 s of simulation and the most abundant species is slab_OH. If you check again the FEP you will notice that slab_OH is the most stable species. In the second case (600 K) the system reaches equilibrium long before only 1 s of simulation reflecting the faster reaction rate. Moreover, the most abundant species is the gas water molecule which is in line with the fact that at 600K water is the most stable species in the FEP.
+In the first case you will see that the system does not completely reach equilibrium after 10 s of 
+simulation and the most abundant species is slab_OH. If you check again the FEP you will notice that 
+slab_OH is the most stable species. In the second case (600 K) the system reaches equilibrium long 
+before only 1 s of simulation reflecting the faster reaction rate. Moreover, the most abundant species 
+is the gas water molecule which is in line with the fact that at 600K water is the most stable species 
+in the FEP.
 
-Now, the user is encouraged to recreate the contents of the mecha.json file by playing with the mecha.yaml input file which provides sections to read the calculator directories and create a mechanism. The specification of energy units, which plots are to be created, the classification of intermediates in reference, minima and transition state, etc. can be specified in the mecha.yaml input file which contains comments explaining these options.
+Now, the user is encouraged to recreate the contents of the *mecha.json* file by playing with the 
+*mecha.yaml* input file which provides sections to read the calculator directories and create a mechanism. 
+The specification of energy units, which plots are to be created, the classification of intermediates in 
+reference, minima and transition state, etc. can be specified in the mecha.yaml input file which contains 
+comments explaining these options.
 
-Upon opening the input file mecha.yaml with mechadata::
+Upon opening the input file *mecha.yaml* with MechaData::
 
 $ mechadata mecha.yaml
 
-we should see the following environment of mechadata containing the one column corresponding to the mechanism “H2O”:
+we should see the following environment of MechaData containing the one column corresponding to the 
+mechanism “H2O”:
 
-As in the example_1 the free energy profile is automatically created because we specified the “plot” section in mecha.yaml and can be visualized by pressing control+g. Notice that now, there is no FEP with free energies, only with electronic energy because we have not calculated yet the free energies. To do so, we can go to the MechaData main window and select all items in the spreadsheet (or directly the whole “H2O” column), then right-click on any cell on the spreadsheet and select “thermochemical analysis -> calculate” from the popup menu. This will open a window allowing us to select the parameters to calculate the free energy for the selected intermediates. Type the following in the “300-600:100” in the “T(K)” energy. With this we will calculate the free energies at from 300 to 600 every 100 values of temperature. Now go to the FEPs and check if these temperatures become available in the “temperature” combobox after selecting “G” on the “plot type” combobox.
+As in the example_1 the free energy profile is automatically created because we specified the “plot” section 
+in *mecha.yaml* and can be visualized by pressing Ctrl+g. Notice that now, there is no FEP with free energies, 
+only with electronic energy because we have not calculated yet the free energies. To do so, we can go to the 
+MechaData main window and select all items in the spreadsheet (or directly the whole “H2O” column), then 
+right-click on any cell on the spreadsheet and select “thermochemical analysis -> calculate” from the popup 
+menu. This will open a window allowing us to select the parameters to calculate the free energy for the selected 
+intermediates. Type the following in the “300-600:100” in the “T(K)” energy. With this we will calculate the free 
+energies at from 300 to 600 every 100 values of temperature. Now go to the FEPs and check if these temperatures 
+become available in the “temperature” combobox after selecting “G” on the “plot type” combobox.
 
-Exporting the reaction mechanism as an input json file can be achieved by right-clicking on the plotting window and selecting “Export Reaction Network”. This will allow creating an input file for mechakinetics to run microkinetics analysis. 
+Exporting the reaction mechanism as an input json file can be achieved by right-clicking on the plotting window 
+and selecting “Export Reaction Network”. This will allow creating an input file for mechakinetics to run 
+microkinetics analysis. 
 
+|
 
 Preprocessing scripts
-=====================
-Importing individual calculations to an already created mechanism can be done by providing the corresponding calculation directory. 
+*****************************
 
-However, some preprocessing is convenient to avoid errors in trying the determine the format of the output of such calculations. 
 
-To that end, we provide sample scripts that create a file named *.data* inside each calculation directory containing information about how *mechadata* should read the files in the directory. 
+Importing individual calculations to an already created mechanism can be done by providing the corresponding 
+calculation directory. 
 
-Each line in the *.data* file represents a configuration entry, specified as a *tag: value* pair, interpreted as a `yaml <https://yaml.org/>`_ file. 
+However, some preprocessing is convenient to avoid errors in trying the determine the format of the output 
+of such calculations. 
 
-The following shows that the program of the QM calculation is VASP, where the file with the electronic energy is OSZICAR, or the energy can be manually set with *energy* option.
+To that end, we provide sample scripts that create a file named *.data* inside each calculation directory 
+containing information about how MechaData should read the files in the directory. 
+
+Each line in the *.data* file represents a configuration entry, specified as a *tag: value* pair, interpreted 
+as a `yaml <https://yaml.org/>`_ file. 
+
+The following shows that the program of the QM calculation is VASP, where the file with the electronic energy 
+is OSZICAR, or the energy can be manually set with *energy* option.
 The file with the geometry is CONTCAR, and the calculated vibrational frequencies in OUTCAR file.
-The unit for the energy is in eV, the total spin moment of the calculation is zero, this is an optimization calculation rather than a transition state, and that the point group is for a solid.
+The unit for the energy is in eV, the total spin moment of the calculation is zero, this is an optimization 
+calculation rather than a transition state, and that the point group is for a solid.
 
 Other possible values are provided after the \# symbol::
 
