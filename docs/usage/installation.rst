@@ -25,7 +25,7 @@ Then, create a conda environment called *ms* and install MechaSuite::
 
 Installing only python modules
 ==============================
-If you are only interested in installing and using the python base modules, mechadata.py and mechakinetics.py, execute the following commands::
+If you are only interested in installing and using the python-based modules, *mechadata* and *mechakinetics*, execute the following commands::
 
   $ git clone git@github.com:rm-compchem/mechasuite.git
   $ cd mechasuite
