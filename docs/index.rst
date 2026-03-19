@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to MechaSuite's documentation!
+MechaSuite documentation
 ======================================
 
 .. toctree::
@@ -14,12 +14,12 @@ Welcome to MechaSuite's documentation!
    usage/getting_started
    usage/modules
    usage/theory
-   usage/tutorials
+   .. usage/tutorials
 
 
-Indices and tables
-==================
+.. Indices and tables
+.. ==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. * :ref:`genindex`
+.. .. * :ref:`modindex`
+.. * :ref:`search`

@@ -1,1 +1,1 @@
-sphinx-build -M html . .
+sphinx-build -M html . . && firefox html/index.html
