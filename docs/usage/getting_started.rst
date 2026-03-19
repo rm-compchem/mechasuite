@@ -3,7 +3,8 @@ Getting Started
 
 
 
-If you have installed MechaSuite as a conda package, always activate the *ms* environment first::
+If you have installed MechaSuite as a conda package, always activate the *ms* 
+environment first::
 
   $ conda activate ms
 
@@ -35,36 +36,79 @@ For MechaKin usage, indicate the JSON with the reaction mechanism::
   $ mechakinetics ${MS}/mechasuite/examples/example_1/rn.json
 
 
-Example1: Hypothetical sytem. First-order reaction 
-===================================================
+Example 1: Hypothetical sytem. First-order reaction 
+**********************************************************
 
-This example illustrates the general environment of Mechadata. To explore the example please enter corresponding directory::
+This example illustrates the general environment of Mechadata. To explore the example 
+please enter corresponding directory::
 
 $ cd examples/example_1
 $ mechadata mechanism.json
 
-The directory contains folders R, I, P, TS1, TS2, ref_item1 representing hypthetical calculation directories. Examples 2 and 3 (below) ilustrate real calculations.
+The directory contains folders *R, I, P, TS1, TS2, ref_item1* representing hypthetical 
+calculation directories. Examples 2 and 3 (below) ilustrate real calculations.
 
-In this example, the hypothetical reaction is a simple two-step mechanism occurring in a batch reactor, where the concentration of reactants changes over time until reaching an equilibrium. The reaction network is defined as follows:
+In this example, the hypothetical reaction is a simple two-step mechanism occurring in 
+a batch reactor, where the concentration of reactants changes over time until reaching 
+an equilibrium. The reaction network is defined as follows:
 
-R <=> I
+R ⇋ I
 
-I <=> P
+I ⇋ P
 
-where *R*, *I* and *P* are the hypothetical reactant, intermediate and product, respectively. The rate constants for both steps are set to be equal by assigning identical forward Gibbs free energies of activation, such as ΔG_act1_f  =  ΔG_act2_f = 17 kcal/mol. Using Eyring's equation, the corresponding forward rate constants at 298 K are k1f = k2f = 2.17 s^-1. To make the steps irreversible, the reverse constants are deliberately chosen to be small, k1r = k2r  10^-15 s^-1. This can be achieved by setting the ΔG for the reverse steps considerably higher than the forward ones, like ΔG_act1_r = ΔG_act2_r = 57 kcal/mol.
+where *R*, *I* and *P* are the hypothetical reactant, intermediate and product, respectively. 
+The rate constants for both steps are set to be equal by assigning identical forward Gibbs 
+free energies of activation, such as 
+ΔG\ :sup:`‡`\ :sub:`1,f`  =  ΔG\ :sup:`‡`\ :sub:`2,f` = 17 kcal/mol. 
 
-\Cref{fig:example1}a illustrates the main interface of mechadata, displaying the central spreadsheet that lists the hypothetical minima species (*R*, *I*, and *P*) together with the corresponding transition states (*TS1* and *TS2*) and their associated hypothetical energies. Their relative energies with respect to the global reference (denoted as *global_ref*), along with the corresponding activation and reaction energies, are displayed in the smaller spreadsheets on the right (relative energy and reaction energy panels in \Cref{fig:Mechadata}b,c). In this example, the *global_ref* serves merely as an arbitrary zero-energy reference for illustration.
+Using Eyring's equation, the corresponding forward rate constants at 298 K are 
+k\ :sub:`1,f` = k\ :sub:`2,f` = 2.17 s\ :sup:`-1`. 
 
- .. %Fig 4 - fig:example1
+To make the steps irreversible, the reverse constants are deliberately chosen to be small, 
+k\ :sub:`1,r` = k\ :sub:`2,r` ∼ 10\ :sup:`-15` s\ :sup:`-1`. 
 
-The interactive plotting interface displaying the corresponding energy profile derived from the reaction mechanism is shown in \Cref{fig:example1}b. The graphical elements representing minima and transition states, as well as their labels, can be customized in terms of style, color, line width, and position. Once the desired settings have been defined, a publication-ready version of the plot can be generated using Matplotlib (see the second example in the manuscript).
+This can be achieved by setting the ΔG for the reverse steps 
+considerably higher than the forward ones, like 
+ΔG\ :sup:`‡`\ :sub:`1,r` = ΔG\ :sup:`‡`\ :sub:`2,r` = 57 kcal/mol.
 
-The concentration profiles in \Cref{fig:example1}c were obtained by numerically solving the system of differential equations using *mechakinetics*. The results illustrate that the concentration of *R* decreases over time, the intermediate *I* first increases and then declines after approximately 0.1 seconds, and the product *P* increases exponentially, behavior characteristic of a first-order reaction with respect to *R*.
+**Figure 1a** illustrates the main interface of MechaData, displaying the central 
+spreadsheet that lists the hypothetical minima species (*R*, *I*, and *P*) together 
+with the corresponding transition states (*TS1* and *TS2*) and their associated 
+hypothetical energies. Their relative energies with respect to the global reference 
+(denoted as *global_ref*), along with the corresponding activation and reaction energies, 
+are displayed in the smaller spreadsheets on the right (relative energy and reaction energy 
+panels in \Cref{fig:Mechadata}b,c). In this example, the *global_ref* serves merely as an 
+arbitrary zero-energy reference for illustration.
 
-Beyond their illustrative role, this and many other hypothetical examples provide a valuable framework for educational purposes. By systematically varying kinetic and thermodynamic parameters, users can explore how individual elementary steps influence the overall behavior of a reaction network. Such interactive exploration facilitates an intuitive understanding of reaction kinetics, sensitivity to model parameters, and the interplay between mechanism and observable rates, making these examples particularly well suited for teaching and training in microkinetic modeling.
+.. figure:: FIG01.png
+
+**Figure 1**. MechaData interface. **a)** Main spreadsheet with absolute and relative energies
+for species R, I and P as well as for T S1 and T S2. **b)** Plotting tool for customizing graph
+appearance prior to export. **c)** Time evolution of the concentration of R, I and P.
+
+
+The interactive plotting interface displaying the corresponding energy profile derived from the 
+reaction mechanism is shown in **Figure 1b**. The graphical elements representing minima and 
+transition states, as well as their labels, can be customized in terms of style, color, line width, 
+and position. Once the desired settings have been defined, a publication-ready version of the plot 
+can be generated using Matplotlib (see the second example in the manuscript).
+
+The concentration profiles in **Figure 1c** were obtained by numerically solving the system of 
+differential equations using *mechakinetics*. The results illustrate that the concentration of 
+*R* decreases over time, the intermediate *I* first increases and then declines after approximately 
+0.1 seconds, and the product *P* increases exponentially, behavior characteristic of a first-order 
+reaction with respect to *R*.
+
+Beyond their illustrative role, this and many other hypothetical examples provide a valuable 
+framework for educational purposes. By systematically varying kinetic and thermodynamic parameters, 
+users can explore how individual elementary steps influence the overall behavior of a reaction network. 
+Such interactive exploration facilitates an intuitive understanding of reaction kinetics, sensitivity to 
+model parameters, and the interplay between mechanism and observable rates, making these examples 
+particularly well suited for teaching and training in microkinetic modeling.
+
 
 Example 2: Nucleophilic fluorination. Comparison with OpenMKM
-=============================================================
+***************************************************************
 The second example illustrates competing reaction channels as studied by `Lisboa and Pliego Jr. <https://link.springer.com/article/10.1007/s00894-022-05160-5>`_, in which microsolvation effects on the selectivity between SN2 and E2 pathways were examined. The system involves nucleophilic fluorination of ethyl bromide by tetrabutylammonium fluoride (TBAF), with tert-butanol (TBOH) acting as an explicit microsolvating agent.
 All necessary files and folders are found in examples directory::
 
@@ -106,8 +150,9 @@ reaction using MechaKinetics (top) and OpenMKM (bottom).
 Both software exhibit matching concentration evolutions and reach similar equilibrium
 points, leading to equivalent results.
 
+
 Example 3: Water formation on the Co(111) surface.
-==================================================
+******************************************************
 
 Example 3 describes the formation and desorption of a water molecule on the 111 surface of Co covered with O* adatoms.
 

@@ -225,12 +225,12 @@ the energy unit, type of calculation, number of vibrational frequencies, number 
 symmetry and total spin moment set for the calculation, as well as a comment set by the user.
 
 **(24) Relative Energy Panel:** Display the calculated relative quantities, such the energy (E), 
-zero point energy (ZPE), enthalpy (|dH|), Gibbs free energy (|dG|) and entropy (|dS|), for 
+zero point energy (ZPE), enthalpy (ΔH), Gibbs free energy (ΔG) and entropy (ΔS), for 
 the selected item at a given temperature. 
 
 **(25) Reaction Panel:** Display calculated quantities for a given reaction, such as the reaction 
-energy (|dE|), ZPE-corrected reaction energy (|dZPE|), reaction enthalpy (|dH|), 
-reaction Gibbs free energy (|dG|), reaction entropy  (|dS|), reaction rate constant (k) and 
+energy (ΔE), ZPE-corrected reaction energy (ΔZPE), reaction enthalpy (ΔH), 
+reaction Gibbs free energy (ΔG), reaction entropy  (ΔS), reaction rate constant (k) and 
 pre-exponential factor (A) from TST theory.
 
 .. (see the theoretical background for further details).
