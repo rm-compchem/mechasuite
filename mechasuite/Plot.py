@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QMenu, QComboBox, QInputDialog, QColorDialog, QLineEdit, QMessageBox, QFileDialog, QShortcut
+from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QMenu, QLabel, QComboBox, QInputDialog, QColorDialog, QLineEdit, QMessageBox, QFileDialog, QShortcut
 from PyQt5.QtGui import QPainter, QPen, QFont, QColor, QPixmap, QBrush, QKeySequence
 from PyQt5.QtCore import Qt, QRect
 from mechasuite.Widgets import MultipleChoiceDialog
@@ -753,7 +753,7 @@ class Plot(QWidget):
     def export_reaction_network(self):
         # if plott type is G
         temps = [str(i) for i in self.current_plot.temps]
-        dialog = MultipleChoiceDialog(temps)
+        dialog = MultipleChoiceDialog(temps, "Choose Temperatures")
         dialog.exec()
         if not dialog.ok:
             return
@@ -1172,9 +1172,13 @@ class MainCanvas(QMainWindow):
         self.comboT.addItems([" "])
         self.comboT.setSizeAdjustPolicy(0)
 
+        self.toolbar.addWidget(QLabel("plots: "))
         self.toolbar.addWidget(self.comboG)
+        self.toolbar.addWidget(QLabel("Font Size: "))
         self.toolbar.addWidget(self.comboSize)
+        self.toolbar.addWidget(QLabel("plot type: "))
         self.toolbar.addWidget(self.comboE)
+        self.toolbar.addWidget(QLabel("Temperature: "))
         self.toolbar.addWidget(self.comboT)
 
         self.setGeometry(200, 200, 800, 800)

@@ -6,12 +6,12 @@ from collections import OrderedDict
 
 
 class MultipleChoiceDialog(QDialog):
-    def __init__(self, itmslist):
+    def __init__(self, itmslist, title="Zeros"):
         QDialog.__init__(self)
         self.items = []
         self.allitmes = itmslist
         self.ok = False
-        self.setWindowTitle("Zeros")
+        self.setWindowTitle(title)
         self.list = QListView(self)
         self.model = QStandardItemModel(self.list)
         self.model.itemChanged.connect(self.set_items)

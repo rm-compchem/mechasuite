@@ -65,7 +65,7 @@ def read_freq_vasp(outcar):
     freqs = []
     unit = None
     rf = False
-    if not os.path.isfile(vaspfile):
+    if not os.path.isfile(outcar):
         return freqs, unit
 
     with open(outcar) as f:

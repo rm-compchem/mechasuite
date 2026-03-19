@@ -189,6 +189,7 @@ class PlotItm(object):
     def get_reacs(self):
         return self.itm.get_reacs()
 
+    @property
     def tp(self):
         return self.itm.tp
 
@@ -529,7 +530,7 @@ class Plot(object):
         f.close()
         return 
 
-    def update_export_step_dic(self, itmo, paths_dic, init_val: dict):
+    def update_export_step_dic(self, itmo: PlotItm, paths_dic, init_val: dict):
         first_min = None 
         second_min = None
 
@@ -562,13 +563,17 @@ class Plot(object):
                     #    key = f"{second_min.name}"
                     key = f"{first_min.name}={second_min.name}"
                     paths_dic[key] = [first_min, second_min, itmo] # ts goes to the end
-                #elif itmo.itm.tp == "min":
-                #    if first_min.tp != "ts":
-                #        key = f"{first_min.name}={itmo.name}"
-                #        paths_dic[key] = [first_min, itmo] # no TS
-                #    if second_min.itm.tp != "ts":
-                #        key = f"{itmo.name}={second_min.name}"
-                #        paths_dic[key] = [itmo, second_min] # no TS
+                elif itmo.itm.tp == "min":
+                    if first_min.tp != "ts":
+                        key = f"{first_min.name}={itmo.name}"
+                        paths_dic[key] = [first_min, itmo] # no TS
+                        # print("itmo.name: ", itmo.name, "first: ", first_min.tp, "second: ", second_min.tp)
+
+                    if second_min.itm.tp != "ts":
+                        key = f"{itmo.name}={second_min.name}"
+                        paths_dic[key] = [itmo, second_min] # no TS
+                        # print("itmo.name: ", itmo.name, "first: ", first_min.tp, "second: ", second_min.tp)
+
         return paths_dic, init_val
     
     def update_reaction_network_dic(self, outdic, paths_dic, T:float): 
@@ -616,7 +621,6 @@ class Plot(object):
         paths_dic, init_val = {}, {}
         for itmo in self.get_itms():
             paths_dic, init_val = self.update_export_step_dic(itmo, paths_dic, init_val)
-        print(paths_dic)
 
         T = 298
         network_str = []
@@ -2341,7 +2345,7 @@ class Mechanism(object):
         commonrefs = []
         for itm in itmlist:
             itmobj = self.get_itm(itm)
-            print(itm, itmobj)
+            # print(itm, itmobj)
             if itmobj is None:
                 raise TypeError("Expected item, got None")
             etot += itmobj.energy
@@ -2523,6 +2527,10 @@ class Mechanism(object):
         the created Itm object
         """
 
+        # check folder is actually a directory
+        if not os.path.isdir(folder):
+            return None
+            
         data_file = os.path.join(folder, ".data")
         if os.path.isfile(data_file):
             with open(data_file) as fd:
@@ -2783,7 +2791,7 @@ class Data(object):
                                    cm=itm["cm"], temps=itm["temps"],
                                    struct=itm["struct"], 
                                    pg=itm["pg"], photos=itm["photos"])
-                    print(itmobj)
+                    # print(itmobj)
                     if itmobj.tp == "mecp":
                         itmobj.redmass = itm["redmass"]
                         try:
@@ -2863,7 +2871,6 @@ class Data(object):
                                 except:
                                     pass
                     if itm.get("states"):
-                        
                         for state in itm["states"]:
                             # NO PONGO LO DE "refs" PORQUE NO SE QUE ES
                             if "relref" in state:
