@@ -84,6 +84,7 @@ class Mechanim(object):
         self.rates = []
         self.orders = []
         self.inputfile = ""
+        self.plotdic = {}
 
     def set_t(self, ti=0, tf=1, p=100):
         self.t = np.linspace(ti, tf, p)
@@ -204,8 +205,8 @@ class Mechanim(object):
         self.conc = odeint(self.solve, self.v0, self.t)
         self.rates = [self.solve(i, 0) for i in self.conc]
 
-
     def plot(self):
+        plot_stride=self.plotdic.get("slice", 1)
         plt.rcParams["font.size"] = 14
         lc = ['#123a4a', '#d18b2c', '#8b1e2d', '#4a90c0', '#2f6f6d', '#d65f4f', '#2c4f9e', '#7fa33b', '#7b3fa0', '#6b6b6b']
         mpl.rcParams['axes.prop_cycle'] = cycler('color', lc)
@@ -213,8 +214,8 @@ class Mechanim(object):
         plt.xlabel("Time (s)")
         plt.ticklabel_format(style="sci", scilimits=[0, 0])
         for i, spec in enumerate(self.species):
-            if max(self.conc[:, i]) > 0.005:
-               plt.plot(self.t, self.conc[:, i], label=spec, linewidth=2.5)
+            if max(self.conc[::, i]) > 0.000:
+                plt.plot(self.t[::plot_stride], self.conc[::plot_stride, i], label=spec, linewidth=2.5)
         plt.legend()
         plt.show()
 
@@ -277,6 +278,7 @@ def mec_from_dic(mec_dic):
     
     for symbol, val in mec_dic["initial_values"].items():
         mec.init_values[symbol] = [val]
+    mec.plotdic = mec_dic.get("plot", {})
     return mec
 
 def mec_from_file(filename):
