@@ -3025,7 +3025,8 @@ class MainWindow(QMainWindow):
         self.splitter2.addWidget(self.splitter3)
         self.splitter3.addWidget(self.ztable)
         self.splitter3.addWidget(self.reltable)
-        self.splitter3.addWidget(self.exctable)
+        # commented out for the next release uncomment later
+        #self.splitter3.addWidget(self.exctable)
 
         self.splitter2.addWidget(self.image)
         self.splitter2.addWidget(self.openGLWidget)
