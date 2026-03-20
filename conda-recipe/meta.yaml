@@ -6,8 +6,9 @@ package:
   version: {{ version }}
 
 source:
-  url: https://github.com/rm-compchem/mechasuite/archive/refs/tags/0.1.tar.gz
-  sha256: 693c689279962fc379cc6f8607a4e125fba6894ddf0297780f4ffcfa805b9253
+  #url: https://github.com/rm-compchem/mechasuite/archive/refs/tags/0.1.tar.gz
+  #sha256: 693c689279962fc379cc6f8607a4e125fba6894ddf0297780f4ffcfa805b9253
+  git_url: https://github.com/rm-compchem/mechasuite.git
 
 build:
   number: 0
@@ -24,6 +25,10 @@ requirements:
     - openpyxl
     - pyqt
     - numpy >=2.2
+    - scikit-build-core
+    - cmake
+    - ninja
+    - pybind11
   run:
     - python >=3.9,<3.13
     - qt-main
@@ -34,13 +39,25 @@ requirements:
     - openpyxl
     - pyqt
     - numpy >=2.2
+    - mesa
+    - libgl-devel
+    - libglu
   build:
     - python >=3.9,<3.13
     - setuptools >=61
     - wheel
+    - make
     - {{ compiler('cxx') }}
     - qt-main
-
+    - gxx
+    - mesa
+    - libgl-devel
+    - libglu
+    - binutils
+    - scikit-build-core
+    - cmake
+    - ninja
+    - pybind11
 
 test:
   imports:
