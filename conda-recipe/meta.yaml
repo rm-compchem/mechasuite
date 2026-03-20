@@ -6,9 +6,8 @@ package:
   version: {{ version }}
 
 source:
-  #url: https://github.com/rm-compchem/mechasuite/archive/refs/tags/0.1.tar.gz
-  #sha256: 693c689279962fc379cc6f8607a4e125fba6894ddf0297780f4ffcfa805b9253
-  git_url: https://github.com/rm-compchem/mechasuite.git
+  url: https://github.com/rm-compchem/mechasuite/archive/refs/tags/0.2.tar.gz
+  sha256: c06a092212a06ab38aafcce2f65e3d55d0cab043e021661dcdc2704f2b8e2032
 
 build:
   number: 0
