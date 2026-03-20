@@ -18,7 +18,7 @@ With [miniconda](https://www.anaconda.com/docs/getting-started/miniconda/main)  
   # Building MechaSuite
   $ conda activate base
   $ conda install conda-build
-  $ git clone git@github.com:rm-compchem/mechasuite.git
+  $ git clone https://github.com/rm-compchem/mechasuite.git
   $ cd mechasuite
   $ conda-build conda-recipe -c conda-forge
   # Create a conda environment called 'ms' and install MechaSuite
@@ -29,7 +29,7 @@ With [miniconda](https://www.anaconda.com/docs/getting-started/miniconda/main)  
 ## Installing only python modules
 If you are only interested in installing and using the python base modules, mechadata.py and mechakinetics.py, execute the following commands:
 ```
-git clone git@github.com:rm-compchem/mechasuite.git
+git clone https://github.com/rm-compchem/mechasuite.git
 cd mechasuite
 pip install -r requirements.txt
 pip install .

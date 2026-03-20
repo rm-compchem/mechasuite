@@ -13,7 +13,7 @@ installed, MechaSuite can be build using the following commands::
  
   $ conda activate base
   $ conda install conda-build
-  $ git clone git@github.com:rm-compchem/mechasuite.git
+  $ git clone https://github.com/rm-compchem/mechasuite.git
   $ cd mechasuite
   $ conda-build conda-recipe -c conda-forge
 
@@ -31,7 +31,7 @@ Installing only python modules
 If you are only interested in installing and using the python-based modules, *mechadata* and 
 *mechakinetics*, execute the following commands::
 
-  $ git clone git@github.com:rm-compchem/mechasuite.git
+  $ git clone https://github.com/rm-compchem/mechasuite.git
   $ cd mechasuite
   $ pip install -r requirements.txt
   $ pip install .
