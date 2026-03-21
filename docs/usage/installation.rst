@@ -1,8 +1,20 @@
 Installation
 ############
 
-Using conda
-===========
+Using conda on linux
+=====================
+
+If you are working on linux (including Windows subsystem WSL) you only need to run the following command with conda that creates a new environment and installs MechaSuite::
+
+  $ conda create -n ms rm-compchem::mechasuite -c conda-forge
+  $ conda activate ms
+
+
+and you are ready to go. For other operating systems you need to build the package (see below).
+
+
+Building and installing with conda
+======================================
 The root directory contains the conda recipe for building and installing the conda package. 
 As MechaSuite is distributed as a conda package, it can be used across Windows, macOS, and 
 Linux systems.
