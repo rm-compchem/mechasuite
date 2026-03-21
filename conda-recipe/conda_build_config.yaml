@@ -1,0 +1,4 @@
+#target_platform:
+  #- linux-64
+  #- osx-64
+  #- osx-arm64

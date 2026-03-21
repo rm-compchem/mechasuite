@@ -22,9 +22,9 @@ With [miniconda](https://www.anaconda.com/docs/getting-started/miniconda/main)  
   $ cd mechasuite
   $ conda-build conda-recipe -c conda-forge
   # Create a conda environment called 'ms' and install MechaSuite
-  $ conda create -n ms
+  $ conda create -n ms -c conda-forge
   $ conda activate ms
-  $ conda install mechasuite --use-local
+  $ conda install mechasuite --use-local -c conda-forge
 ```
 ## Installing only python modules
 If you are only interested in installing and using the python base modules, mechadata.py and mechakinetics.py, execute the following commands:

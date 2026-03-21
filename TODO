@@ -1,1 +1,3 @@
 remove ref items from add_ref to itm : checked remove the dangling code left
+# for creating hash for release .tar.gz
+curl -sL https://github.com/username/reponame/archive/vX.X.X.tar.gz | openssl sha256

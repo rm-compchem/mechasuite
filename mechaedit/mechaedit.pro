@@ -4,7 +4,7 @@
 
 TEMPLATE = app
 TARGET = mechaedit
-INCLUDEPATH += .   ./include /usr/include
+INCLUDEPATH += .   ./include #/usr/include
 #unix: LIBS += -lGL -lGLU -L"./lib" -l:libgifski.a -ldl #-lopenbabel #-lgwavi # -fopenmp 
 unix: LIBS += -lGL -lGLU  -ldl #-lopenbabel #-lgwavi # -fopenmp 
 win32: LIBS += -lopengl32 -lglu32 -fopenmp

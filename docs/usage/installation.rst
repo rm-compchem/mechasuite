@@ -21,9 +21,9 @@ installed, MechaSuite can be build using the following commands::
 Then, create a conda environment called *ms* and install MechaSuite::
 
 
-  $ conda create -n ms
+  $ conda create -n ms -c conda-forge
   $ conda activate ms
-  $ conda install mechasuite --use-local
+  $ conda install mechasuite --use-local -c conda-forge
   
 
 Installing only python modules
