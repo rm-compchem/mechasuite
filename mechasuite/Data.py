@@ -715,6 +715,14 @@ class Struct():
         for label, num in zip(labels_by_elements, num_elements):
             self.atoms[label] = num
 
+    @property
+    def formula(self):
+        unique = set(self.labels)
+        f = ""
+        for u in unique:
+            f += f'{self.labels.count(u)}{u}'
+        return f
+
     def to_dit(self):
         selfdict = OrderedDict()
         selfdict["coors"] = self.coors
@@ -2648,6 +2656,7 @@ class Mechanism(object):
         return itmobj
 
         # THIS ABOVE HAS TO BE DELETED  ------------
+
 
 class Data(object):
     def __init__(self):
