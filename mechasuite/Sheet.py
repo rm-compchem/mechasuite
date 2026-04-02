@@ -3242,7 +3242,7 @@ class MainWindow(QMainWindow):
             # create data dict to pass to itm_from_folder function
             # this dict can be overrided by .data file in each subfolder
             data_dict = { keyword: mecinfo.get(keyword) 
-                            for keyword in ["energy_file", "freq_file" ]
+                            for keyword in ["energy_file", "freq_file", "program", "struct_file" ]
                             if mecinfo.get(keyword) is not None
                          }
             

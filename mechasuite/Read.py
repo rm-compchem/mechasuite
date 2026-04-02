@@ -33,7 +33,7 @@ def read_energy_orca(outfile):
     spin =  0 # set to zero. None gives problems when summing various spins: None + int
     pg = None
     unit = "Ha"
-    if not os.path.isfile(vaspfile):
+    if not os.path.isfile(outfile):
         return energy, spin, pg, unit
 
     with open(outfile) as f:

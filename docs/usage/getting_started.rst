@@ -37,6 +37,21 @@ For MechaKin usage, indicate the JSON with the reaction mechanism::
 
 
 |
+Input files
+************
+
+There are two types of input files for mechadata. The first type provides information as how to read
+the calculation directories and what final configuration we want on the spreadsheet. For example, folders can be tag as minima, transition state or references.
+It is also possible to specify the energy units, the program that create the outfiles (for proper parsing), etc. This file is intended 
+to be editted by the user and the .yaml extension must exist at the end the file name. 
+Furthermore, the calculation directories must exits when MechaData reads the input file, otherwise, it will fail. 
+This input file is not strictly necesary because MechaData tries to automatically detect the type of calculation when importing a directoyr. 
+However, this file facilitates the processing of the calculation directories in intermedaites stages of the mechanims generation, that is, when
+not all calculations are performed and intermediate analysis of the results is required. Final analysis is more conveniently stored in the second type of input file.
+The second file contains all the information the mechanism and do not need the calculation folders anymore. It is intended to be read and edited
+only by MechaData and not by the user. It does not need and extension per se but since it has a JSON format, it is convenient to add
+the corresponding extension (.json).
+All the examples provide .yaml and .json files for ilustration.
 
 Example 1: Hypothetical system. First-order reaction 
 **********************************************************

@@ -25,14 +25,14 @@ std::array<float, 3> abs3D(const std::array<float, 3>& a1){
 }
 
 
-void parseXYZCommentLine(char* comment, int& step, double& time, double& energy )
+void parseXYZCommentLine(char* comment, int& step, double& time, double& energy, array<array<float,3>,3> &cell)
 {
   int n=0;
   char *cmp_pointer;
   
   // read cell
   //glm::mat3 cell; 
-  float cell[3][3];
+  //float cell[3][3];
   n = sscanf(comment,  "Lattice=\"%f %f %f %f %f %f %f %f %f\"", &cell[0][0], &cell[0][1], &cell[0][2], 
                                                             &cell[1][0], &cell[1][1],&cell[1][2],
                                                             &cell[2][0], &cell[2][1],&cell[2][2]);
@@ -2381,53 +2381,19 @@ void Struct::load_xyz(QString inputfile){
 	    int step = 0;
 	    char comment[1048];
 	    strcpy(comment,line.toStdString().c_str());
-	    parseXYZCommentLine(comment, step, time, energy);
+	    parseXYZCommentLine(comment, step, time, energy, cell);
 	    
             temp_animation = Animation();
             temp_animation.step = step;
             temp_animation.time = time;
             temp_animation.energy = energy;
-            //lsplitted = line.split(" ", QString::SkipEmptyParts);
-            //if (lsplitted.count() == 1){
-            //    try{
-            //        //getting the number of atoms that will be read
-            //        nat = lsplitted[0].toInt();
-            //        readcoors = true;
-
-            //        //try to read the energy, time and step in the second line
-            //        //check the format
-            //        line = in.readLine();
-            //        if(format == 0){
-            //            if(line.contains("i =") && line.contains("time =") && line.contains("E =")){
-            //                format = 1;
-            //                line.replace(",", "");
-            //                lsplitted = line.split(" ", QString::SkipEmptyParts);
-            //                temp_animation = Animation();
-            //                temp_animation.step = lsplitted[2].toInt();
-            //                temp_animation.time = lsplitted[5].toFloat();
-            //                temp_animation.energy = lsplitted[8].toFloat();
-            //            }
-            //        }
-            //        else if(format == 1){
-            //            line.replace(",", "");
-            //            lsplitted = line.split(" ", QString::SkipEmptyParts);
-            //            temp_animation = Animation();
-            //            temp_animation.step = lsplitted[2].toInt();
-            //            temp_animation.time = lsplitted[5].toFloat();
-            //            temp_animation.energy = lsplitted[8].toFloat();
-            //        }
-            //    }
-            //    catch(...){
-            //        readcoors = false;
-            //        cont = 0;
-            //        nat = 0;
-            //    }
-            //}
         }
     }
        pelisize = pelicount;
        file1.close();
        showcell = false;
+
+       valid_cell();
        
 }
 
@@ -4362,11 +4328,13 @@ void Struct::check_covered(){
 
 bool Struct::valid_cell(){
     for(unsigned int i=0;i<3;i++){
-        if(cell[i][0]==0.0 && cell[i][1]==0.0 && cell[i][2] == 0.0){
+        if(cell[i][0]==0.0f && cell[i][1]==0.0f && cell[i][2] == 0.0f){
             showcell = false;
             return false;
         }
     }
+    showcell = true;
+    set_cell_lines();
     return true;
 }
 

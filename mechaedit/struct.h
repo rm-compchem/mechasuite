@@ -67,7 +67,7 @@ public:
      vector<float> en_peli;
      vector<CV> col_var;  //collective variables
 
-     array<array<float,3>,3> cell;
+     array<array<float,3>,3> cell ;
      array<array<float,3>,24> cell_lines;
      array<float, 12> cell_lines_widths;
      array<array<float, 4>, 12> cell_lines_colors;
