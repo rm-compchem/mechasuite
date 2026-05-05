@@ -63,27 +63,47 @@ def read_energy_gaussian(ef):
 
 def read_freq_vasp(outcar):
     freqs = []
+    vectors = []
     unit = None
     rf = False
     if not os.path.isfile(outcar):
-        return freqs, unit
+        return freqs, vectors, unit
 
     with open(outcar) as f:
         lineas = f.readlines()
-
+    norm_mode = []
     for num, linea in enumerate(lineas):
         if "Eigenvectors and eigenvalues" in linea:
             if not rf:
                 rf = True
             else:
                 break
+        
         if "THz" in linea and "cm-1" in linea and rf:
+            if norm_mode:  # Only append if norm_mode has data (fixes empty list bug)
+                vectors.append(norm_mode)
             try:
                 freqs.append(float(linea.split()[7]))
             except:
                 freqs.append(-float(linea.split()[6]))
+            norm_mode = []  # Reset for the next mode
+
+        parts = linea.split()
+        if len(parts) == 6 and rf:
+            try:
+                # Only numeric displacement rows
+                vec = [float(x) for x in parts[3:6]]
+            except ValueError:
+                continue
+            norm_mode.append(vec)
+
+    # Append the last mode's vectors if any remain
+    if norm_mode:
+        vectors.append(norm_mode)
+
     unit = "cm-1"
-    return freqs, unit
+    # Vectors are the normal vibrational modes
+    return freqs, vectors, unit
 
 def read_freq_orca(outfile):
     freqs = []
@@ -372,7 +392,7 @@ def detect_vasp(fpath, filenames):
         if filename in ["OUTCAR.opt", "OUTCAR"]:
             d["energy_file"] = filename
 
-        if filename in ["OUTCAR.freq"] :
+        if filename in ["OUTCAR.freq, OUTCAR"] :
             d["freq_file"] = filename
 
         if filename in ["POSCAR.opt", "CONTCAR"]:
