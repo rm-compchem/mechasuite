@@ -1424,7 +1424,7 @@ class State_Conv(Reac):
             self.HR_factor = S_total
             self.S = S_total
 
-    def vibronic_spectra(self, max_quanta=6, min_S=0.01, fwhm=0.1, num_points=1000):
+    def vibronic_spectra(self, max_quanta=10, min_S=0.01, fwhm=0.1, num_points=1000):
         # Calculate the vibronic spectrum
         E_00 = self.energy # Vertical transition energy (0-0 transition)
         if not self.S_k or not self.freqs_eV:
@@ -1480,8 +1480,16 @@ class State_Conv(Reac):
     def plot_vibronic_spectra(self, x_axis, y_axis):
         import matplotlib.pyplot as plt
 
-        plt.figure(figsize=(10, 6))
-        plt.plot(x_axis, y_axis, label='Vibronic Spectrum')
+        wavelength_axis = 1240 / x_axis[::-1]
+        y_axis_plot = y_axis[::-1]
+
+        fig = plt.figure(figsize=(10, 6))
+        ax1 = fig.add_subplot(111)
+        ax2 = ax1.twiny()
+        ax1.plot(wavelength_axis, y_axis, label='Vibronic Spectrum')
+
+        def nm_to_eV(x):
+            return 1240 / x
 
         if hasattr(self, "transitions"):
             max_I = max(I for _, I in self.transitions)
@@ -1489,10 +1497,11 @@ class State_Conv(Reac):
             for E, I in self.transitions:
                 alpha = float(I) / max_I if max_I != 0 else 1
                 label = "Transitions" if first else None
+                wavelength_E = 1240 / E
                 plt.vlines(
-                    E,
+                    wavelength_E,
                     0,
-                    max(y_axis) * 0.9,
+                    max(y_axis_plot) * 0.9,
                     colors="gray",
                     linestyles="--",
                     alpha=alpha,
@@ -1500,7 +1509,11 @@ class State_Conv(Reac):
                 )
                 first = False
 
-        plt.xlabel('Energy (eV)')
+        ax1.set_xlabel('Energy (nm)')
+        ax2.set_xlabel('Energy (eV)')
+        ax1.set_xlim(wavelength_axis[0], wavelength_axis[-1])
+        ax2.set_xlim(nm_to_eV(wavelength_axis[-1]), nm_to_eV(wavelength_axis[0]))
+        ax2.set_xticks(nm_to_eV(ax1.get_xticks()))
         plt.ylabel('Intensity (a.u.)')
         plt.title('Simulated Vibronic Spectrum')
         plt.legend()
