@@ -2901,11 +2901,14 @@ class Data(object):
     def __init__(self):
         self.mechs = OrderedDict()
         self.diagrams = OrderedDict()
+        self.board_layouts = OrderedDict()
+
 
     def to_dict(self):
         selfdict = OrderedDict()
         selfdict["mechs"] = [mech.to_dict() for mech in self.mechs.values()]
         selfdict["diagrams"] = [d.to_dict() for d in self.diagrams.values()]
+        selfdict["board_layouts"] = [bl.to_dict() for bl in self.board_layouts.values()]
         return selfdict
 
     def change_mec_name(self, oname, nname):

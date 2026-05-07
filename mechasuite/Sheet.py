@@ -9,6 +9,7 @@ from PyQt5.QtGui import QPixmap, QCursor, QFont, QColor
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 from mechasuite.Widgets import *
 from mechasuite.Plot import plot, MainCanvas
+from mechasuite.Board import BoardWindow
 import json
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -3062,6 +3063,11 @@ class MainWindow(QMainWindow):
         plot_action.setStatusTip("Show all energy plots")
         plot_action.triggered.connect(self.on_plot)
 
+        board_action = QAction("&Show Board Window", self)
+        board_action.setShortcut("Ctrl+b")
+        board_action.setStatusTip("Open board window")
+        board_action.triggered.connect(self.on_board)
+
         # openglview = QAction("&Open GL view", self)
         # openglview.triggered.connect(self.on_openglview)
 
@@ -3087,6 +3093,7 @@ class MainWindow(QMainWindow):
 
         viewmenu = mainmenu.addMenu("&View")
         viewmenu.addAction(plot_action)
+        viewmenu.addAction(board_action)
 
         # Menubar ----------------------------------------------------------------
 
@@ -3601,6 +3608,13 @@ class MainWindow(QMainWindow):
     def on_plot(self):
         self.plot.show()
         self.plot.activateWindow()
+
+    def on_board(self):
+        # Pass the temperatures to self.board
+        comboT_values = [self.comboT.itemText(i) for i in range(self.comboT.count())]
+        self.board = BoardWindow(self.data, comboT_values)
+        self.board.show()
+        self.board.activateWindow()
 
     def on_del_plot(self):
         plot_names = self.data.get_plots_names()
