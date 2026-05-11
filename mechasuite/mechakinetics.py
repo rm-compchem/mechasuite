@@ -357,8 +357,8 @@ def run_microkinetics(indic):
     mec.write()
     mec.plot()
 
-def parse_reaction_kmc(eq, rdict, system):
-    rate = rdict["298"]
+def parse_reaction_kmc(eq, rdict, system, max_rate=1e10):
+    rate = rdict["423.15"]
     r1 = kmc_core.Reaction()
     r2 = None
     lhs, rhs = eq.split("=")
@@ -380,8 +380,30 @@ def parse_reaction_kmc(eq, rdict, system):
         r2.reactants = r1.products
         r2.products = r1.reactants
         r2.rate = rate[1]
-    print(rate[0], rate[1])
-    return r1, r2
+    
+    if r1.rate < max_rate and r2.rate < max_rate:
+        return r1, r2
+    elif r1.rate > max_rate and r2.rate > max_rate:
+        if r1.rate > r2.rate:
+            newr2_exp = ( np.log10(max_rate) - (np.log10(r1.rate) - np.log10(r2.rate)) )
+            r1.rate = max_rate
+            r2.rate = 10**newr2_exp
+            return r1, r2
+        else:
+            newr1_exp = ( np.log10(max_rate) - (np.log10(r2.rate) - np.log10(r1.rate)) )
+            r1.rate = 10**newr1_exp
+            r2.rate = max_rate
+            return r1, r2
+    elif r1.rate > max_rate:
+        newr2_exp = ( np.log10(max_rate) - np.log10(r2.rate) ) / np.log10(r1.rate)
+        r1.rate = max_rate
+        r2.rate = 10**newr2_exp
+        return r1, r2
+    else:
+        newr1_exp = ( np.log10(max_rate) - np.log10(r1.rate) ) / np.log10(r2.rate)
+        r1.rate = 10**newr1_exp
+        r2.rate = max_rate
+        return r1, r2
 
 def run_kmc(data):
     sys = kmc_core.System()
@@ -402,11 +424,13 @@ def run_kmc(data):
     reactor.reservoir = reservoir
     reactor.closed_system = data.get("closed", True)
     reactor.residence_time = data.get("residence_time", -1.0)
+    max_rate = data.get("max_rate", 1e10)
     sys.reactor = reactor
 
     # reactions
     for equation, rdict in data["mec"].items():
-        r1, r2 = parse_reaction_kmc(equation, rdict, sys)
+        r1, r2 = parse_reaction_kmc(equation, rdict, sys, max_rate)
+        print(r1.rate, r2.rate if r2 else None)
         sys.addReaction(r1)
         if r2 is not None:
             sys.addReaction(r2)
