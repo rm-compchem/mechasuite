@@ -3195,6 +3195,11 @@ class Data(object):
                                          width=link["width"],
                                          style=link["style"],
                                          coors=link["coors"])
+        if "board_layouts" in data:
+            from mechasuite.Board import LayoutNode
+            for bl in data["board_layouts"]:
+                layoutobj = LayoutNode.from_dict(bl)
+                self.board_layouts[layoutobj.mech_name] = layoutobj
 
 
 def dict_to_data(indict):

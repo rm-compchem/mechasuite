@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from PyQt5.QtWidgets import (
-    QMainWindow, QApplication, QGraphicsScene, QGraphicsView,
-    QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem, QLabel, QComboBox, QGraphicsLineItem, QCheckBox
+    QDialog, QFileDialog, QMainWindow, QApplication, QGraphicsScene, QGraphicsView,
+    QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem, QLabel, QComboBox, QGraphicsLineItem, QCheckBox, QMenu, QMessageBox
 )
 from PyQt5.QtGui import QPainter, QPen, QBrush, QColor
 from PyQt5.QtCore import Qt, QRectF, QPointF
@@ -18,6 +18,24 @@ Colors = {'min': QColor(200, 200, 255),
             'ts': QColor(255, 200, 200),
             'mecp': QColor(200, 255, 200)
             }
+
+def qcolor_to_dict(qcolor):
+    """Convert QColor to JSON-serializable dict"""
+    return {
+        'r': qcolor.red(),
+        'g': qcolor.green(),
+        'b': qcolor.blue(),
+        'a': qcolor.alpha()
+    }
+
+def dict_to_qcolor(color_dict):
+    """Convert dict back to QColor"""
+    return QColor(
+        color_dict['r'],
+        color_dict['g'],
+        color_dict['b'],
+        color_dict.get('a', 255)
+    )
 
 class ItmNode(QGraphicsRectItem):
     def __init__(self, itm, x, y, board_window, width=140, height=60):
@@ -41,6 +59,33 @@ class ItmNode(QGraphicsRectItem):
         label.setDefaultTextColor(Qt.black)
         label.setPos(8, 8)
 
+    def contextMenuEvent(self, event):
+        menu = QMenu()
+        add_reac_action = menu.addAction("Add Reactant(s)")
+
+        action = menu.exec_(event.screenPos())
+
+        if action == add_reac_action:
+            self._handle_add_reac()
+
+     #   super().contextMenuEvent(event)
+
+    def _handle_add_reac(self):
+        scene = self.scene()
+        if not scene:
+            return
+        sel_items = scene.selectedItems()
+        reactants = [item.itm for item in sel_items if isinstance(item, ItmNode) and item.itm != self.itm]
+        if reactants:
+            self.on_add_reac(reactants)
+
+            for item in sel_items:
+                item.setSelected(False)
+
+        self.board_window.scene.clear()
+        self.board_window.build_board(self.itm.mech) # Update layout after adding reactants
+
+
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:
             for line in self.lines:
@@ -50,6 +95,25 @@ class ItmNode(QGraphicsRectItem):
                 self.board_window.update_layout(self.itm, value)
 
         return super().itemChange(change, value)
+
+    def on_add_reac(self, reactants): # reactant should be a list with the selected reactants (of class Itm)
+        # El itm contiene su mech en self.mech
+        if self.itm.tp == 'ref':
+            return  # No se pueden agregar reacciones a un ref
+        for reac in reactants:
+            if reac.struct.nat != self.itm.struct.nat:
+                print(reac.name, reac.struct, self.itm.name, self.itm.struct)
+                QMessageBox.critical(
+                    None, 
+                    "Error", 
+                    f"Cannot add reaction: {reac.name} has different number of atoms than {self.itm.name}"
+                )
+                continue
+            self.itm.add_reac(reac)
+        
+        
+
+
 
 class LayoutNode:
     def __init__(self, mech_name):
@@ -67,6 +131,24 @@ class LayoutNode:
     def add_connection(self, itm1_name, itm2_name, k=None):
         if (itm1_name, itm2_name) not in self.connections:
             self.connections.append((itm1_name, itm2_name, k if k else None))
+
+    def to_dict(self):
+        """Convert layout to JSON-serializable dict"""
+        return {
+            'mech_name': self.mech_name,
+            'positions': {name: list(pos) if isinstance(pos, tuple) else pos for name, pos in self.positions.items()},
+            'colors': {name: qcolor_to_dict(color) for name, color in self.colors.items()},
+            'connections': [(c[0], c[1], c[2]) for c in self.connections]
+        }
+
+    @staticmethod
+    def from_dict(data):
+        """Create LayoutNode from dict"""
+        layout = LayoutNode(data['mech_name'])
+        layout.positions = {name: tuple(pos) for name, pos in data['positions'].items()}
+        layout.colors = {name: dict_to_qcolor(color) for name, color in data['colors'].items()}
+        layout.connections = data['connections']
+        return layout
 
 class ConnectionLine(QGraphicsLineItem):
     def __init__(self, node1, node2, k=None, parent=None):
@@ -169,6 +251,43 @@ class BoardWindow(QMainWindow):
         if self.data.get_mechs():
             self.on_mech_changed(self.data.get_mechs_names()[0])
 
+    def contextMenuEvent(self, event):
+        menu = QMenu()
+        import_interm = menu.addAction("Import Intermediate")
+
+        action = menu.exec_(event.globalPos())
+
+        if action == import_interm:
+            self._handle_import_interm()
+
+
+    def _handle_import_interm(self):
+        mech_name = self.mech_combo.currentText()
+        mech = self.data.get_mech(mech_name)
+        if not mech:
+            QMessageBox.critical(self, "Error", "No mechanism selected")
+            return
+        
+        dialog = QFileDialog()
+        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setOption(QFileDialog.DontUseNativeDialog)
+        folder = dialog.getExistingDirectory(self, "Choose folder", "")
+        if not folder:
+            return
+        
+        ignored_itms = []
+        itmobj = mech.itm_from_folder(folder)
+        if itmobj is None:
+            ignored_itms.append(folder)
+
+        if ignored_itms:
+            msg = "The following folders were not added because there are items with the same name or folder is not set properly:\n\n"
+            msg += "\n".join([os.path.basename(i) for i in ignored_itms])
+            QMessageBox.information(self, "Import Info", msg)
+
+        self.scene.clear()
+        self.build_board(mech)       
+
 
     def on_mech_changed(self, mech_name):
         self.scene.clear()
@@ -268,6 +387,11 @@ class BoardWindow(QMainWindow):
         mech_name = self.mech_combo.currentText()
         if mech_name in self.layouts:
             self.layouts[mech_name].save_position(itm.name, new_pos)
+            # Update connections in layout
+            for reac in itm.get_reacs():
+                ref_name = reac.ref.name
+                self.layouts[mech_name].add_connection(itm.name, ref_name)
+            
 
 
     
