@@ -28,6 +28,31 @@ def read_energy_vasp(vaspfile):
                 energy = float(line.split()[-1])
     return energy, spin, pg, unit
 
+def read_energy_ase(outfile):
+    energy = 0.0
+    spin = 0
+    pg = None
+    unit = "eV"
+    if not os.path.isfile(outfile):
+        return energy, spin, pg, unit
+    
+    with open(outfile) as f:
+        lines = f.readlines()
+     # Column four is energy, converged result is the last row containing FIRE:
+    for line in reversed(lines):
+        if "FIRE:" in line:
+            energy = float(line.split()[3])
+            break
+
+    if energy == 0.0:
+        for line in reversed(lines):
+            if "Sella" in line:
+                energy = float(line.split()[3])
+                break
+
+    return energy, spin, pg, unit
+
+
 def read_energy_orca(outfile):
     energy = 0.0
     spin =  0 # set to zero. None gives problems when summing various spins: None + int
@@ -103,6 +128,48 @@ def read_freq_vasp(outcar):
 
     unit = "cm-1"
     # Vectors are the normal vibrational modes
+    return freqs, vectors, unit
+
+def read_freq_ase(outfile):
+    freqs = []
+    vectors = []
+    unit = "cm-1"
+
+    if not os.path.isfile(outfile):
+        return freqs, vectors, unit
+
+    import re
+    mode_re = re.compile(r'Mode #\d+,\s*f\s*=\s*([-+]?\d*\.?\d+)(i?)\s+cm\^-1')
+
+    current_mode_vectors = None
+
+    with open(outfile) as f:
+        for line in f:
+            m = mode_re.search(line)
+            if m:
+                if current_mode_vectors is not None:
+                    vectors.append(current_mode_vectors)
+                freq = float(m.group(1))
+                if m.group(2) == "i":
+                    freq = -freq
+                freqs.append(freq)
+                current_mode_vectors = []
+                continue
+
+            if current_mode_vectors is not None:
+                parts = line.split()
+                if len(parts) >= 7:
+                    try:
+                        dx = float(parts[-3])
+                        dy = float(parts[-2])
+                        dz = float(parts[-1])
+                        current_mode_vectors.append([dx, dy, dz])
+                    except ValueError:
+                        pass
+
+    if current_mode_vectors is not None:
+        vectors.append(current_mode_vectors)
+
     return freqs, vectors, unit
 
 def read_freq_orca(outfile):
@@ -432,13 +499,13 @@ def detect_program(fpath):
 
     # detect orca
     infodic = detect_orca(fpath, files)
-    if info_dic:
-        return info_dic
+    if infodic:
+        return infodic
 
     # detect gaussian
     infodic = detect_gaussian(fpath, files)
-    if info_dic:
-        return info_dic
+    if infodic:
+        return infodic
 
     # no program detected return empty dic
     return {}

@@ -14,13 +14,15 @@ from scipy.special import factorial
 PROGRAM_ENERGY_MAP = {
     "gaussian": read_energy_gaussian,
     "orca": read_energy_orca,
-    "vasp": read_energy_vasp
+    "vasp": read_energy_vasp,
+    "ase": read_energy_ase
         }
 
 PROGRAM_FREQ_MAP = {
     "gaussian": read_freq_gaussian,
     "orca": read_freq_orca,
-    "vasp": read_freq_vasp
+    "vasp": read_freq_vasp,
+    "ase": read_freq_ase
         }
 
 class PlotLabel(object):
@@ -1752,6 +1754,11 @@ class Itm(object):
         else:
             self.photos = []
 
+        if "smiles" in kwargs:
+            self.smiles = kwargs["smiles"]
+        else:
+            self.smiles = None
+
         if "struct" in kwargs:
             self.struct = Struct(sdict=kwargs["struct"])
         else:
@@ -1829,6 +1836,7 @@ class Itm(object):
         selfdict["pg"] = self.pg
         selfdict["spin"] = self.spin
         selfdict["photos"] = self.photos
+        selfdict["smiles"] = self.smiles
         if self.tp == "mecp":
             selfdict["redmass"] = self.redmass
             selfdict["SOC"] = self.SOC
@@ -2729,6 +2737,7 @@ class Mechanism(object):
 
         # try to read freqs
         freq_path = os.path.join(folder, data.get("freq_file", ""))
+        print("Reading frequencies from: ", freq_path)
         if not os.path.isfile(freq_path):
             detected_data = detect_program(folder)
             if "freq_file" in detected_data:
@@ -3040,7 +3049,7 @@ class Data(object):
                     itmobj = mecobj.add_itm(itm["name"], energy=itm["energy"],
                                    tp=itm["tp"], freqs=itm["freqs"],
                                    cm=itm["cm"], temps=itm["temps"],
-                                   struct=itm["struct"], 
+                                   struct=itm["struct"], smiles=itm["smiles"],
                                    pg=itm["pg"], photos=itm["photos"])
                     # print(itmobj)
                     if itmobj.tp == "mecp":
@@ -3156,12 +3165,16 @@ class Data(object):
                         itmobj = self.get_mech(diag["col"]).get_itm(itm["name"])
                         if itmobj is None:
                             continue
-                        pitmobj = plotobj.add_itm(itmobj, name=itm["name"],
-                                                  color=itm["color"],
-                                                  width=itm["width"],
-                                                  length=itm["length"],
-                                                  style=itm["style"],
-                                                  coors=itm["coors"])
+                        try:
+                            pitmobj = plotobj.add_itm(itmobj, name=itm["name"],
+                                                      color=itm["color"],
+                                                      width=itm["width"],
+                                                      length=itm["length"],
+                                                      style=itm["style"],
+                                                      coors=itm["coors"])
+                        except (AttributeError, KeyError) as e:
+                            print(f"Warning: Could not load plot item '{itm['name']}' - reference may be missing. Skipping. ({e})")
+                            continue                           
 
                 if "labels" in diag:
                     for label in diag["labels"]:

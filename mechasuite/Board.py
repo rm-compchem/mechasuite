@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from PyQt5.QtWidgets import (
-    QDialog, QFileDialog, QMainWindow, QApplication, QGraphicsScene, QGraphicsView,
-    QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem, QLabel, QComboBox, QGraphicsLineItem, QCheckBox, QMenu, QMessageBox
+    QDialog, QFileDialog, QMainWindow, QGridLayout, QApplication, QGraphicsScene, QGraphicsView, QLineEdit, QPushButton, 
+    QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem, QLabel, QComboBox, QGraphicsLineItem, QCheckBox, QMenu, QMessageBox, QGraphicsPixmapItem
 )
-from PyQt5.QtGui import QPainter, QPen, QBrush, QColor
+from PyQt5.QtGui import QPainter, QPen, QBrush, QColor, QPixmap, QImage, QPainterPath
 from PyQt5.QtCore import Qt, QRectF, QPointF
 from mechasuite.Widgets import MultipleChoiceDialog
 from mechasuite.Data import Data
@@ -37,14 +37,99 @@ def dict_to_qcolor(color_dict):
         color_dict.get('a', 255)
     )
 
+# import a SMILES image from code
+def create_smiles_image(smiles):
+    from rdkit import Chem
+    from rdkit.Chem import Draw
+    from rdkit.Chem.Draw import rdMolDraw2D
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        raise ValueError(f"Invalid SMILES: {smiles}")
+    opts = rdMolDraw2D.MolDrawOptions()
+    opts.clearBackground = True  # Transparent background
+    img = Draw.MolToImage(mol, size=(200, 200), options=opts)
+    return img
+
+def pil_to_qpixmap(pil_image):
+    """Convert PIL Image to QPixmap"""
+    # Ensure RGB or RGBA mode
+    if pil_image.mode not in ('RGB', 'RGBA'):
+        pil_image = pil_image.convert('RGBA' if pil_image.mode == 'P' or 'LA' else 'RGB')
+    
+    # Get raw image data as bytes
+    data = pil_image.tobytes()
+    w, h = pil_image.size
+    
+    if pil_image.mode == 'RGB':
+        qimage = QImage(data, w, h, w * 3, QImage.Format_RGB888)
+    elif pil_image.mode == 'RGBA':
+        qimage = QImage(data, w, h, w * 4, QImage.Format_RGBA8888)
+    else:
+        raise ValueError(f"Unsupported PIL image mode: {pil_image.mode}")
+    
+    # Convert to QPixmap
+    return QPixmap.fromImage(qimage)
+
+
+class ZoomableGraphicsView(QGraphicsView):
+    """QGraphicsView with zoom"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pan_active = False
+        self.pan_start_pos = None
+    def wheelEvent(self, event):
+        if event.modifiers() == Qt.ControlModifier:
+            # Zoom factor: positive delta = zoom in, negative = zoom out
+            zoom_factor = 1.1 if event.angleDelta().y() > 0 else 0.9
+            self.scale(zoom_factor, zoom_factor)
+            event.accept()
+        else:
+            super().wheelEvent(event)
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MiddleButton:
+            self.pan_active = True
+            self.pan_start_pos = event.pos()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+    
+    def mouseMoveEvent(self, event):
+        if self.pan_active and self.pan_start_pos:
+            delta = event.pos() - self.pan_start_pos
+            self.horizontalScrollBar().setValue(
+                self.horizontalScrollBar().value() - delta.x()
+            )
+            self.verticalScrollBar().setValue(
+                self.verticalScrollBar().value() - delta.y()
+            )
+            self.pan_start_pos = event.pos()
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
+    
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MiddleButton:
+            self.pan_active = False
+            self.pan_start_pos = None
+            event.accept()
+        else:
+            super().mouseReleaseEvent(event)
+
+            
 class ItmNode(QGraphicsRectItem):
-    def __init__(self, itm, x, y, board_window, width=140, height=60):
+    def __init__(self, itm, x, y, board_window, width=140, height=160, smiles=None):
         super().__init__(0, 0, width, height)
         self.itm = itm
         self.board_window = board_window
         self.lines = []
         self.setPos(x, y)
         self.color = Colors.get(itm.tp, QColor(200, 200, 255))
+        self.header_color = Colors.get(itm.tp, QColor(200, 200, 255))
+        self.smiles = smiles
+        self.img = None
+        self.width = width
+        self.height = height
+        self.header_height = 30
 
         self.setBrush(QBrush(self.color))
         self.setPen(QPen(Qt.black))
@@ -55,18 +140,101 @@ class ItmNode(QGraphicsRectItem):
         )
         self.setToolTip(f"{itm.name}\nEnergy: {getattr(itm, 'energy', 0):.4f}")
 
-        label = QGraphicsTextItem(itm.name, self)
-        label.setDefaultTextColor(Qt.black)
-        label.setPos(8, 8)
+        self.label = QGraphicsTextItem(itm.name, self)
+        font = self.label.font()
+        font.setBold(True)
+        self.label.setFont(font)
+        self.label.setDefaultTextColor(Qt.black)
+
+        text_rect = self.label.boundingRect() # Centering text in header
+        text_x = (self.width - text_rect.width()) / 2
+        text_y = (self.header_height - text_rect.height()) / 2
+        self.label.setPos(text_x, text_y)
+
+
+
+
+        #label = QGraphicsTextItem(itm.name, self)
+        #label.setZValue(1)  # Ensure label is above the rectangle
+        #label.setDefaultTextColor(Qt.black)
+        #label.setPos(8, 8)
+
+        if self.smiles:
+            try:
+                self.img = create_smiles_image(self.smiles)
+            except Exception as e:
+                print(f"Error creating image for {itm.name} with SMILES {self.smiles}: {e}")
+
+        if self.img:
+            # If you have an image, you can add it as background of the node:
+            #pixmap = QPixmap.fromImage(self.img)
+            pixmap = pil_to_qpixmap(self.img)
+            self.pixmap_item = QGraphicsPixmapItem(pixmap, self)
+            #pixmap_item = QGraphicsPixmapItem(pixmap, self)
+            #pixmap_item.setPos(0, 0)
+            #pixmap_item.setZValue(-1)  # Ensure image is behind text
+            # Calculate the available space for the image (with 10px padding)
+            padding = 10
+            avail_w = self.width - (padding * 2)
+            avail_h = self.height - self.header_height - (padding * 2)
+            
+            # Scale image smoothly while keeping aspect ratio
+            scaled_pixmap = pixmap.scaled(
+                avail_w, avail_h, 
+                Qt.KeepAspectRatio, 
+                Qt.SmoothTransformation
+            )
+            self.pixmap_item.setPixmap(scaled_pixmap)
+            
+            # Center the image within the body bounds
+            img_x = (self.width - scaled_pixmap.width()) / 2
+            img_y = self.header_height + (avail_h - scaled_pixmap.height()) / 2 + padding
+            self.pixmap_item.setPos(img_x, img_y)  
+
+    def paint(self, painter, option, widget=None):
+        """Override paint to draw a custom, polished node background."""
+        painter.setRenderHint(painter.Antialiasing) # Ensure smooth curves
+        
+        # Create a rounded path for the main box
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, self.width, self.height, 8, 8)
+        
+        # Draw the main body background (White/Light Gray)
+        painter.setBrush(QBrush(self.color))
+        painter.setPen(Qt.NoPen)
+        painter.drawPath(path)
+        
+        # Draw the Header Background
+        # We use setClipPath so the header colors don't bleed outside the rounded corners
+        painter.setClipPath(path)
+        painter.setBrush(QBrush(self.header_color))
+        painter.drawRect(0, 0, self.width, self.header_height)
+        
+        # Draw the separator line between header and body
+        painter.setClipping(False) # Turn clipping off to draw the outer border
+        painter.setPen(QPen(QColor(150, 150, 150), 1))
+        painter.drawLine(0, self.header_height, self.width, self.header_height)
+        
+        # Draw the outer border of the node
+        # Change border color if the item is selected by the user
+        if self.isSelected():
+            painter.setPen(QPen(QColor(100, 150, 255), 2.5)) # Highlighted border
+        else:
+            painter.setPen(QPen(QColor(120, 120, 120), 1.5)) # Standard border
+            
+        painter.drawPath(path)
 
     def contextMenuEvent(self, event):
         menu = QMenu()
         add_reac_action = menu.addAction("Add Reactant(s)")
+        add_smiles_sketch_action = menu.addAction("Add SMILES Sketch")
 
         action = menu.exec_(event.screenPos())
 
         if action == add_reac_action:
             self._handle_add_reac()
+        elif action == add_smiles_sketch_action:
+            self._handle_add_smiles_sketch()
 
      #   super().contextMenuEvent(event)
 
@@ -85,6 +253,49 @@ class ItmNode(QGraphicsRectItem):
         self.board_window.scene.clear()
         self.board_window.build_board(self.itm.mech) # Update layout after adding reactants
 
+    def _handle_add_smiles_sketch(self):
+        dialog = QDialog()
+        dialog.setWindowTitle("Add SMILES Sketch")
+        self.smiles_input = QLineEdit(dialog)
+        self.smiles_input.setPlaceholderText("Enter SMILES string")
+        add_button = QPushButton("Add", dialog)
+        add_button.clicked.connect(lambda: self._add_smiles_reac(dialog))
+        layout = QGridLayout(dialog)
+        layout.addWidget(QLabel("SMILES:"), 0, 0)
+        layout.addWidget(self.smiles_input, 0, 1)
+        layout.addWidget(add_button, 1, 0, 1, 2)
+        dialog.exec_()
+
+    def _add_smiles_reac(self, dialog):
+        smiles = self.smiles_input.text().strip()
+        if not smiles:
+            QMessageBox.warning(dialog, "Input Error", "Please enter a valid SMILES string.")
+            return    
+        self.itm.smiles = smiles
+        try:
+            img = create_smiles_image(smiles)
+            # Here you would convert the image to a format suitable for display in the node
+            # and create a new Itm for the reactant with the SMILES info. This is a placeholder.
+            self.set_image(img)
+        except Exception as e:
+            QMessageBox.critical(dialog, "Error", f"Failed to create image from SMILES: {e}")
+            return
+        dialog.accept()
+
+    def set_image(self, img):
+        self.img = img
+        pixmap = pil_to_qpixmap(img)
+
+        # Scale the pixmap to fit within the node with a small margin
+        # Node size is 140x60, so scale to 130x50 to show background color
+        scaled_pixmap = pixmap.scaledToWidth(130, Qt.SmoothTransformation)
+        if scaled_pixmap.height() > 50:
+            scaled_pixmap = scaled_pixmap.scaledToHeight(50, Qt.SmoothTransformation)
+
+        pixmap_item = QGraphicsPixmapItem(scaled_pixmap, self)
+        # Center the image within the node
+        pixmap_item.setPos((140 - scaled_pixmap.width()) / 2, (60 - scaled_pixmap.height()) / 2)
+        pixmap_item.setZValue(0.5)  # Keep behind text label
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:
@@ -241,7 +452,8 @@ class BoardWindow(QMainWindow):
         
 
         self.scene = QGraphicsScene(self)
-        self.view = QGraphicsView(self.scene, self)
+        self.view = ZoomableGraphicsView(self.scene, self)
+        # self.view = QGraphicsView(self.scene, self)
         self.view.setRenderHints(QPainter.Antialiasing | QPainter.TextAntialiasing)
         self.setCentralWidget(self.view)
 
@@ -338,11 +550,17 @@ class BoardWindow(QMainWindow):
             else:
                 color = Colors.get(itm.tp, QColor(200, 200, 255))
                 layout.save_color(itm.name, color)
-
-            node = ItmNode(itm, x, y, self)
+            node = ItmNode(itm, x, y, self, smiles=getattr(itm, 'smiles', None))
             node.setBrush(QBrush(color))
             self.scene.addItem(node)
             nodes[itm.name] = node
+
+ #           if hasattr(itm, 'smiles') and itm.smiles:
+ #               try:
+ #                   img = create_smiles_image(itm.smiles)
+ #                   node.set_image(img)
+ #               except Exception as e:
+ #                   print(f"Error creating image for {itm.name} with SMILES {itm.smiles}: {e}")
 
         for itm in itms:
             for reac in itm.get_reacs():
