@@ -12,6 +12,7 @@ import yaml
 import re
 import os
 from mechasuite import kmc as kmc_core
+import pickle
 
 INPUTFILE = ""
 
@@ -236,9 +237,9 @@ class Mechanim(object):
             slope, n, r, p, std_err = stats.linregress(c, v)
             print(spec, slope, r**2)
             self.orders.append(slope)
-            # plt.plot(v, c, label=spec)
-        # plt.legend()
-        # plt.show()
+           # plt.plot(v, c, label=spec)
+         #plt.legend()
+         #plt.show()
 
     def get_app_ae(self):
         if len(self.temps) <= 2:
@@ -358,7 +359,7 @@ def run_microkinetics(indic):
     mec.plot()
 
 def parse_reaction_kmc(eq, rdict, system, max_rate=1e10):
-    rate = rdict["423.15"]
+    rate = rdict["298"]
     r1 = kmc_core.Reaction()
     r2 = None
     lhs, rhs = eq.split("=")
@@ -425,6 +426,8 @@ def run_kmc(data):
     reactor.closed_system = data.get("closed", True)
     reactor.residence_time = data.get("residence_time", -1.0)
     max_rate = data.get("max_rate", 1e10)
+    max_step = data.get("max_step", 1e18)
+    plot_every = int(data.get("plot_every", 1))
     sys.reactor = reactor
 
     # reactions
@@ -439,27 +442,32 @@ def run_kmc(data):
     kmc = kmc_core.KMC(sys, 123)
 
     #tau = data.get("tau", 0.1)
-    kmc.runSSA(data["simulation_time"], 100000)
+    kmc.runSSA(data["simulation_time"], int(max_step))
     # kmc.runTau(tau, data["t_end"])
 
     # plotting
     names = list(data["surface_count"].keys()) + list(data.get("gas_count",{}).keys())
     hist = sys.history
     times = sys.times
-
+    mod_hist = hist[::plot_every]
+    mod_times = times[::plot_every]
     for i,name in enumerate(names):
         idx = sys.getSpeciesIndex(name)
         if idx in reactor.reservoir:
             continue
-        plt.plot(times,[h[i] for h in hist], label=name)
+        plt.plot(mod_times,[h[i] for h in mod_hist], label=name)
     plt.xlim(0, data["simulation_time"])
     plt.xlabel("time")
     plt.ylabel("population")
     plt.legend()
-    plt.show()
+    #plt.show()
+    with open(OUTPUTFILE, 'wb') as f:
+        pickle.dump((mod_times, mod_hist), f)
+    plt.savefig(FIGFILE)
+
 
 def main():
-    global INPUTFILE
+    global INPUTFILE, OUTPUTFILE, FIGFILE
     try:
         filename = sys.argv[1]
     except IndexError:
@@ -467,6 +475,8 @@ def main():
         sys.exit(0)
 
     INPUTFILE = filename
+    OUTPUTFILE = filename.rsplit('.', 1)[0] + '.data'
+    FIGFILE = filename.rsplit('.', 1)[0] + '.png'
 
     mec_dic = {}
     if filename.endswith(".json"):
