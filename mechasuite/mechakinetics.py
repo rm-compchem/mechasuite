@@ -403,6 +403,7 @@ def run_kmc(data):
     reactor.closed_system = data.get("closed", True)
     reactor.residence_time = data.get("residence_time", -1.0)
     sys.reactor = reactor
+    sys.save_freq = data.get("save_freq", 1)
 
     # reactions
     for equation, rdict in data["mec"].items():
@@ -422,6 +423,7 @@ def run_kmc(data):
     names = list(data["surface_count"].keys()) + list(data.get("gas_count",{}).keys())
     hist = sys.history
     times = sys.times
+    print(f"kmc steps: {sys.step}  ")
 
     for i,name in enumerate(names):
         idx = sys.getSpeciesIndex(name)

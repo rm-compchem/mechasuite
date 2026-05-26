@@ -168,8 +168,11 @@ bool System::stepSSA(double& time, std::mt19937& rng)
     for(auto& [idx,nu]:R.products){ species[idx]+=nu; changed.push_back(idx);}
 
     reactor.applyFlow(species, dt, rng);
-    history.push_back(species);
-    times.push_back(time);
+    if(step % saveFreq == 0)
+    {
+        history.push_back(species);
+        times.push_back(time);
+    } 
 
     updatePropensities(changed);
     return true;
@@ -201,12 +204,11 @@ bool System::stepTau(double& time, double tau, std::mt19937& rng)
 void KMC::runSSA(double t_end, size_t max_steps)
 {
     double time=0.0;
-    size_t count = 0;
     while(time<t_end){
         if(!system.stepSSA(time,rng)) break;
-	if(max_steps > 0 && count > max_steps) break;
+	if(max_steps > 0 && system.step > max_steps) break;
 
-	count ++;
+	system.step ++;
     }
     //for(size_t i=0;i<max_steps && time<t_end;i++)
     //    if(!system.stepSSA(time,rng)) break;
@@ -257,6 +259,8 @@ PYBIND11_MODULE(kmc, m) {
         .def_readwrite("reactor", &System::reactor)
         .def_readwrite("history", &System::history)
         .def_readwrite("times", &System::times)
+        .def_readwrite("save_freq", &System::saveFreq)
+        .def_readwrite("step", &System::step)
         .def("addSpecies", &System::addSpecies)
         .def("getSpeciesIndex", &System::getSpeciesIndex)
         .def("addReaction", &System::addReaction)

@@ -44,6 +44,9 @@ public:
     std::vector<std::vector<int>> history;
     std::vector<double> times;
 
+    short saveFreq = 1;
+    size_t step = 0;
+
     System() = default;
 
     int addSpecies(const std::string& name, int initial);

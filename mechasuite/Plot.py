@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QMenu, QLabel, Q
 from PyQt5.QtGui import QPainter, QPen, QFont, QColor, QPixmap, QBrush, QKeySequence
 from PyQt5.QtCore import Qt, QRect
 from mechasuite.Widgets import MultipleChoiceDialog
+from mechasuite.globs import plot_units_label
 import sys
 import numpy as np
 import matplotlib
@@ -584,11 +585,18 @@ class Plot(QWidget):
 
         plt.xlabel(r"$Reaction\ Coordinate$", fontsize=fontsize)
         # plt.xlabel("Reaction Coordinate", fontsize=fontsize, fontweight="bold")
+        unit_label = self.current_plot.col.unit 
+        unit_label = plot_units_label.get(unit_label, "kJ/mol")
+        energy_label = "E"
         if self.current_plot.etype == "G":
-            plt.ylabel(r"$G_{rel}\ (kcal/mol)$", fontsize=fontsize, fontweight="bold")
-        else:
+            energy_label = "G"    
+       #     plt.ylabel(r"$G_{rel}\ (kcal/mol)$", fontsize=fontsize, fontweight="bold")
+       #else:
+       #     energy_label = "E"    
             # plt.ylabel("$\boldsymbol{E_{rel} (kcal/mol)}$", fontsize=fontsize, fontweight="bold")
-            plt.ylabel(r"${E_{rel}\ (kcal/mol)}$", fontsize=fontsize, fontweight="bold")
+       #     plt.ylabel(r"${E_{rel}\ (kcal/mol)}$", fontsize=fontsize, fontweight="bold")
+        ylabel = fr"${energy_label}_{{rel}}\ ({unit_label})$"
+        plt.ylabel(ylabel, fontsize=fontsize, fontweight="bold")
         plt.xticks([])
         return plt
 
