@@ -110,6 +110,14 @@ conv = {
     }
 }
 
+plot_units_label = {
+   "J": "J/mol",
+   "kJ": "kJ/mol",
+   "cal": "cal/mol",
+   "kcal": "kcal/mol",
+   "Ha": "Ha",
+   "eV": "eV",
+        }
 
 colors = {}
 

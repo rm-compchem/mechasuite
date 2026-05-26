@@ -2367,14 +2367,12 @@ class MainSheet(QTableWidget):
                         msg.exec()
                         return
                     elif len(same_refs_names) == 1:
-                        print("len 11")
                         itmobj.add_reac(reacobj, relref=same_refs_names[0])
                     else:
                         dialog = MultipleChoiceDialog(same_refs_names)
                         dialog.exec()
                         if not dialog.ok:
                             return
-                        print("len >1")
                         itmobj.add_reac(reacobj, relref=dialog.items[0])
                 else:
                     itmobj.add_reac(reacobj)
@@ -3461,14 +3459,14 @@ class MainWindow(QMainWindow):
                     #self.plot = MainCanvas(self, self.data)
                     #self.plot.update_data()
 
-                plotobj = self.data.get_plot(plotname)
-                # add itms in individual pathways
-                for itmlist in pathvalue.values():
-                    itms = [mecobj.get_itm(itm_name) for itm_name in itmlist if mecobj.get_itm(itm_name) is not None]
-                    plotobj.add_itms(itms)
-                    # add reaction reference
-                    for n in range(1, len(itms)):
-                        itms[n].add_reac(itms[n-1])
+                    plotobj = self.data.get_plot(plotname)
+                    # add itms in individual pathways
+                    for itmlist in pathvalue.values():
+                        itms = [mecobj.get_itm(itm_name) for itm_name in itmlist if mecobj.get_itm(itm_name) is not None]
+                        plotobj.add_itms(itms)
+                        # add reaction reference
+                        for n in range(1, len(itms)):
+                            itms[n].add_reac(itms[n-1], commonrefs[0])
 
         self.table.update_data(self.data)
         self.plot = MainCanvas(self, self.data)

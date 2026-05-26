@@ -25,7 +25,7 @@ std::array<float, 3> abs3D(const std::array<float, 3>& a1){
 }
 
 
-void parseXYZCommentLine(char* comment, int& step, double& time, double& energy, array<array<float,3>,3> &cell)
+void parseXYZCommentLine(char* comment, int& step, double& time, double& energy, float cell[3][3])
 {
   int n=0;
   char *cmp_pointer;
@@ -2304,6 +2304,7 @@ void Struct::load_xyz(QString inputfile){
     }
     QTextStream in(&file1);
     array<float, 3> tempcoor, temp_center_of_mass = {0.0,0.0,0.0};
+    float tempcell[3][3];
     QStringList lsplitted;
     bool readcoors = false, firstcoors = true;
     QString line;
@@ -2381,7 +2382,7 @@ void Struct::load_xyz(QString inputfile){
 	    int step = 0;
 	    char comment[1048];
 	    strcpy(comment,line.toStdString().c_str());
-	    parseXYZCommentLine(comment, step, time, energy, cell);
+	    parseXYZCommentLine(comment, step, time, energy, tempcell);
 	    
             temp_animation = Animation();
             temp_animation.step = step;
@@ -2393,7 +2394,10 @@ void Struct::load_xyz(QString inputfile){
        file1.close();
        showcell = false;
 
-       valid_cell();
+       if(valid_cell(tempcell)){
+          set_unit_cell(tempcell);
+          showcell = true;
+       }
        
 }
 
@@ -2546,7 +2550,7 @@ void Struct::load_poscar(QString inputfile){
         anim.com[i] /= atoms.size();
     }
     animation.push_back(anim);
-
+//printf("%f %f %f \n", atoms[0].coor[0], atoms[0].coor[1], atoms[0].coor[2]);
     showcell = true;
     //set_cell_lines();
     vasp.setup = true;
@@ -4333,8 +4337,15 @@ bool Struct::valid_cell(){
             return false;
         }
     }
-    showcell = true;
-    set_cell_lines();
+    return true;
+}
+
+bool Struct::valid_cell(float cell[3][3]){
+    for(unsigned int i=0;i<3;i++){
+        if(cell[i][0]==0.0f && cell[i][1]==0.0f && cell[i][2] == 0.0f){
+            return false;
+        }
+    }
     return true;
 }
 

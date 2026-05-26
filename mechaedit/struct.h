@@ -216,6 +216,7 @@ public:
     void del_peli_by_index(vector<int> &indices);
     void check_covered();    //check whether there atoms over z axis so that it is not necesarry to render them
     bool valid_cell();
+    bool valid_cell(float cell[3][3]);
     void remove_duplicates(bool cart);
     void remove_duplicates_pbc_frac();
 
