@@ -404,6 +404,7 @@ def run_kmc(data):
     reactor.residence_time = data.get("residence_time", -1.0)
     sys.reactor = reactor
     sys.save_freq = data.get("save_freq", 1)
+    sys.logfile = data.get("logfile", "kmc.log")
 
     # reactions
     for equation, rdict in data["mec"].items():
