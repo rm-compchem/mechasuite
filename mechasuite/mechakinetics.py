@@ -12,6 +12,7 @@ import yaml
 import re
 import os
 from mechasuite import kmc as kmc_core
+import pickle
 
 INPUTFILE = ""
 
@@ -236,9 +237,9 @@ class Mechanim(object):
             slope, n, r, p, std_err = stats.linregress(c, v)
             print(spec, slope, r**2)
             self.orders.append(slope)
-            # plt.plot(v, c, label=spec)
-        # plt.legend()
-        # plt.show()
+           # plt.plot(v, c, label=spec)
+         #plt.legend()
+         #plt.show()
 
     def get_app_ae(self):
         if len(self.temps) <= 2:
@@ -357,7 +358,7 @@ def run_microkinetics(indic):
     mec.write()
     mec.plot()
 
-def parse_reaction_kmc(eq, rdict, system):
+def parse_reaction_kmc(eq, rdict, system, max_rate=1e10):
     rate = rdict["298"]
     r1 = kmc_core.Reaction()
     r2 = None
@@ -380,8 +381,30 @@ def parse_reaction_kmc(eq, rdict, system):
         r2.reactants = r1.products
         r2.products = r1.reactants
         r2.rate = rate[1]
-    print(rate[0], rate[1])
-    return r1, r2
+    
+    if r1.rate < max_rate and r2.rate < max_rate:
+        return r1, r2
+    elif r1.rate > max_rate and r2.rate > max_rate:
+        if r1.rate > r2.rate:
+            newr2_exp = ( np.log10(max_rate) - (np.log10(r1.rate) - np.log10(r2.rate)) )
+            r1.rate = max_rate
+            r2.rate = 10**newr2_exp
+            return r1, r2
+        else:
+            newr1_exp = ( np.log10(max_rate) - (np.log10(r2.rate) - np.log10(r1.rate)) )
+            r1.rate = 10**newr1_exp
+            r2.rate = max_rate
+            return r1, r2
+    elif r1.rate > max_rate:
+        newr2_exp = ( np.log10(max_rate) - np.log10(r2.rate) ) / np.log10(r1.rate)
+        r1.rate = max_rate
+        r2.rate = 10**newr2_exp
+        return r1, r2
+    else:
+        newr1_exp = ( np.log10(max_rate) - np.log10(r1.rate) ) / np.log10(r2.rate)
+        r1.rate = 10**newr1_exp
+        r2.rate = max_rate
+        return r1, r2
 
 def run_kmc(data):
     sys = kmc_core.System()
@@ -402,13 +425,17 @@ def run_kmc(data):
     reactor.reservoir = reservoir
     reactor.closed_system = data.get("closed", True)
     reactor.residence_time = data.get("residence_time", -1.0)
+    max_rate = data.get("max_rate", 1e10)
+    max_step = data.get("max_step", 1e18)
+    plot_every = int(data.get("plot_every", 1))
     sys.reactor = reactor
     sys.save_freq = data.get("save_freq", 1)
     sys.logfile = data.get("logfile", "kmc.log")
 
     # reactions
     for equation, rdict in data["mec"].items():
-        r1, r2 = parse_reaction_kmc(equation, rdict, sys)
+        r1, r2 = parse_reaction_kmc(equation, rdict, sys, max_rate)
+        print(r1.rate, r2.rate if r2 else None)
         sys.addReaction(r1)
         if r2 is not None:
             sys.addReaction(r2)
@@ -417,28 +444,34 @@ def run_kmc(data):
     kmc = kmc_core.KMC(sys, 123)
 
     #tau = data.get("tau", 0.1)
-    kmc.runSSA(data["simulation_time"], 100000)
+    kmc.runSSA(data["simulation_time"], int(max_step))
     # kmc.runTau(tau, data["t_end"])
 
     # plotting
     names = list(data["surface_count"].keys()) + list(data.get("gas_count",{}).keys())
     hist = sys.history
     times = sys.times
+    mod_hist = hist[::plot_every]
+    mod_times = times[::plot_every]
     print(f"kmc steps: {sys.step}  ")
 
     for i,name in enumerate(names):
         idx = sys.getSpeciesIndex(name)
         if idx in reactor.reservoir:
             continue
-        plt.plot(times,[h[i] for h in hist], label=name)
+        plt.plot(mod_times,[h[i] for h in mod_hist], label=name)
     plt.xlim(0, data["simulation_time"])
     plt.xlabel("time")
     plt.ylabel("population")
     plt.legend()
-    plt.show()
+    #plt.show()
+    with open(OUTPUTFILE, 'wb') as f:
+        pickle.dump((mod_times, mod_hist), f)
+    plt.savefig(FIGFILE)
+
 
 def main():
-    global INPUTFILE
+    global INPUTFILE, OUTPUTFILE, FIGFILE
     try:
         filename = sys.argv[1]
     except IndexError:
@@ -446,6 +479,8 @@ def main():
         sys.exit(0)
 
     INPUTFILE = filename
+    OUTPUTFILE = filename.rsplit('.', 1)[0] + '.data'
+    FIGFILE = filename.rsplit('.', 1)[0] + '.png'
 
     mec_dic = {}
     if filename.endswith(".json"):

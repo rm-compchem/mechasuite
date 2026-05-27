@@ -28,6 +28,31 @@ def read_energy_vasp(vaspfile):
                 energy = float(line.split()[-1])
     return energy, spin, pg, unit
 
+def read_energy_ase(outfile):
+    energy = 0.0
+    spin = 0
+    pg = None
+    unit = "eV"
+    if not os.path.isfile(outfile):
+        return energy, spin, pg, unit
+    
+    with open(outfile) as f:
+        lines = f.readlines()
+     # Column four is energy, converged result is the last row containing FIRE:
+    for line in reversed(lines):
+        if "FIRE:" in line:
+            energy = float(line.split()[3])
+            break
+
+    if energy == 0.0:
+        for line in reversed(lines):
+            if "Sella" in line:
+                energy = float(line.split()[3])
+                break
+
+    return energy, spin, pg, unit
+
+
 def read_energy_orca(outfile):
     energy = 0.0
     spin =  0 # set to zero. None gives problems when summing various spins: None + int
@@ -63,27 +88,89 @@ def read_energy_gaussian(ef):
 
 def read_freq_vasp(outcar):
     freqs = []
+    vectors = []
     unit = None
     rf = False
     if not os.path.isfile(outcar):
-        return freqs, unit
+        return freqs, vectors, unit
 
     with open(outcar) as f:
         lineas = f.readlines()
-
+    norm_mode = []
     for num, linea in enumerate(lineas):
         if "Eigenvectors and eigenvalues" in linea:
             if not rf:
                 rf = True
             else:
                 break
+        
         if "THz" in linea and "cm-1" in linea and rf:
+            if norm_mode:  # Only append if norm_mode has data (fixes empty list bug)
+                vectors.append(norm_mode)
             try:
                 freqs.append(float(linea.split()[7]))
             except:
                 freqs.append(-float(linea.split()[6]))
+            norm_mode = []  # Reset for the next mode
+
+        parts = linea.split()
+        if len(parts) == 6 and rf:
+            try:
+                # Only numeric displacement rows
+                vec = [float(x) for x in parts[3:6]]
+            except ValueError:
+                continue
+            norm_mode.append(vec)
+
+    # Append the last mode's vectors if any remain
+    if norm_mode:
+        vectors.append(norm_mode)
+
     unit = "cm-1"
-    return freqs, unit
+    # Vectors are the normal vibrational modes
+    return freqs, vectors, unit
+
+def read_freq_ase(outfile):
+    freqs = []
+    vectors = []
+    unit = "cm-1"
+
+    if not os.path.isfile(outfile):
+        return freqs, vectors, unit
+
+    import re
+    mode_re = re.compile(r'Mode #\d+,\s*f\s*=\s*([-+]?\d*\.?\d+)(i?)\s+cm\^-1')
+
+    current_mode_vectors = None
+
+    with open(outfile) as f:
+        for line in f:
+            m = mode_re.search(line)
+            if m:
+                if current_mode_vectors is not None:
+                    vectors.append(current_mode_vectors)
+                freq = float(m.group(1))
+                if m.group(2) == "i":
+                    freq = -freq
+                freqs.append(freq)
+                current_mode_vectors = []
+                continue
+
+            if current_mode_vectors is not None:
+                parts = line.split()
+                if len(parts) >= 7:
+                    try:
+                        dx = float(parts[-3])
+                        dy = float(parts[-2])
+                        dz = float(parts[-1])
+                        current_mode_vectors.append([dx, dy, dz])
+                    except ValueError:
+                        pass
+
+    if current_mode_vectors is not None:
+        vectors.append(current_mode_vectors)
+
+    return freqs, vectors, unit
 
 def read_freq_orca(outfile):
     freqs = []
@@ -372,7 +459,7 @@ def detect_vasp(fpath, filenames):
         if filename in ["OUTCAR.opt", "OUTCAR"]:
             d["energy_file"] = filename
 
-        if filename in ["OUTCAR.freq"] :
+        if filename in ["OUTCAR.freq, OUTCAR"] :
             d["freq_file"] = filename
 
         if filename in ["POSCAR.opt", "CONTCAR"]:
@@ -412,13 +499,13 @@ def detect_program(fpath):
 
     # detect orca
     infodic = detect_orca(fpath, files)
-    if info_dic:
-        return info_dic
+    if infodic:
+        return infodic
 
     # detect gaussian
     infodic = detect_gaussian(fpath, files)
-    if info_dic:
-        return info_dic
+    if infodic:
+        return infodic
 
     # no program detected return empty dic
     return {}

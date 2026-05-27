@@ -9,6 +9,7 @@ from PyQt5.QtGui import QPixmap, QCursor, QFont, QColor
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 from mechasuite.Widgets import *
 from mechasuite.Plot import plot, MainCanvas
+from mechasuite.Board import BoardWindow
 import json
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -2620,7 +2621,7 @@ class RefSheet(QTableWidget):
         if tp == "reac":
             self.vlabels = [" \u0394E", " \u0394ZPE", " \u0394H", " \u0394G", " \u0394S", " k", " A", "κ"]
         elif tp == "exc":
-            self.vlabels = [" \u0394E", " \u0394G", " DF", " Type", " k(0)", " k(T)"]
+            self.vlabels = [" \u0394E", " \u0394G", " DF", " Type", " k(0)", " k(T)", "Eₘ", " G", "HR factor"]
         else:
             self.vlabels = [" E", " ZPE",  " \u0394H", " G", " \u0394S"]
 
@@ -2722,10 +2723,18 @@ class RefSheet(QTableWidget):
     def contextMenuEvent(self, event):
         menu = QMenu(self)
         tempdep = menu.addAction("Temperature dependency")
+        reorg_energy = menu.addAction("Reorganization energy")
+        calc_HR = menu.addAction("Calculate HR factors")
+        vibronic_spectrum = menu.addAction("Plot vibronic spectrum")
         action = menu.exec_(self.mapToGlobal(event.pos()))
         if action == tempdep:
             self.on_temp_dependency()
-
+        elif action == reorg_energy:
+            self.on_reorg_energy()
+        elif action == calc_HR:
+            self.on_calc_HR()
+        elif action == vibronic_spectrum:
+            self.on_vibronic_spectrum()
     def on_temp_dependency(self):
         if self.tp == "ref":
             return
@@ -2747,6 +2756,89 @@ class RefSheet(QTableWidget):
         reacname = self.horizontalHeaderItem(self.currentColumn()).text()
         reacobj = self.itmobj.get_reac(reacname)
         reacobj.get_kinetic_temp_dependency(temps)
+
+    def on_reorg_energy(self):
+        if self.tp != "exc":
+            print("Reorganization energy can only be calculated for excited states.")
+            return
+        
+        col = self.currentColumn()
+        if col < 0:
+            return
+        
+        state_name = self.horizontalHeaderItem(col).text()
+        typeobj = self.item(3, col)  # Type of process is in row 3
+        process_type = typeobj.text() if typeobj is not None else ""
+
+        state = self.itmobj.get_excited_state(state_name, process_type)
+        if state is None:
+            QMessageBox.warning(self, "Reorganization energy",
+                                "Could not identify the selected excited state.")
+            return
+        
+        filename, _ = QFileDialog.getOpenFileName(self,
+                                                  "Load energy file",
+                                                  "",
+                                                  "All files (*)")
+        if not filename:
+            return
+        
+        energy, _ , _ , u = read_energy_vasp(filename)
+        if energy is None:
+            QMessageBox.warning(self, "Reorganization energy",
+                                "Could not read energy from the selected file.")
+            return
+        target_unit = self.itmobj.mech.unit
+        if u != target_unit:
+            energy *= conv[u][target_unit]
+        ref_energy = state.ref.energy
+        #print("REFENERGY", ref_energy)
+        reorg_energy = energy - ref_energy # estoy restando E1,0 - E1,1, eso es reorganization energy.
+        state.set_reorganization_energy(reorg_energy)
+        self.update_data(self.itmobj)
+
+    def on_calc_HR(self):
+        if self.tp != "exc":
+            print("HR factors can only be calculated for excited states.")
+            return
+        
+        col = self.currentColumn()
+        if col < 0:
+            return
+        
+        state_name = self.horizontalHeaderItem(col).text()
+        typeobj = self.item(3, col)  # Type of process is in row 3
+        process_type = typeobj.text() if typeobj is not None else ""
+
+        state = self.itmobj.get_excited_state(state_name, process_type)
+        if state is None:
+            QMessageBox.warning(self, "Calculate HR factors",
+                                "Could not identify the selected excited state.")
+            return
+        
+        state.calc_HR_factor()
+        self.update_data(self.itmobj)
+
+    def on_vibronic_spectrum(self):
+        if self.tp != "exc":
+            print("Vibronic spectrum can only be plotted for excited states.")
+            return
+        
+        col = self.currentColumn()
+        if col < 0:
+            return
+        
+        state_name = self.horizontalHeaderItem(col).text()
+        typeobj = self.item(3, col)  # Type of process is in row 3
+        process_type = typeobj.text() if typeobj is not None else ""
+
+        state = self.itmobj.get_excited_state(state_name, process_type)
+        if state is None:
+            QMessageBox.warning(self, "Plot vibronic spectrum",
+                                "Could not identify the selected excited state.")
+            return
+        x, y = state.vibronic_spectra()
+        state.plot_vibronic_spectra(x, y)
 
     def update_data(self, itmobj=None):
         if itmobj is not None:
@@ -2843,6 +2935,9 @@ class RefSheet(QTableWidget):
                     self.setItem(3, col, QTableWidgetItem(str(zobj.process_type)))
                     self.setItem(4, col, QTableWidgetItem("{:.3e}".format(zobj.k0(T))))
                     self.setItem(5, col, QTableWidgetItem("{:.3e}".format(zobj.kT(T))))
+                    self.setItem(6, col, QTableWidgetItem("{:.4f}".format(zobj.Em)))
+                    self.setItem(7, col, QTableWidgetItem("{:.4f}".format(zobj.G)))
+                    self.setItem(8, col, QTableWidgetItem("{:.4f}".format(zobj.S)))
                 else:
                     self.setItem(1, col, QTableWidgetItem(""))
                     self.setItem(2, col, QTableWidgetItem(""))
@@ -2966,6 +3061,11 @@ class MainWindow(QMainWindow):
         plot_action.setStatusTip("Show all energy plots")
         plot_action.triggered.connect(self.on_plot)
 
+        board_action = QAction("&Show Board Window", self)
+        board_action.setShortcut("Ctrl+b")
+        board_action.setStatusTip("Open board window")
+        board_action.triggered.connect(self.on_board)
+
         # openglview = QAction("&Open GL view", self)
         # openglview.triggered.connect(self.on_openglview)
 
@@ -2991,6 +3091,7 @@ class MainWindow(QMainWindow):
 
         viewmenu = mainmenu.addMenu("&View")
         viewmenu.addAction(plot_action)
+        viewmenu.addAction(board_action)
 
         # Menubar ----------------------------------------------------------------
 
@@ -3024,7 +3125,7 @@ class MainWindow(QMainWindow):
         self.splitter3.addWidget(self.ztable)
         self.splitter3.addWidget(self.reltable)
         # commented out for the next release uncomment later
-        #self.splitter3.addWidget(self.exctable)
+        self.splitter3.addWidget(self.exctable)
 
         self.splitter2.addWidget(self.image)
         self.splitter2.addWidget(self.openGLWidget)
@@ -3505,6 +3606,13 @@ class MainWindow(QMainWindow):
     def on_plot(self):
         self.plot.show()
         self.plot.activateWindow()
+
+    def on_board(self):
+        # Pass the temperatures to self.board
+        comboT_values = [self.comboT.itemText(i) for i in range(self.comboT.count())]
+        self.board = BoardWindow(self.data, comboT_values)
+        self.board.show()
+        self.board.activateWindow()
 
     def on_del_plot(self):
         plot_names = self.data.get_plots_names()

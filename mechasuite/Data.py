@@ -9,17 +9,20 @@ from scipy import optimize
 from mechasuite.Landau import *
 import yaml, json
 import copy
+from scipy.special import factorial
 
 PROGRAM_ENERGY_MAP = {
     "gaussian": read_energy_gaussian,
     "orca": read_energy_orca,
-    "vasp": read_energy_vasp
+    "vasp": read_energy_vasp,
+    "ase": read_energy_ase
         }
 
 PROGRAM_FREQ_MAP = {
     "gaussian": read_freq_gaussian,
     "orca": read_freq_orca,
-    "vasp": read_freq_vasp
+    "vasp": read_freq_vasp,
+    "ase": read_freq_ase
         }
 
 class PlotLabel(object):
@@ -735,20 +738,24 @@ class Freq(object):
         if fdict is not None:
             self.set_vibs(fdict["vibs"])
             self.unit = fdict["unit"]
+            self.vectors = fdict.get("vectors", [])
         else:
             self.vibs = []
             self.unit = None
+            self.vectors = []
 
     def to_dict(self):
         selfdict = OrderedDict()
         selfdict["vibs"] = self.vibs
         selfdict["unit"] = self.unit
+        selfdict["vectors"] = self.vectors
         return selfdict
 
-    def set_vibs(self, vibs):
-        vibs = [float(f) for f in vibs]
-        vibs.sort(reverse=True)
-        self.vibs = vibs
+    def set_vibs(self, vibs, vectors=None):
+        pairs = list(zip([float(f) for f in vibs], vectors or [[]] * len(vibs)))
+        pairs.sort(reverse=True, key=lambda x: x[0])
+        self.vibs = [f for f, _ in pairs]
+        self.vectors = [vec for _, vec in pairs] if vectors is not None else []
 
 
 class Reference(object):
@@ -1274,6 +1281,10 @@ class State_Conv(Reac):
         self.zpe = 0.0
         self.process_type = process_type
         self.egap = 0.0
+        self.Em = 0.0001 # To avoid division by zero in coupling calculation
+        self.w = 0.00 # Mean vibrational frequency for the process (in cm-1)
+        self.G = 0.000 # Coupling strength  
+        self.S = 0.000 # Huang-Rhys factor
 
         self.thermo = {
             "g": {}, "h": {}, "stot": {},
@@ -1305,6 +1316,213 @@ class State_Conv(Reac):
     def set_driving_force(self, df): # Establece el driving force para el proceso de conversion de estado
         self.driving_force = df
 
+    def set_e(self):
+        self.abs_en = 0.0
+        self.abs_zpe = 0.0
+        calc_zpe = True
+        if self.relref:
+            self.abs_en = self.ref_ref.energy
+            self.energy = self.abs_en - self.parent_itm_ref.energy
+
+            self.abs_zpe = self.ref_ref.zpe
+            if self.parent_itm_ref.zpe != 0 and self.abs_zpe != 0:
+                self.zpe = self.abs_zpe - self.parent_itm_ref.zpe
+            else:
+                self.zpe = 0.0
+        else:
+            self.abs_en = self.ref.energy
+            self.energy = self.abs_en - self.parent_itm.energy
+            self.abs_zpe = self.ref.zpe
+
+            if self.abs_zpe != 0 and self.parent_itm.zpe != 0:
+                self.zpe = self.abs_zpe - self.parent_itm.zpe
+            else:
+                self.zpe = 0.0
+
+
+    def set_reorganization_energy(self, energy):
+        self.Em = energy
+        self.update_thermo_2()
+
+    def calc_mean_vib_freq(self):
+        # Calculate mean vibrational frequency of the ground state from the reference
+        if self.ref.freq_is_set:
+            freqs = self.ref.freqs.vibs
+            if self.ref.freqs.unit == "cm-1":
+                freqs_cm1 = freqs
+            elif self.ref.freqs.unit == "eV":
+                freqs_cm1 = [f * 8065.54 for f in freqs]  # Convert eV to cm-1
+            else:
+                raise ValueError("Unknown frequency unit for reference")
+            mean_freq = np.mean(freqs_cm1)
+            self.w = mean_freq * 2 * np.pi * 2.99792458e10  # Convert to angular frequency in s^-1
+        else:
+            raise ValueError("Frequencies are not set for the reference")
+
+    def calc_coupling(self, u):
+        if self.w == 0.0:
+            self.calc_mean_vib_freq()
+        beta = (1/(Kb["cm1"] * self.parent_itm.temperature))
+        G = (self.Em*conv[u]["cm1"] / (hbar["cm1"] * self.w)) * coth((beta * hbar["cm1"] * self.w) / 2)
+        self.G = G
+
+    def displacement_vector(self):
+        # Calculate the displacement vector between the parent itm and the reference
+        ground_coors = self.parent_itm.struct.coors
+        excited_coors = self.ref.struct.coors
+
+        if len(ground_coors) != len(excited_coors):
+            raise ValueError("Ground and excited state atom counts differ")
+
+        # The displacement vector needs to be mass-weighted for the calculation of the Huang-Rhys factor
+        return [
+            [d * np.sqrt(masas[self.parent_itm.struct.labels[i]]) for d in (exc - grd for exc, grd in zip(exc_atom, grd_atom))]
+            for i, (grd_atom, exc_atom) in enumerate(zip(ground_coors, excited_coors))
+        ]
+    
+    def calc_HR_factor(self):
+        # Calculate the Huang-Rhys factor from the displacement vector and the vibrational normal modes
+        # HR factor for each mode: 0.5 * (normal_mode · displacement_vector)^2 / (omega * displacement_amplitude)
+        if self.ref.freq_is_set:
+            freqs = self.ref.freqs.vibs
+            # Replace negative and small frequencies with 100 cm-1 to avoid numerical issues
+            if self.ref.freqs.unit == "cm-1":
+                freqs = [f if f > 100 else 100 for f in freqs]
+            elif self.ref.freqs.unit == "eV":
+                freqs = [f if f * 8065.54 > 100 else 100/8065.54 for f in freqs] 
+            vectors = self.ref.freqs.vectors  # Normal mode vectors (list of N modes, each with N atoms with [dx,dy,dz])
+
+            if not vectors or len(vectors) == 0:
+                raise ValueError("Normal mode vectors not available for reference")
+
+            if self.ref.freqs.unit == "cm-1":
+                freqs_cm1 = freqs
+            elif self.ref.freqs.unit == "eV":
+                freqs_cm1 = [f * 8065.54 for f in freqs]  # Convert eV to cm-1
+            else:
+                raise ValueError("Unknown frequency unit for reference")
+
+            displacement = self.displacement_vector()  # [atom_1: [dx,dy,dz], atom_2: [...], ...]
+
+            S_total = 0.0
+            self.S_k = []
+            self.freqs_eV = []
+            # For each normal mode
+            for mode_idx, (freq, mode_vector) in enumerate(zip(freqs_cm1, vectors)):
+                # Calculate dot product: sum over all atoms of dot product of displacements
+                dot_product = sum(
+                    sum(disp_component * mode_component 
+                        for disp_component, mode_component in zip(atom_disp, atom_mode))
+                    for atom_disp, atom_mode in zip(displacement, mode_vector)
+                )
+
+
+                S_mode = 0.01483 * freq * (dot_product ** 2) # 0.01483 comes from converting amu of displacements to kgm^2 and changing the frequency from cm-1 to s-1.
+                S_total += S_mode
+
+                self.S_k.append(S_mode)
+                self.freqs_eV.append(freq * 0.000123984) # Convert cm-1 to eV for reference
+
+            self.HR_factor = S_total
+            self.S = S_total
+
+    def vibronic_spectra(self, max_quanta=10, min_S=0.01, fwhm=0.1, num_points=1000):
+        # Calculate the vibronic spectrum
+        E_00 = self.energy # Vertical transition energy (0-0 transition)
+        if not self.S_k or not self.freqs_eV:
+            self.calc_HR_factor()
+
+        print("self.S_k:", self.S_k)
+
+        # Remove modes with negligible HR factor
+        sig_modes = [(omega, S) for omega, S in zip(self.freqs_eV, self.S_k) if S >= min_S]
+
+        ignored_S = sum(S for S in self.S_k if S < min_S)
+        baseline_int = np.exp(-ignored_S)  # Baseline intensity from ignored modes
+
+        transitions = []
+
+        def generate_transitions(mode_idx, current_quanta, current_energy, current_intensity):
+            if mode_idx >= len(sig_modes) or current_quanta > max_quanta:
+                transitions.append((current_energy, current_intensity))
+                return
+
+            omega, S = sig_modes[mode_idx]
+
+            # Generate transitions for 0 to max_quanta vibrational quanta in this mode
+            for n in range(max_quanta - current_quanta + 1):
+                new_energy = current_energy + n * omega
+                new_intensity = current_intensity * (S ** n) / factorial(n)
+                generate_transitions(mode_idx + 1, current_quanta + n, new_energy, new_intensity)
+            
+        generate_transitions(0, 0, E_00, baseline_int)
+        max_I = max(I for _, I in transitions) if transitions else 1.0
+        self.transitions = [ (E, I) for E, I in transitions if I >= max_I * 0.01 ]  # Filter out very weak transitions
+
+        # Gaussian Broadening
+        transitions = np.array(transitions)
+
+        x_min = E_00 - (fwhm * 3)
+        max_active_freq = max((omega for omega, S in sig_modes), default=0.2)
+        x_max = E_00 + (max_quanta * max_active_freq) + (fwhm * 3)
+        x_axis = np.linspace(x_min, x_max, num_points)
+        y_axis = np.zeros_like(x_axis)
+
+        # Gaussian formula: I * exp( -4 * ln(2) * (x - E)^2 / FWHM^2 )
+        sigma_factor = 4 * np.log(2) / (fwhm**2)
+
+        for E, I in transitions:
+            y_axis += I * np.exp(-sigma_factor * (x_axis - E) ** 2)
+
+        if np.max(y_axis) > 0:
+            y_axis /= np.max(y_axis)  # Normalize to max intensity of 1
+
+        return x_axis, y_axis
+
+    def plot_vibronic_spectra(self, x_axis, y_axis):
+        import matplotlib.pyplot as plt
+
+        wavelength_axis = 1240 / x_axis[::-1]
+        y_axis_plot = y_axis[::-1]
+
+        fig = plt.figure(figsize=(10, 6))
+        ax1 = fig.add_subplot(111)
+        ax2 = ax1.twiny()
+        ax1.plot(wavelength_axis, y_axis, label='Vibronic Spectrum')
+
+        def nm_to_eV(x):
+            return 1240 / x
+
+        if hasattr(self, "transitions"):
+            max_I = max(I for _, I in self.transitions)
+            first = True
+            for E, I in self.transitions:
+                alpha = float(I) / max_I if max_I != 0 else 1
+                label = "Transitions" if first else None
+                wavelength_E = 1240 / E
+                plt.vlines(
+                    wavelength_E,
+                    0,
+                    max(y_axis_plot) * 0.9,
+                    colors="gray",
+                    linestyles="--",
+                    alpha=alpha,
+                    label=label
+                )
+                first = False
+
+        ax1.set_xlabel('Energy (nm)')
+        ax2.set_xlabel('Energy (eV)')
+        ax1.set_xlim(wavelength_axis[0], wavelength_axis[-1])
+        ax2.set_xlim(nm_to_eV(wavelength_axis[-1]), nm_to_eV(wavelength_axis[0]))
+        ax2.set_xticks(nm_to_eV(ax1.get_xticks()))
+        plt.ylabel('Intensity (a.u.)')
+        plt.title('Simulated Vibronic Spectrum')
+        plt.legend()
+        plt.grid()
+        plt.show() 
+
+
     def update_thermo_2(self, *args):  # Cálculo de constantes no radiativas
         u = self.parent_itm.mech.unit
         self.thermo["g"] = {}
@@ -1318,6 +1536,7 @@ class State_Conv(Reac):
         self.thermo["k(0)"] = {}
         self.thermo["k(T)"] = {}
         self.thermo["Egap"] = {}
+        self.thermo["G"] = {}
         self.thermo["Type"] = self.process_type
         self.thermo["DF"] = self.df_mag
 
@@ -1331,6 +1550,14 @@ class State_Conv(Reac):
             self.thermo["a"][T] = 0.0
             self.thermo["ae"][T] = 0.0
             self.thermo["k(0)"][T] = 0.0
+            # Coupling calculation
+            if self.Em != 0.0:
+                self.parent_itm.temperature = T
+                self.calc_coupling(u)
+                self.thermo["G"][T] = self.G
+            else:
+                self.thermo["G"][T] = 0.0
+
             for key in keys:
                 if self.relref:
                     relp = self.parent_itm_ref.tkey(key, T) - self.ref_ref.tkey(key, T)
@@ -1435,6 +1662,20 @@ class State_Conv(Reac):
     def egap(self, T):
         return self.thermo["Egap"][T]
     
+    def to_dict(self):
+        d = super().to_dict()
+        d.update({
+            "process_type": self.process_type,
+            "df_mag": self.df_mag,
+            "Em": self.Em,
+            "HR_factor": self.HR_factor,
+            "max_freq_GS": self.max_freq_GS,
+            "w": self.w,
+            "G": self.G,
+            "S": self.S,
+            "transitions": getattr(self, "transitions", [])
+        })
+        return d
 
 class Itm(object):
     def __init__(self, name, *args, **kwargs):
@@ -1463,7 +1704,7 @@ class Itm(object):
         if "energy_font" in kwargs:
             self.energy_font = kwargs["energy_font"]
         else:
-            self.energy_font = ""
+            self.energy_font = "Arial,11,-1,0,100,0,0,0,0,0,Regular"
 
         if "energy" in kwargs:
             self.energy = kwargs["energy"]
@@ -1512,6 +1753,11 @@ class Itm(object):
             self.photos = kwargs["photos"]
         else:
             self.photos = []
+
+        if "smiles" in kwargs:
+            self.smiles = kwargs["smiles"]
+        else:
+            self.smiles = None
 
         if "struct" in kwargs:
             self.struct = Struct(sdict=kwargs["struct"])
@@ -1590,6 +1836,7 @@ class Itm(object):
         selfdict["pg"] = self.pg
         selfdict["spin"] = self.spin
         selfdict["photos"] = self.photos
+        selfdict["smiles"] = self.smiles
         if self.tp == "mecp":
             selfdict["redmass"] = self.redmass
             selfdict["SOC"] = self.SOC
@@ -1848,6 +2095,9 @@ class Itm(object):
         #print(self.states)
         return list(self.states.values())
 
+    def get_excited_state(self, state_name, proc_type=""): #retrieve specific excited state and process type
+        return self.states.get(state_name + proc_type)
+
     def get_reac(self, reac):
         if reac in self.reacs:
             return self.reacs[reac]
@@ -1899,7 +2149,7 @@ class Itm(object):
                 self.freqs.unit = unit
                 return True
 
-    def freqs_from_file(self, f, program=""):
+    def freqs_from_file(self, f, program="vasp"):
         """
         Reads the frequencies from file
         """
@@ -1910,15 +2160,16 @@ class Itm(object):
         if program not in PROGRAM_FREQ_MAP:
             print(program, " not implemented for frequency reading")
             return False
-
+        print("PROGRAM = ", program)
         func_reader = PROGRAM_FREQ_MAP[program]
         try:
-            vibs, unit = func_reader(f)
+            vibs, norm_modes, unit = func_reader(f)
+            print("Normal modes read from file: ", norm_modes[0], len(norm_modes))
         except:
             self.cm += "COULD NOT FIND VIBS IN FILE: " + f + "\n"
             return False
 
-        self.freqs.set_vibs(vibs[:])
+        self.freqs.set_vibs(vibs[:], vectors=norm_modes)
         self.freqs.unit = "cm-1"
     
     def pg_from_orca_file(self, infile):
@@ -2453,6 +2704,7 @@ class Mechanism(object):
 
         itmname = os.path.basename(folder)
         program = data.get("program")
+        print("Program detected: ", program)
         if program is None:
             print("itm_from_folder_custom: Unkown program")
             return 
@@ -2485,6 +2737,11 @@ class Mechanism(object):
 
         # try to read freqs
         freq_path = os.path.join(folder, data.get("freq_file", ""))
+        print("Reading frequencies from: ", freq_path)
+        if not os.path.isfile(freq_path):
+            detected_data = detect_program(folder)
+            if "freq_file" in detected_data:
+                freq_path = os.path.join(folder, detected_data["freq_file"])
         itmobj.freqs_from_file(freq_path, program)
        
         # try to read struct
@@ -2653,11 +2910,14 @@ class Data(object):
     def __init__(self):
         self.mechs = OrderedDict()
         self.diagrams = OrderedDict()
+        self.board_layouts = OrderedDict()
+
 
     def to_dict(self):
         selfdict = OrderedDict()
         selfdict["mechs"] = [mech.to_dict() for mech in self.mechs.values()]
         selfdict["diagrams"] = [d.to_dict() for d in self.diagrams.values()]
+        selfdict["board_layouts"] = [bl.to_dict() for bl in self.board_layouts.values()]
         return selfdict
 
     def change_mec_name(self, oname, nname):
@@ -2789,7 +3049,7 @@ class Data(object):
                     itmobj = mecobj.add_itm(itm["name"], energy=itm["energy"],
                                    tp=itm["tp"], freqs=itm["freqs"],
                                    cm=itm["cm"], temps=itm["temps"],
-                                   struct=itm["struct"], 
+                                   struct=itm["struct"], smiles=itm["smiles"],
                                    pg=itm["pg"], photos=itm["photos"])
                     # print(itmobj)
                     if itmobj.tp == "mecp":
@@ -2878,7 +3138,11 @@ class Data(object):
                                     itmobj.add_excited_state(mecobj.get_itm(state["ref"]), state["thermo"]["Type"],  state["thermo"]["DF"] , state["relref"])
                                 except Exception as e:
                                     print("Error adding excited state for item " + itmobj.name+ " with reference " + state["ref"] + " and error: " + str(e))
-
+                            created = itmobj.get_excited_state(state["ref"], state["thermo"]["Type"])
+                            if created:
+                                created.Em = state.get("Em", created.Em)
+                                created.HR_factor = state.get("HR_factor", created.HR_factor)
+                                created.max_freq_GS = state.get("max_freq_GS", created.max_freq_GS)
                 if "refs" in mec:
                     message = mecobj.add_refs(mec["refs"])
                     print(message)
@@ -2901,12 +3165,16 @@ class Data(object):
                         itmobj = self.get_mech(diag["col"]).get_itm(itm["name"])
                         if itmobj is None:
                             continue
-                        pitmobj = plotobj.add_itm(itmobj, name=itm["name"],
-                                                  color=itm["color"],
-                                                  width=itm["width"],
-                                                  length=itm["length"],
-                                                  style=itm["style"],
-                                                  coors=itm["coors"])
+                        try:
+                            pitmobj = plotobj.add_itm(itmobj, name=itm["name"],
+                                                      color=itm["color"],
+                                                      width=itm["width"],
+                                                      length=itm["length"],
+                                                      style=itm["style"],
+                                                      coors=itm["coors"])
+                        except (AttributeError, KeyError) as e:
+                            print(f"Warning: Could not load plot item '{itm['name']}' - reference may be missing. Skipping. ({e})")
+                            continue                           
 
                 if "labels" in diag:
                     for label in diag["labels"]:
@@ -2940,6 +3208,11 @@ class Data(object):
                                          width=link["width"],
                                          style=link["style"],
                                          coors=link["coors"])
+        if "board_layouts" in data:
+            from mechasuite.Board import LayoutNode
+            for bl in data["board_layouts"]:
+                layoutobj = LayoutNode.from_dict(bl)
+                self.board_layouts[layoutobj.mech_name] = layoutobj
 
 
 def dict_to_data(indict):

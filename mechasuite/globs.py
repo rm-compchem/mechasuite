@@ -1,3 +1,8 @@
+import numpy as np
+
+def coth(x):
+    return 1/np.tanh(x)
+
 NA = 6.022140857e23  # Avogadro's number
 R = {
     "eV": 8.625594481086727e-05,
