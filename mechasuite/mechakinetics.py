@@ -429,7 +429,8 @@ def run_kmc(data):
     max_step = data.get("max_step", 1e18)
     plot_every = int(data.get("plot_every", 1))
     sys.reactor = reactor
-    sys.save_freq = int(data.get("save_freq", 1))
+    sys.save_freq = data.get("save_freq", 1)
+    sys.logfile = data.get("logfile", "kmc.log")
 
     # reactions
     for equation, rdict in data["mec"].items():

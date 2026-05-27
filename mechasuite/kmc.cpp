@@ -6,6 +6,8 @@
 #include <iostream>
 #include <algorithm>
 #include <functional>
+#include <iostream>
+#include <fstream>
 
 // ----------------- Reactor -----------------
 // too agresive
@@ -23,6 +25,42 @@
 //         if(sp[idx]<0) sp[idx]=0;
 //     }
 // }
+
+void writeHistory(const std::string& filename, double time, const std::vector<int>& species)
+{
+   std::ofstream outfile;
+   outfile.open (filename,  std::ios::app );
+   if(!outfile.is_open()) {
+      std::cout << "error opening logile\n";
+      return;
+   }
+   
+   outfile << time << "  " ;
+   for( auto i: species){
+   	outfile << i << "  ";
+   }
+   outfile << "\n";
+   outfile.close();
+}
+
+void initHistoryFile(const std::string& filename, const std::vector<std::string>& names)
+{
+   std::ofstream outfile;
+   outfile.open (filename,  std::ios::out );
+   if(!outfile.is_open()) {
+      std::cout << "error opening logile\n";
+      return;
+   }
+   
+   outfile << "Time  ";
+   for (const auto name:names){
+      outfile << name << " ";
+   }
+   
+   outfile << "\n";
+   outfile.close();
+}
+
 void Reactor::applyFlow(std::vector<int>& sp,
                         double dt,
                         std::mt19937& rng)
@@ -172,6 +210,8 @@ bool System::stepSSA(double& time, std::mt19937& rng)
     {
         history.push_back(species);
         times.push_back(time);
+
+        writeHistory(logfile, time, species); 
     } 
 
     updatePropensities(changed);
@@ -194,8 +234,13 @@ bool System::stepTau(double& time, double tau, std::mt19937& rng)
     }
     time += tau;
     reactor.applyFlow(species,tau, rng);
-    history.push_back(species);
-    times.push_back(time);
+    if(step % saveFreq == 0)
+    {
+        history.push_back(species);
+        times.push_back(time);
+
+        writeHistory(logfile, time, species); 
+    } 
     updatePropensities(changed);
     return any_event;
 }
@@ -203,6 +248,10 @@ bool System::stepTau(double& time, double tau, std::mt19937& rng)
 // ----------------- KMC -----------------
 void KMC::runSSA(double t_end, size_t max_steps)
 {
+   // override any existing file
+   initHistoryFile(system.logfile, system.names);
+   // override any existing file
+
     double time=0.0;
     while(time<t_end){
         if(!system.stepSSA(time,rng)) break;
@@ -214,7 +263,12 @@ void KMC::runSSA(double t_end, size_t max_steps)
     //    if(!system.stepSSA(time,rng)) break;
 }
 
-void KMC::runTau(double tau, double t_end){
+void KMC::runTau(double tau, double t_end)
+{
+   // override any existing file
+   initHistoryFile(system.logfile, system.names);
+   // override any existing file
+
     double time=0.0;
     while(time<t_end){
         if(!system.stepTau(time,tau,rng)) break;
@@ -261,6 +315,7 @@ PYBIND11_MODULE(kmc, m) {
         .def_readwrite("times", &System::times)
         .def_readwrite("save_freq", &System::saveFreq)
         .def_readwrite("step", &System::step)
+        .def_readwrite("logfile", &System::logfile)
         .def("addSpecies", &System::addSpecies)
         .def("getSpeciesIndex", &System::getSpeciesIndex)
         .def("addReaction", &System::addReaction)

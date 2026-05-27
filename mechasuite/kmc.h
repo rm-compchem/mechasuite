@@ -47,6 +47,8 @@ public:
     size_t saveFreq = 1;
     size_t step = 0;
 
+    std::string logfile = "kmc.log";
+
     System() = default;
 
     int addSpecies(const std::string& name, int initial);
@@ -61,8 +63,8 @@ public:
     // stochastic algorithms
     bool stepSSA(double& time, std::mt19937& rng);
     bool stepTau(double& time, double tau, std::mt19937& rng);
-private:
     std::vector<std::string> names;
+private:
     std::unordered_map<std::string,int> name_to_idx;
 };
 
