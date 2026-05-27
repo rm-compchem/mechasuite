@@ -86,7 +86,7 @@ extern QMap<QString, float> cylinders;
 extern QMap<QString, float> masas;
 extern QMap<int, QString> atomic_symbols;
 extern QMap<QString, array<float,4>> colors;
-extern array<string,73> element_symbols;
+extern array<string, 121> element_symbols;
 extern array<float, 12> clw;
 extern array<array<float, 4>, 12> clc;
 extern array<SPACEGROUP, 230> spaceGroups;
