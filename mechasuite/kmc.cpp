@@ -316,6 +316,8 @@ PYBIND11_MODULE(kmc, m) {
         .def_readwrite("save_freq", &System::saveFreq)
         .def_readwrite("step", &System::step)
         .def_readwrite("logfile", &System::logfile)
+        //.def_property_readonly("names", [](System &self) -> System& { return self.system; })
+        .def_readonly("names", &System::names)
         .def("addSpecies", &System::addSpecies)
         .def("getSpeciesIndex", &System::getSpeciesIndex)
         .def("addReaction", &System::addReaction)

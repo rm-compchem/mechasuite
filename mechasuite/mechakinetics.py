@@ -357,6 +357,19 @@ def run_microkinetics(indic):
     mec.write()
     mec.plot()
 
+def get_species_dic_from_reac_str(lofstr):
+    # converts "2I+2P=3X" in a list: [I, P, X]
+    allspec = {}
+    for eqstr in lofstr:
+        sp = eqstr.split("=")
+        coeftuple = re.findall(r'(\d*)([A-Za-z_]\w*)', sp[0])
+        for spec_pair in coeftuple:
+            allspec[spec_pair[1]] = 0
+        coeftuple = re.findall(r'(\d*)([A-Za-z_]\w*)', sp[1])
+        for spec_pair in coeftuple:
+            allspec[spec_pair[1]] = 0
+    return allspec
+    
 def parse_reaction_kmc(eq, rdict, system):
     rate = rdict["298"]
     r1 = kmc_core.Reaction()
@@ -374,25 +387,30 @@ def parse_reaction_kmc(eq, rdict, system):
 
     r1.reactants = counts(lhs)
     r1.products = counts(rhs)
-    r1.rate = rate[0]
+    r1.rate = float(rate[0])
     if len(rate) > 1:
         r2 = kmc_core.Reaction()
         r2.reactants = r1.products
         r2.products = r1.reactants
-        r2.rate = rate[1]
+        r2.rate = float(rate[1])
     print(rate[0], rate[1])
     return r1, r2
 
 def run_kmc(data):
     sys = kmc_core.System()
-
-    # add surface species
-    for s,v in data["surface_count"].items():
+    
+    allspec = get_species_dic_from_reac_str(list(data["mec"].keys()))
+    allspec.update(data["surface_count"])
+    allspec.update(data["gas_count"])
+    for s, v in allspec.items():
         sys.addSpecies(s,v)
+    ## add surface species
+    #for s,v in data["surface_count"].items():
+    #    sys.addSpecies(s,v)
 
-    # add gas species
-    for s,v in data.get("gas_count",{}).items():
-        sys.addSpecies(s,v)
+    ## add gas species
+    #for s,v in data.get("gas_count",{}).items():
+    #    sys.addSpecies(s,v)
 
     # reactor
     reactor = kmc_core.Reactor()
@@ -417,11 +435,12 @@ def run_kmc(data):
     kmc = kmc_core.KMC(sys, 123)
 
     #tau = data.get("tau", 0.1)
-    kmc.runSSA(data["simulation_time"], 100000)
+    kmc.runSSA(data["simulation_time"], int(1e+18))
     # kmc.runTau(tau, data["t_end"])
 
     # plotting
-    names = list(data["surface_count"].keys()) + list(data.get("gas_count",{}).keys())
+    #names = list(data["surface_count"].keys()) + list(data.get("gas_count",{}).keys())
+    names = sys.names
     hist = sys.history
     times = sys.times
     print(f"kmc steps: {sys.step}  ")
