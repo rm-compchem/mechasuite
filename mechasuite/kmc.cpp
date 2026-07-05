@@ -221,19 +221,24 @@ bool System::stepSSA(double& time, std::mt19937& rng)
 // ----------------- Tau-leaping -----------------
 bool System::stepTau(double& time, double tau, std::mt19937& rng)
 {
+    printf("doing tau %lf tau: %lf\n", time, tau);
     computeAllPropensities();
+    printf("doing tau %lf  %li\n", time, reactions.size());
     std::poisson_distribution<int> pois;
     bool any_event=false;
     std::vector<int> changed;
     for(size_t i=0;i<reactions.size();++i){
+        printf("doing tau %lf \n", time);
         pois = std::poisson_distribution<int>(propensities[i]*tau);
         int nfirings = pois(rng);
         if(nfirings>0) any_event=true;
         for(auto& [idx,nu]:reactions[i].reactants){ species[idx]-= nu*nfirings; changed.push_back(idx);}
         for(auto& [idx,nu]:reactions[i].products){ species[idx]+= nu*nfirings; changed.push_back(idx);}
     }
+    printf("doing tau %lf \n", time);
     time += tau;
     reactor.applyFlow(species,tau, rng);
+    printf("doing tau %lf \n", time);
     if(step % saveFreq == 0)
     {
         history.push_back(species);
@@ -241,7 +246,9 @@ bool System::stepTau(double& time, double tau, std::mt19937& rng)
 
         writeHistory(logfile, time, species); 
     } 
+    printf("doing tau %lf \n", time);
     updatePropensities(changed);
+    printf("done tau\n");
     return any_event;
 }
 
@@ -272,6 +279,8 @@ void KMC::runTau(double tau, double t_end)
     double time=0.0;
     while(time<t_end){
         if(!system.stepTau(time,tau,rng)) break;
+
+	system.step ++;
     }
 }
 
