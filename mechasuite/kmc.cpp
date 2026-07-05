@@ -130,6 +130,17 @@ void System::addReaction(const Reaction& r)
 
 double System::binomial(unsigned n, unsigned k)
 {
+    /*
+    computes the binomial coefficient "n choose k" — the number of ways
+    to pick k items from a set of n, i.e. n! / (k! · (n-k)!).
+
+    to get the correct combinatorial factor for reactions that consume more 
+    than one copy of the same species — e.g. for 2A -> B, the propensity 
+    isn't just proportional to the population of A, it's proportional to 
+    C(n_A, 2) (the number of distinct pairs of A molecules available to react), 
+    which is standard stochastic mass-action kinetics.
+    */
+
     if(k>n) return 0.0;
     if(k==0 || k==n) return 1.0;
     double res = 1.0;
@@ -147,15 +158,6 @@ double System::computePropensity(const Reaction& r) const
         a *= binomial(species[idx], nu);
         if(a==0.0) return 0.0;
     }
-    // backward rate for reversible
-    // if(r.reversible){
-    //     double prod = 1.0;
-    //     for(auto& [idx, nu] : r.products){
-    //         prod *= binomial(species[idx], nu);
-    //         if(prod==0.0) return 0.0;
-    //     }
-    //     a += r.rate_backward * prod / std::max(r.Keq,1e-12);
-    // }
     return a;
 }
 
