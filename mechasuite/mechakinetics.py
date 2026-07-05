@@ -397,6 +397,7 @@ def parse_reaction_kmc(eq, rdict, system):
     return r1, r2
 
 def run_kmc(data):
+    solver = data.get("solver", "kmc") 
     sys = kmc_core.System()
     
     allspec = get_species_dic_from_reac_str(list(data["mec"].keys()))
@@ -434,9 +435,11 @@ def run_kmc(data):
     # KMC engine
     kmc = kmc_core.KMC(sys, 123)
 
-    #tau = data.get("tau", 0.1)
-    kmc.runSSA(data["simulation_time"], int(1e+18))
-    # kmc.runTau(tau, data["t_end"])
+    if solver == "kmc_tau":
+        tau = data.get("tau", 0.1)
+        kmc.runTau(tau, data["simulation_time"])
+    else:
+        kmc.runSSA(data["simulation_time"], int(1e+18))
 
     # plotting
     #names = list(data["surface_count"].keys()) + list(data.get("gas_count",{}).keys())
@@ -476,7 +479,7 @@ def main():
 
     # default to kmc
     runtype = mec_dic.get("solver", "mk")
-    if runtype == "kmc":
+    if runtype.startswith("kmc"):
         run_kmc(mec_dic)
     elif runtype in ["diff_eq", "microkinetics", "mk"]:
         run_microkinetics(mec_dic)
