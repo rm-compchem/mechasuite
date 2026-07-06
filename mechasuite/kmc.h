@@ -7,13 +7,13 @@
 
 struct Reaction 
 {
-    std::unordered_map<int,int> reactants; // species idx -> stoichiometry
-    std::unordered_map<int,int> products;  // species idx -> stoichiometry
+    std::unordered_map<int,int> reactants; // idx in species vector -> stoichiometry
+    std::unordered_map<int,int> products;  // idx in species vector -> stoichiometry
     double rate;                           // forward rate
     bool reversible = false;               // use backward rate
     bool adsorption = false;               // gas->surface
     bool desorption = false;               // surface->gas
-    double Keq = 1.0;                      // equilibrium constant for detailed balance
+    // double Keq = 1.0;                      // equilibrium constant for detailed balance
 };
 
 struct Reactor 
@@ -34,7 +34,7 @@ struct DependencyGraph
 class System 
 {
 public:
-    std::vector<int> species;
+    std::vector<int> species; // concentration/count of species
     std::vector<Reaction> reactions;
     Reactor reactor;
     DependencyGraph dep_graph;
@@ -43,6 +43,8 @@ public:
 
     std::vector<std::vector<int>> history;
     std::vector<double> times;
+    std::vector<std::string> names; // list of species names
+
 
     short saveFreq = 1;
     size_t step = 0;
@@ -60,10 +62,20 @@ public:
     double computePropensity(const Reaction& r) const;
     static double binomial(unsigned n, unsigned k);
 
+    // new functions
+    std::vector<double> computeHOR() const;
+    std::vector<bool> identifyCritical(const std::vector<double>& propensities, int nc) const;
+    double computeTauCGPT(const std::vector<double>& propensities,
+                            const std::vector<bool>& critical,
+                            const std::vector<double>& g, double eps, double a0) const;
+    bool stepAdaptive(double& time, std::mt19937& rng,
+                    double eps, int nc, int nSSAFallback);
+    // new functions
+
+
     // stochastic algorithms
     bool stepSSA(double& time, std::mt19937& rng);
     bool stepTau(double& time, double tau, std::mt19937& rng);
-    std::vector<std::string> names;
 private:
     std::unordered_map<std::string,int> name_to_idx;
 };
@@ -76,4 +88,5 @@ public:
     KMC(System& sys, unsigned seed=42) : system(sys), rng(seed) {}
     void runSSA(double t_end, size_t max_steps);
     void runTau(double tau, double t_end);
+    void runAdaptive(double t_end, size_t max_steps, double eps=0.03, int nc=10, int nSSAFallback=100);
 };

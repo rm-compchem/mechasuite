@@ -438,6 +438,8 @@ def run_kmc(data):
     if solver == "kmc_tau":
         tau = data.get("tau", 0.1)
         kmc.runTau(tau, data["simulation_time"])
+    elif solver == "kmc_adaptive":
+        kmc.runAdaptive(data["simulation_time"], int(1e+18))
     else:
         kmc.runSSA(data["simulation_time"], int(1e+18))
 
