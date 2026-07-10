@@ -499,11 +499,11 @@ def pressure_to_count(P, volume, temperature):
     kB = 1.380649e-23
     return int(round(P * volume / (kB * temperature)))
 
-def load_gas_history():
-    with open("kmc_gas.log") as f:
+def load_history(filename):
+    with open(filename) as f:
         header = f.readline()
         names = header.split()[1:]
-    data = np.loadtxt("kmc_gas.log", skiprows=1)
+    data = np.loadtxt(filename, skiprows=1)
     return names, data[:, 0], data[:, 1:].T
 
 def run_kmc(data):
@@ -606,12 +606,14 @@ def run_kmc(data):
     print("final partial pressure:", reactor.partial_pressure)
 
     # plotting
+    if "plot" not in data: return
+
     gas_idx = set(reactor.gas_species.keys()) | set(reactor.reservoir.keys())
 
     fig, (ax_gas, ax_surf) = plt.subplots(1, 2, figsize=(10, 5), sharex=True)
 
     # --- Gas-phase species: partial pressure, feed (in) vs current outlet (out) ---
-    labels, time, pressure_history = load_gas_history()
+    labels, time, pressure_history = load_history("kmc_gas.log")
     pressure_history /= pressure_history.sum(axis=0, keepdims=True)  # instantaneous outlet mole fraction
     # print(len(labels), len(time), pressure_history.shape)
     for label, ph in zip(labels, pressure_history):
@@ -622,11 +624,13 @@ def run_kmc(data):
     ax_gas.legend()
 
     # --- Surface species: discrete population ---
-    for i, name in enumerate(names):
+    labels, time, surface_history = load_history(sys.logfile)
+
+    for name, sh in zip(labels, surface_history):
         idx = sys.getSpeciesIndex(name)
         if idx in gas_idx:
             continue
-        ax_surf.plot(times, [h[i] for h in hist], label=name)
+        ax_surf.plot(times, sh, label=name)
 
     ax_surf.set_xlabel("time")
     ax_surf.set_ylabel("population")
