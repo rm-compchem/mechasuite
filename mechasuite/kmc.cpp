@@ -485,8 +485,8 @@ syncGasReporting();
 
     if(step % saveFreq == 0)
     {
-        history.push_back(species);
-        times.push_back(time);
+        // history.push_back(species);
+        // times.push_back(time);
         extent_history.push_back(reaction_extent);
 
         writeHistory(logfile, time, *this); 
@@ -531,8 +531,8 @@ syncGasReporting();
 
     if(step % saveFreq == 0)
     {
-        history.push_back(species);
-        times.push_back(time);
+        // history.push_back(species);
+        // times.push_back(time);
         extent_history.push_back(reaction_extent);
 
         writeHistory(logfile, time, *this); 
@@ -614,8 +614,8 @@ reactor.updateGasPressures(tauUsed, gas_delta);
 syncGasReporting();
 
     if(step % saveFreq == 0){
-        history.push_back(species);
-        times.push_back(time);
+        // history.push_back(species);
+        // times.push_back(time);
         extent_history.push_back(reaction_extent);
 
         writeHistory(logfile, time, *this);

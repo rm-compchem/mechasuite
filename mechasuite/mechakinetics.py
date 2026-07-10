@@ -585,9 +585,9 @@ def run_kmc(data):
     else:
         kmc.runSSA(data["simulation_time"], int(1e+18))
 
-    names = sys.names
-    hist = sys.history
-    times = sys.times
+    # names = sys.names
+    # hist = sys.history
+    # times = sys.times
     print(f"kmc steps: {sys.step}  ")
     
     # tof
@@ -625,12 +625,11 @@ def run_kmc(data):
 
     # --- Surface species: discrete population ---
     labels, time, surface_history = load_history(sys.logfile)
-
     for name, sh in zip(labels, surface_history):
         idx = sys.getSpeciesIndex(name)
         if idx in gas_idx:
             continue
-        ax_surf.plot(times, sh, label=name)
+        ax_surf.plot(time, sh, label=name)
 
     ax_surf.set_xlabel("time")
     ax_surf.set_ylabel("population")
