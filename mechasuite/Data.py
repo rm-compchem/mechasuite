@@ -13,13 +13,15 @@ import copy
 PROGRAM_ENERGY_MAP = {
     "gaussian": read_energy_gaussian,
     "orca": read_energy_orca,
-    "vasp": read_energy_vasp
+    "vasp": read_energy_vasp,
+    "ase": read_energy_ase
         }
 
 PROGRAM_FREQ_MAP = {
     "gaussian": read_freq_gaussian,
     "orca": read_freq_orca,
-    "vasp": read_freq_vasp
+    "vasp": read_freq_vasp,
+    "ase": read_freq_ase
         }
 
 class PlotLabel(object):

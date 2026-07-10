@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <map>
 #include <random>
 #include <set>
 
@@ -20,10 +21,16 @@ struct Reactor
 {
     bool closed_system = true;
     double residence_time = -1.0; // PFR/CSTR
-    std::unordered_map<int,int> gas_species; // target counts
-    std::unordered_map<int,int> reservoir; // target counts
+    // std::unordered_map<int,int> gas_species; // species index and count
+    std::unordered_map<int,double> gas_species; // species index and count
+    std::unordered_map<int,int> reservoir; // species index and count
+    std::map<int,double> partial_pressure;   // Pa, indexed by gas species idx — constant, not simulated
+    double volume = 1e-5;        // m^3, gas-phase volume of the reactor
+    double temperature = 300.0;  // K
+
     void applyFlow(std::vector<int>& species, double dt, std::mt19937& rng);
     bool isGas(int idx) const { return gas_species.find(idx) != gas_species.end(); }
+    void updateGasPressures(double, const std::map<int,double>& );
 };
 
 struct DependencyGraph 
@@ -45,8 +52,10 @@ public:
     std::vector<double> times;
     std::vector<std::string> names; // list of species names
 
+    std::vector<long long> reaction_extent;
+    std::vector<std::vector<long long>> extent_history;
 
-    short saveFreq = 1;
+    short saveFreq = 100;
     size_t step = 0;
 
     std::string logfile = "kmc.log";
@@ -63,11 +72,17 @@ public:
     static double binomial(unsigned n, unsigned k);
 
     // new functions
+    bool isSteadyState(double window, double tol) const;
     std::vector<double> computeHOR() const;
     std::vector<bool> identifyCritical(const std::vector<double>& propensities, int nc) const;
     double computeTauCGPT(const std::vector<double>& propensities,
                             const std::vector<bool>& critical,
                             const std::vector<double>& g, double eps, double a0) const;
+
+    void applyReactionEvent(size_t, int, std::vector<int>&,std::map<int,double>&);
+    void syncGasReporting();
+    void printReactions() const;
+
     bool stepAdaptive(double& time, std::mt19937& rng,
                     double eps, int nc, int nSSAFallback);
     // new functions
@@ -83,9 +98,15 @@ private:
 class KMC 
 {
 public:
+    KMC(System& sys, unsigned seed=42) : system(sys), rng(seed) {}
+
     System& system;
     std::mt19937 rng;
-    KMC(System& sys, unsigned seed=42) : system(sys), rng(seed) {}
+    double steadyWindow=0.0; // in seconds
+    size_t checkFreq = 1000;
+    double steadyTol = 0.05; // percentage of noise
+    double steadyOnset = -1;
+    bool checkSteady(double& time);
     void runSSA(double t_end, size_t max_steps);
     void runTau(double tau, double t_end);
     void runAdaptive(double t_end, size_t max_steps, double eps=0.03, int nc=10, int nSSAFallback=100);

@@ -1,5 +1,6 @@
 from mechasuite.pyposcar import *
 import os
+import re
 
 # FREQ READER FUNCTION MUST RETURN freqs, units
 # ENERGY READER FUNCTION MUST RETURN energy, spin, pg, unit
@@ -48,7 +49,7 @@ def read_energy_gaussian(ef):
     spin = 0 # set to zero. None gives problems when summing various spins: None + int
     pg = None
     unit = "Ha"
-    if not os.path.isfile(vaspfile):
+    if not os.path.isfile(ef):
         return energy, spin, pg, unit
 
     with open(ef) as f:
@@ -61,6 +62,28 @@ def read_energy_gaussian(ef):
                         E = float(E)
     return energy, spin, pg, unit
 
+def read_energy_ase(outfile):
+    energy = 0
+    spin = 0
+    pg = None
+    unit = "eV"
+    if not os.path.isfile(outfile):
+        return energy, spin, pg, unit
+    with open(outfile) as f:
+        f.readline() # ignore first line
+        line = f.readline()
+        if not "energy=" in line:
+            return energy, spin, pg, unit
+        lsplit = line.split("energy=")
+        if len(lsplit) < 2:
+            return energy, spin, pg, unit
+        en = lsplit[1].split()
+        if len(en) == 0:
+            return energy, spin, pg, unit
+        # first numerical value after split "energy=number"
+        energy = float(en[0]) 
+        return energy, spin, pg, unit
+    
 def read_freq_vasp(outcar):
     freqs = []
     unit = None
@@ -141,6 +164,97 @@ def read_freq_gaussian(ef):
                 freqs = line.split()[2:]
                 for freq in freqs:
                     vibs.append(float(freq))
+    return vibs, unit
+
+def read_freq_ase(filename):
+    """
+    Read an ASE vibrational xyz file.
+
+    Parameters
+    ----------
+    filename : str
+
+    Returns
+    -------
+    frequencies : (nmodes,) ndarray
+        Frequencies in cm^-1.
+        Imaginary frequencies are returned as negative values.
+
+    modes : (nmodes, natoms, 3) ndarray
+        Normal mode displacement vectors.
+
+    positions : (natoms, 3) ndarray
+        Atomic coordinates.
+
+    symbols : list[str]
+        Atomic symbols.
+    """
+    vibs = []
+    unit = "cm-1"
+    modes = []
+    positions = None
+    symbols = None
+    if not os.path.isfile(filename):
+        return vibs, unit
+    
+    with open(filename) as f:
+        lines = [line.rstrip() for line in f]
+
+
+
+    i = 0
+    while i < len(lines):
+        if not lines[i].strip():
+            i += 1
+            continue
+
+        try:
+            natoms = int(lines[i])
+        except ValueError:
+            i += 1
+            continue
+
+        header = lines[i + 1]
+
+        m = re.search(r"f\s*=\s*([-\d\.]+)(i?)\s*cm", header)
+        if m is None:
+            raise ValueError(f"Cannot parse frequency:\n{header}")
+
+        freq = float(m.group(1))
+        if m.group(2) == "i":
+            freq *= -1.0
+
+        vibs.append(freq)
+        mode = np.zeros((natoms, 3))
+
+        if positions is None:
+            positions = np.zeros((natoms, 3))
+            symbols = []
+
+        for a in range(natoms):
+            fields = lines[i + 2 + a].split()
+
+            if len(fields) != 7:
+                raise ValueError(
+                    f"Expected 7 columns, got {len(fields)}:\n{lines[i+2+a]}"
+                )
+
+            symbol = fields[0]
+
+            xyz = np.array(fields[1:4], float)
+            disp = np.array(fields[4:7], float)
+
+            if len(symbols) < natoms:
+                symbols.append(symbol)
+                positions[a] = xyz
+
+            mode[a] = disp
+
+        modes.append(mode)
+
+        i += natoms + 2
+
+    # in the future i might want to return also the normal modes
     return vibs, unit
 
 def read_orca_pg(outfile):

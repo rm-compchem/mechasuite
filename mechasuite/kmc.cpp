@@ -6,12 +6,11 @@
 #include <iostream>
 #include <algorithm>
 #include <functional>
-#include <iostream>
 #include <fstream>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "kmc.h"
+
 
 namespace py = pybind11;
 
@@ -34,7 +33,7 @@ enum class StopReason { Running, ReachedTEnd, NoPropensity, MaxStepReached };
 //     }
 // }
 
-void writeHistory(const std::string& filename, double time, const std::vector<int>& species)
+void writeHistory(const std::string& filename, double time, System& sys)
 {
    std::ofstream outfile;
    outfile.open (filename,  std::ios::app );
@@ -44,14 +43,28 @@ void writeHistory(const std::string& filename, double time, const std::vector<in
    }
    
    outfile << time << "  " ;
-   for( auto i: species){
+   for( auto i: sys.species){
    	outfile << i << "  ";
+   }
+   outfile << "\n";
+   outfile.close();
+
+  // gas
+   outfile.open ("kmc_gas.log",  std::ios::app );
+   if(!outfile.is_open()) {
+      std::cout << "error opening logile\n";
+      return;
+   }
+   
+   outfile << time << "  " ;
+   for( auto& [idx, feed_p] : sys.reactor.gas_species){
+   	outfile << sys.reactor.partial_pressure[idx] << "  ";
    }
    outfile << "\n";
    outfile.close();
 }
 
-void initHistoryFile(const std::string& filename, const std::vector<std::string>& names)
+void initHistoryFile(const std::string& filename, System& sys)
 {
    std::ofstream outfile;
    outfile.open (filename,  std::ios::out );
@@ -61,12 +74,57 @@ void initHistoryFile(const std::string& filename, const std::vector<std::string>
    }
    
    outfile << "Time  ";
-   for (const auto name:names){
+   for (const auto name:sys.names){
       outfile << name << " ";
    }
    
    outfile << "\n";
    outfile.close();
+
+
+   // write gas
+   outfile.open ("kmc_gas.log",  std::ios::out );
+   if(!outfile.is_open()) {
+      std::cout << "error opening logile\n";
+      return;
+   }
+   
+   outfile << "Time  ";
+   for (auto& [idx, feed_p] : sys.reactor.gas_species){
+      outfile << sys.names[idx] << " ";
+   }
+   
+   outfile << "\n";
+   outfile.close();   
+}
+
+// Exact update of every gas species' partial pressure over the elapsed
+// time dt of this KMC step. Two additive, physically separate terms:
+//  1 transport: exact analytic solution of dP/dt=(feed-P)/tau, valid for
+//      any dt, no noise, no stiffness.
+//  2 reaction: the *actual* stoichiometric consequence of whatever fired
+//      this step (from applyReactionEvent below), applied at the end of
+//      the interval -- matches Gillespie semantics (event occurs at t+dt).
+void Reactor::updateGasPressures(double dt, const std::map<int,double>& delta_from_reactions)
+{
+    if(volume <= 0.0) return;
+    for(auto& [idx, feed_p] : gas_species){
+        if(reservoir.count(idx)) continue;   // pinned externally, skip integration
+
+        double Pi = partial_pressure.count(idx) ? partial_pressure[idx] : feed_p;
+
+        if(!closed_system && residence_time > 0.0)
+            // Pi - feed_p is how far the current pressure is from the feed (steady-state target) value.
+            // exp(-dt/residence_time) is the fraction of that gap that survives after time dt — it decays exponentially with time constant τ. At dt=0 it's 1 (no change yet); as dt→∞ it's 0 (gap fully closed).
+            // So the new pressure is: feed value, plus whatever fraction of the old gap hasn't relaxed away yet.
+            Pi = feed_p + (Pi - feed_p) * std::exp(-dt/residence_time); 
+
+        auto it = delta_from_reactions.find(idx);
+        if(it != delta_from_reactions.end()) Pi += it->second;
+        if(Pi < 0.0) Pi = 0.0;   // fp-roundoff guard only, not a physical clamp
+
+        partial_pressure[idx] = Pi;
+    }
 }
 
 void Reactor::applyFlow(std::vector<int>& sp,
@@ -113,6 +171,50 @@ void Reactor::applyFlow(std::vector<int>& sp,
 }
 
 // ----------------- System -----------------
+// System.cpp
+// Applies nfirings of reaction rxn_idx. Surface/site species update
+// species[] exactly as before (genuine discrete KMC state). Gas-phase
+// species (reactor.isGas(idx)) do NOT touch species[] -- their mass is
+// accumulated into gas_delta_pressure (Pa, via PV=NkT) for
+// Reactor::updateGasPressures to apply exactly, since gas is now a
+// continuum, not a particle count.
+void System::applyReactionEvent(size_t rxn_idx, int nfirings,
+                                 std::vector<int>& changed_surface,
+                                 std::map<int,double>& gas_delta_pressure)
+{
+    if(nfirings<=0) return;
+    
+    const Reaction& R = reactions[rxn_idx];
+    constexpr double kB = 1.380649e-23;
+
+    // contribution to pressure change of one molecule/atom
+    double per_molecule_Pa = (reactor.volume>0.0) ? kB*reactor.temperature/reactor.volume : 0.0;
+
+    for(auto& [idx,nu] : R.reactants){
+        if(reactor.isGas(idx)) gas_delta_pressure[idx] -= nu*nfirings*per_molecule_Pa;
+        else { species[idx] -= nu*nfirings; changed_surface.push_back(idx); }
+    }
+    for(auto& [idx,nu] : R.products){
+        if(reactor.isGas(idx)) gas_delta_pressure[idx] += nu*nfirings*per_molecule_Pa;
+        else { species[idx] += nu*nfirings; changed_surface.push_back(idx); }
+    }
+    reaction_extent[rxn_idx] += nfirings;
+}
+
+// Purely cosmetic: mirrors the continuous pressure into an equivalent
+// molecule count in species[], so your existing history/logging/plotting
+// code (which reads System::species) keeps working with zero changes.
+// Never read back into propensities or dynamics.
+void System::syncGasReporting()
+{
+    // update gas count in species
+    constexpr double kB = 1.380649e-23;
+    for(auto& [idx, feed_p] : reactor.gas_species){
+        double Pi = reactor.partial_pressure.count(idx) ? reactor.partial_pressure[idx] : 0.0;
+        species[idx] = static_cast<int>(std::round(Pi * reactor.volume / (kB*reactor.temperature)));
+    }
+}
+
 int System::addSpecies(const std::string& name, int initial)
 {
     if(name_to_idx.count(name)) return name_to_idx[name];
@@ -159,12 +261,31 @@ double System::binomial(unsigned n, unsigned k)
     return res;
 }
 
+// double System::computePropensity(const Reaction& r) const 
+// {
+//     double a = r.rate;
+//     for(auto& [idx, nu] : r.reactants){
+//         a *= binomial(species[idx], nu);
+//         if(a==0.0) return 0.0;
+//     }
+//     return a;
+// }
+
 double System::computePropensity(const Reaction& r) const 
 {
     double a = r.rate;
     for(auto& [idx, nu] : r.reactants){
-        a *= binomial(species[idx], nu);
-        if(a==0.0) return 0.0;
+        if(r.adsorption && reactor.isGas(idx)){
+            // Gas reservoir is effectively infinite — driven by pressure,
+            // not by a simulated particle count.
+            auto it = reactor.partial_pressure.find(idx);
+            double p = (it != reactor.partial_pressure.end()) ? it->second : 0.0;
+            a *= std::pow(p, nu);   // first-order in pressure for nu=1 (the normal case)
+            // std::cout << "calculating rate for gas "<< names[idx] << " " << a;
+        } else {
+            a *= binomial(species[idx], nu);
+            if(a==0.0) return 0.0; // early exit, it is zero anyways
+        }
     }
     return a;
 }
@@ -191,6 +312,44 @@ void System::updatePropensities(const std::vector<int>& changed_species)
     for(size_t i: to_update){
         propensities[i] = computePropensity(reactions[i]);
     }
+}
+
+// Compares the windowed average of species populations over
+// [t_now-2*window, t_now-window] against [t_now-window, t_now].
+// Declares steady state when every species' relative change between
+// the two windows is below tol. Works for both a closed system settling
+// to equilibrium and an open flow system settling to a driven steady state —
+// it only asks "have populations stopped drifting", not "is net rate zero".
+bool System::isSteadyState(double window, double tol) const
+{
+    if(times.empty()) return false;
+    double t_now = times.back();
+    if(t_now < 2.0*window) return false;   // not enough elapsed time to judge yet
+
+    auto idx_at = [&](double t){
+        return static_cast<size_t>(std::lower_bound(times.begin(), times.end(), t) - times.begin());
+    };
+    size_t i0 = idx_at(t_now - 2.0*window);
+    size_t i1 = idx_at(t_now - window);
+    size_t i2 = times.size();
+    if(i1 <= i0 || i2 <= i1) return false;   // window too fine relative to saveFreq resolution
+
+    size_t nsp = species.size();
+    std::vector<double> avg_prev(nsp,0.0), avg_curr(nsp,0.0);
+
+    for(size_t i=i0;i<i1;++i)
+        for(size_t s=0;s<nsp;++s) avg_prev[s] += history[i][s];
+    for(size_t s=0;s<nsp;++s) avg_prev[s] /= double(i1-i0);
+
+    for(size_t i=i1;i<i2;++i)
+        for(size_t s=0;s<nsp;++s) avg_curr[s] += history[i][s];
+    for(size_t s=0;s<nsp;++s) avg_curr[s] /= double(i2-i1);
+
+    for(size_t s=0;s<nsp;++s){
+        double denom = std::max(avg_prev[s], 1.0);   // guards near-zero populations
+        if(std::abs(avg_curr[s]-avg_prev[s]) / denom >= tol) return false;
+    }
+    return true;
 }
 
 // Computes the "highest order reactant" factor g_i for each species.
@@ -292,6 +451,17 @@ double System::computeTauCGPT(const std::vector<double>& propensities,
     return tau;
 }
 
+void System::printReactions() const
+{
+    for(size_t i=0;i<reactions.size();++i){
+        std::cout << i << ": ";
+        for(auto& [idx,nu]: reactions[i].reactants)
+            std::cout << nu << names[idx] << "->";
+        for(auto& [idx,nu]: reactions[i].products)
+            std::cout << nu << names[idx] << "\n";
+    }
+}
+
 // ----------------- SSA -----------------
 bool System::stepSSA(double& time, std::mt19937& rng)
 {
@@ -310,22 +480,30 @@ bool System::stepSSA(double& time, std::mt19937& rng)
     size_t mu=0;
     for(size_t i=0;i<propensities.size();++i){
         accum += propensities[i];
-        if(accum>=thresh){ mu=i; break; }
+        if(accum>=thresh){ mu=i; break; } // faster events will happen more frequently
     }
 
     Reaction& R = reactions[mu];
-    std::vector<int> changed;
-    for(auto& [idx,nu]:R.reactants){ species[idx]-=nu; changed.push_back(idx);}
-    for(auto& [idx,nu]:R.products){ species[idx]+=nu; changed.push_back(idx);}
-    // updatePropensities(changed);
+    reaction_extent[mu]++;
 
-    reactor.applyFlow(species, dt, rng);
+    std::vector<int> changed;
+    // for(auto& [idx,nu]:R.reactants){ species[idx]-=nu; changed.push_back(idx);}
+    // for(auto& [idx,nu]:R.products){ species[idx]+=nu; changed.push_back(idx);}
+    // updatePropensities(changed);
+    // reactor.applyFlow(species, dt, rng);
+
+std::map<int,double> gas_delta; // zero-initialized per use via operator[], but explicit here for clarity
+applyReactionEvent(mu, 1, changed, gas_delta); // one firing, second arg
+reactor.updateGasPressures(dt, gas_delta);
+syncGasReporting();
+
     if(step % saveFreq == 0)
     {
         history.push_back(species);
         times.push_back(time);
+        extent_history.push_back(reaction_extent);
 
-        writeHistory(logfile, time, species); 
+        writeHistory(logfile, time, *this); 
     } 
 
     return true;
@@ -339,23 +517,41 @@ bool System::stepTau(double& time, double tau, std::mt19937& rng)
     std::poisson_distribution<int> pois;
     bool any_event=false;
     std::vector<int> changed;
-    for(size_t i=0;i<reactions.size();++i){
-        pois = std::poisson_distribution<int>(propensities[i]*tau);
-        int nfirings = pois(rng);
-        if(nfirings>0) any_event=true;
-        for(auto& [idx,nu]:reactions[i].reactants){ species[idx]-= nu*nfirings; changed.push_back(idx);}
-        for(auto& [idx,nu]:reactions[i].products){ species[idx]+= nu*nfirings; changed.push_back(idx);}
-    }
-    time += tau;
-    reactor.applyFlow(species,tau, rng);
+    // for(size_t i=0;i<reactions.size();++i){
+    //     pois = std::poisson_distribution<int>(propensities[i]*tau);
+    //     int nfirings = pois(rng);
+    //     if(nfirings>0) any_event=true;
+    //     for(auto& [idx,nu]:reactions[i].reactants){ species[idx]-= nu*nfirings; changed.push_back(idx);}
+    //     for(auto& [idx,nu]:reactions[i].products){ species[idx]+= nu*nfirings; changed.push_back(idx);}
+
+    //     reaction_extent[i] += nfirings;   // or += k in stepAdaptive
+    // }
+
+    // for(int idx: changed) if(species[idx] < 0) species[idx] = 0; // correct for possible negative overfiring
+    // time += tau;
+    // reactor.applyFlow(species,tau, rng);
+
+std::map<int,double> gas_delta;
+for(size_t i=0;i<reactions.size();++i){
+    pois = std::poisson_distribution<int>(propensities[i]*tau);
+    int nfirings = pois(rng);
+    if(nfirings>0) any_event=true;
+    applyReactionEvent(i, nfirings, changed, gas_delta);
+}
+time += tau;
+reactor.updateGasPressures(tau, gas_delta);
+syncGasReporting();
+
+
     if(step % saveFreq == 0)
     {
         history.push_back(species);
         times.push_back(time);
+        extent_history.push_back(reaction_extent);
 
-        writeHistory(logfile, time, species); 
+        writeHistory(logfile, time, *this); 
     } 
-    updatePropensities(changed);
+    // updatePropensities(changed);
     return any_event;
 }
 
@@ -395,6 +591,7 @@ bool System::stepAdaptive(double& time, std::mt19937& rng, double eps, int nc, i
     double tauUsed = std::min(tau, tauCrit);
 
     std::vector<int> changed;
+std::map<int,double> gas_delta;
 
     // Fire the one critical reaction only if its draw actually fell inside this step
     if(tauCrit < tau && aCrit>0.0){
@@ -404,8 +601,9 @@ bool System::stepAdaptive(double& time, std::mt19937& rng, double eps, int nc, i
             if(!critical[j]) continue;
             accum += propensities[j];
             if(accum>=thresh){
-                for(auto& [idx,nu]: reactions[j].reactants){ species[idx]-=nu; changed.push_back(idx);}
-                for(auto& [idx,nu]: reactions[j].products){  species[idx]+=nu; changed.push_back(idx);}
+                // for(auto& [idx,nu]: reactions[j].reactants){ species[idx]-=nu; changed.push_back(idx);}
+                // for(auto& [idx,nu]: reactions[j].products){  species[idx]+=nu; changed.push_back(idx);}
+applyReactionEvent(j, 1, changed, gas_delta); // one firing, second arg
                 break;
             }
         }
@@ -413,45 +611,87 @@ bool System::stepAdaptive(double& time, std::mt19937& rng, double eps, int nc, i
 
     // Non-critical reactions leap over tauUsed (the true elapsed time),
     // not the nominal bound tau — this was the other bug.
-    for(size_t j=0;j<reactions.size();++j){
-        if(critical[j] || propensities[j]<=0.0) continue;
-        std::poisson_distribution<int> pois(propensities[j]*tauUsed);
-        int k = pois(rng);
-        for(auto& [idx,nu]: reactions[j].reactants){ species[idx]-= nu*k; changed.push_back(idx);}
-        for(auto& [idx,nu]: reactions[j].products){  species[idx]+= nu*k; changed.push_back(idx);}
+    for(size_t i=0;i<reactions.size();++i){
+        if(critical[i] || propensities[i]<=0.0) continue;
+        std::poisson_distribution<int> pois(propensities[i]*tauUsed);
+        int nfirings = pois(rng);
+    applyReactionEvent(i, nfirings, changed, gas_delta);
+
+
     }
-    for(int idx: changed) if(species[idx] < 0) species[idx] = 0;
+
+    for(int idx: changed) if(species[idx] < 0) species[idx] = 0; // correct for possible overfireing
 
     time += tauUsed;   // was: time += tau
-    reactor.applyFlow(species, tauUsed, rng);
+    // reactor.applyFlow(species, tauUsed, rng);
+reactor.updateGasPressures(tauUsed, gas_delta);
+syncGasReporting();
 
     if(step % saveFreq == 0){
         history.push_back(species);
         times.push_back(time);
-        writeHistory(logfile, time, species);
+        extent_history.push_back(reaction_extent);
+
+        writeHistory(logfile, time, *this);
     }
-    updatePropensities(changed);
+    // updatePropensities(changed);
     return true;
 }
 
 // ----------------- KMC -----------------
+bool KMC::checkSteady(double& time)
+{
+    if(checkFreq == 0){
+        std::cout << "WARNING: steady_check_freq is 0. Setting steady_check_freq to 10000\n";
+        checkFreq = 10000;
+        return false;
+    }
+
+    if(steadyWindow>0.0 && system.step % checkFreq == 0 && system.isSteadyState(steadyWindow, steadyTol)){
+        if(steadyOnset < 0.0){
+            std::cout << "Steady state reached at t=" << time << " (step " << system.step << ")\n";
+            steadyOnset = time;
+        }
+        else{
+            std::cout << "Steady state reached at t=" << time << " (step " << system.step << ") — stopping early.\n";
+            return true;                
+        }
+    }
+    else { steadyOnset = -1.0; } // reset to -1, probably the first one was spurius
+    return false;
+}
+
 void KMC::runSSA(double t_end, size_t max_steps)
 {
+   std::cout << "Running standard Stochastic Simulation Algorithm (SSA) \n";
+
    // init
    // override any existing file
-   initHistoryFile(system.logfile, system.names);
-   system.computeAllPropensities();
+   initHistoryFile(system.logfile, system);
+system.reaction_extent.assign(system.reactions.size(), 0);
+system.extent_history.clear();
 
     double time=0.0;
     while(time<t_end){
-        if(!system.stepSSA(time,rng)) break;
-	    if(max_steps > 0 && system.step > max_steps) break;
+        if(!system.stepSSA(time,rng)){
+            std::cout << "STOPPED: a0<=0 (dead end) at t=" << time
+                      << " step=" << system.step << "\n";
+            return;
+        }
+
+	    if(max_steps > 0 && system.step > max_steps){
+            std::cout << "STOPPED: max_step reached at t=" << time << "\n";
+            return;
+        }
 
 	    system.step ++;
 
         // interrup with ctrl-c
         if(system.step % 1000 == 0 && PyErr_CheckSignals() != 0)
             throw py::error_already_set();
+
+        // interrupt steady state
+        if(checkSteady(time)) break;
 
     }
     //for(size_t i=0;i<max_steps && time<t_end;i++)
@@ -460,9 +700,12 @@ void KMC::runSSA(double t_end, size_t max_steps)
 
 void KMC::runTau(double tau, double t_end)
 {
+   std::cout << "Running tau-leaping Simulation \n";
+   // init
    // override any existing file
-   initHistoryFile(system.logfile, system.names);
-   // override any existing file
+   initHistoryFile(system.logfile, system);
+system.reaction_extent.assign(system.reactions.size(), 0);
+system.extent_history.clear();
 
     double time=0.0;
     while(time<t_end){
@@ -473,13 +716,23 @@ void KMC::runTau(double tau, double t_end)
         // interrup with ctrl-c
         if(PyErr_CheckSignals() != 0)
             throw py::error_already_set();
-    
+
+        // interrupt steady state
+        if(checkSteady(time)) break;
+
     }
 }
 
 void KMC::runAdaptive(double t_end, size_t max_steps, double eps, int nc, int nSSAFallback)
 {
-  initHistoryFile(system.logfile, system.names);
+   std::cout << "Running Adaptive simulation (Calculating adaptive tau-leaping) \n";
+
+    // init
+    // override existing file
+    initHistoryFile(system.logfile, system);
+system.reaction_extent.assign(system.reactions.size(), 0);
+system.extent_history.clear();
+
     double time = 0.0;
 
     while(time < t_end){
@@ -498,7 +751,12 @@ void KMC::runAdaptive(double t_end, size_t max_steps, double eps, int nc, int nS
             std::cout << "STOPPED: max_step reached at t=" << time << "\n";
             return;
         }
+
         if(PyErr_CheckSignals() != 0) throw py::error_already_set();
+
+        // interrupt steady state
+        if(checkSteady(time)) break;
+
     }
     std::cout << "Completed normally, t=" << time << "\n";
 }
@@ -524,8 +782,13 @@ PYBIND11_MODULE(kmc, m) {
         .def_readwrite("residence_time", &Reactor::residence_time)
         .def_readwrite("gas_species", &Reactor::gas_species)
         .def_readwrite("reservoir", &Reactor::reservoir)
+        .def_readwrite("partial_pressure", &Reactor::partial_pressure)   // if not already exposed via Reactor bindings
         .def("applyFlow", &Reactor::applyFlow)
         .def("isGas", &Reactor::isGas)
+
+.def_readwrite("volume", &Reactor::volume)
+.def_readwrite("temperature", &Reactor::temperature)
+.def("updateGasPressures", &Reactor::updateGasPressures)
     ;
 
     py::class_<System>(m, "System")
@@ -535,6 +798,8 @@ PYBIND11_MODULE(kmc, m) {
         .def_readwrite("reactor", &System::reactor)
         .def_readwrite("history", &System::history)
         .def_readwrite("times", &System::times)
+        .def_readwrite("reaction_extent", &System::reaction_extent)
+        .def_readwrite("extent_history", &System::extent_history)
         .def_readwrite("save_freq", &System::saveFreq)
         .def_readwrite("step", &System::step)
         .def_readwrite("logfile", &System::logfile)
@@ -543,6 +808,7 @@ PYBIND11_MODULE(kmc, m) {
         .def("addSpecies", &System::addSpecies)
         .def("getSpeciesIndex", &System::getSpeciesIndex)
         .def("addReaction", &System::addReaction)
+        .def("print_reactions", &System::printReactions)
         .def("computeAllPropensities", &System::computeAllPropensities)
         .def("updatePropensities", &System::updatePropensities)
         .def("stepSSA", &System::stepSSA)
@@ -553,6 +819,10 @@ PYBIND11_MODULE(kmc, m) {
     py::class_<KMC>(m, "KMC")
         .def(py::init<System&, unsigned>(), py::arg("system"), py::arg("seed")=42)
         .def_property_readonly("system", [](KMC &self) -> System& { return self.system; })
+        .def_readwrite("steady_window", &KMC::steadyWindow)
+        .def_readwrite("steady_tol", &KMC::steadyTol)
+        .def_readwrite("steady_check_freq", &KMC::checkFreq)
+        .def_readonly("steady_onset", &KMC::steadyOnset)
         .def("runSSA", &KMC::runSSA)
         .def("runTau", &KMC::runTau)
         .def("runAdaptive", &KMC::runAdaptive,

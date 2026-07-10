@@ -357,6 +357,50 @@ def run_microkinetics(indic):
     mec.write()
     mec.plot()
 
+
+def is_steady_state(times, history, t_check, window, tol=0.02):
+    times = np.asarray(times)
+    history = np.asarray(history)   # shape (n_snapshots, n_species)
+    if t_check < 2*window:
+        return False
+
+    def avg_over(t0, t1):
+        mask = (times >= t0) & (times <= t1)
+        return history[mask].mean(axis=0) if mask.any() else None
+
+    prev = avg_over(t_check - 2*window, t_check - window)
+    curr = avg_over(t_check - window, t_check)
+    if prev is None or curr is None:
+        return False
+
+    denom = np.maximum(prev, 1.0)          # avoid divide-by-zero for empty species
+    rel_change = np.abs(curr - prev) / denom
+    return np.all(rel_change < tol)
+
+def find_steady_state_onset(times, history, window, tol=0.02):
+    for t in times:
+        if is_steady_state(times, history, t, window, tol):
+            return t
+    return None   # never reached steady state within the simulated time
+
+def compute_tof(times, extent_history, reaction_idx, t_start, t_end, n_sites):
+    times = np.asarray(times)
+    extent_history = np.asarray(extent_history)   # shape (n_snapshots, n_reactions)
+    i0 = np.searchsorted(times, t_start)
+    i1 = min(np.searchsorted(times, t_end), len(times)-1)
+    if i1 <= i0 or i1 >= len(times):
+        return 0.0
+    dN = extent_history[i1, reaction_idx] - extent_history[i0, reaction_idx]
+    dt = times[i1] - times[i0]
+    return (dN / dt) / n_sites if dt > 0 else 0.0
+
+def apparent_activation_energy(temperatures, tofs):
+    R = 8.314
+    x = 1.0 / np.asarray(temperatures)
+    y = np.log(np.asarray(tofs))
+    slope, intercept = np.polyfit(x, y, 1)
+    return -slope * R   # J/mol
+
 def get_species_dic_from_reac_str(lofstr):
     # converts "2I+2P=3X" in a list: [I, P, X]
     allspec = {}
@@ -369,8 +413,9 @@ def get_species_dic_from_reac_str(lofstr):
         for spec_pair in coeftuple:
             allspec[spec_pair[1]] = 0
     return allspec
-    
-def parse_reaction_kmc(eq, rdict, system):
+
+def parse_reaction_kmc(eq, rdict, system, gas_species_names):
+    P_standard = 1e5
     rate = rdict["298"]
     r1 = kmc_core.Reaction()
     r2 = None
@@ -378,62 +423,130 @@ def parse_reaction_kmc(eq, rdict, system):
 
     def counts(side):
         d = {}
-        tokens = re.findall(r'(\d*)([A-Za-z_]\w*)', side)
-        for n,s in tokens:
+        for n, s in re.findall(r'(\d*)([A-Za-z_]\w*)', side):
             nu = int(n) if n else 1
             idx = system.getSpeciesIndex(s)
-            d[idx] = d.get(idx,0)+nu
+            d[idx] = d.get(idx, 0) + nu
         return d
 
+    def side_species(side):
+        return re.findall(r'[A-Za-z_]\w*', side)
+
     r1.reactants = counts(lhs)
-    r1.products = counts(rhs)
+    r1.products  = counts(rhs)
     r1.rate = float(rate[0])
+    # Pressure-driven propensity only matters when GAS appears as a
+    # reactant (adsorption-type step). Desorption-type steps (gas only on
+    # the product side) don't need the flag -- propensity there is governed
+    # by the discrete adsorbed-species reactant, ordinary binomial path.
+    r1.adsorption = any(s in gas_species_names for s in side_species(lhs))
+
     if len(rate) > 1:
         r2 = kmc_core.Reaction()
-        r2.reactants = r1.products
-        r2.products = r1.reactants
+        r2.reactants, r2.products = r1.products, r1.reactants
         r2.rate = float(rate[1])
-    print(rate[0], rate[1])
+        r2.adsorption = any(s in gas_species_names for s in side_species(rhs))
+
+    # add units of pressure to the constants so propensities become
+    # adimensional when multiplied by pressure in adsorptions and desorptions
+    if r1.adsorption:
+        r1.rate /= P_standard
+    if r2 is not None and r2.adsorption:
+        r2.rate /= P_standard
+
     return r1, r2
+
+def build_gas_species_map(sys, data):
+    """
+    Full gas-phase population->target map for Reactor.applyFlow, including
+    species that are only ever *produced* (e.g. desorption products) and
+    never fed. The ones listed not listed in gas_count get 0.
+    """
+    feed = data.get("gas_count", {})
+    all_gas_names = data.get("gas_species", list(feed.keys()))
+    return {sys.getSpeciesIndex(name): feed.get(name, 0) for name in all_gas_names}
+
+def residence_time_from_flow(molar_flow_rate, reactor_volume, pressure, temperature):
+    R = 8.314  # J/(mol·K)
+    """molar_flow_rate: mol/s, reactor_volume: m^3, pressure: Pa, temperature: K"""
+    Q = molar_flow_rate * R * temperature / pressure   # volumetric flow, m^3/s
+    return reactor_volume / Q 
+
+def pressure_to_count(P, volume, temperature):
+    kB = 1.380649e-23
+    return int(round(P * volume / (kB * temperature)))
+
+def load_gas_history():
+    with open("kmc_gas.log") as f:
+        header = f.readline()
+        names = header.split()[1:]
+    data = np.loadtxt("kmc_gas.log", skiprows=1)
+    return names, data[:, 0], data[:, 1:].T
 
 def run_kmc(data):
     solver = data.get("solver", "kmc") 
     sys = kmc_core.System()
     
-    allspec = get_species_dic_from_reac_str(list(data["mec"].keys()))
-    allspec.update(data["surface_count"])
-    allspec.update(data["gas_count"])
+    # init species and count
+    allspec = get_species_dic_from_reac_str(list(data["mec"].keys())) # gets {A: 0, B:0 ...}
+    allspec.update(data["surface_count"]) # init number of particles, gas are updated with partial pressure
+    # allspec.update(data.get("gas_count", {}))  # becarefull to populate also the outlet gases
     for s, v in allspec.items():
         sys.addSpecies(s,v)
-    ## add surface species
-    #for s,v in data["surface_count"].items():
-    #    sys.addSpecies(s,v)
-
-    ## add gas species
-    #for s,v in data.get("gas_count",{}).items():
-    #    sys.addSpecies(s,v)
 
     # reactor
     reactor = kmc_core.Reactor()
-    gas_map = {sys.getSpeciesIndex(s): v for s,v in data.get("gas_count",{}).items()}
-    reactor.gas_species = gas_map
-    reservoir = {sys.getSpeciesIndex(s): v for s,v in data.get("reservoir",{}).items()}
-    reactor.reservoir = reservoir
     reactor.closed_system = data.get("closed", True)
-    reactor.residence_time = data.get("residence_time", -1.0)
+    reactor.volume = data.get("reactor_volume", 1e-5)      # m^3
+    reactor.temperature = data.get("temperature", 300.0)   # K
+
+    # populate gas pressure. What is absent
+    # Feed composition as partial pressures.
+    P_tot = data.get("pressure", 1e5)              # 1 atm default
+    fracs = data.get("gas_mole_fraction", {})
+    if sum(fracs.values()) < 1:
+        raise ValueError("PARTIAL PERSSURE MUST ADD UP TO 1")
+    
+    feed_p = {s: P_tot*gfrac for s, gfrac in fracs.items()}
+    
+    # gas_species similar to fee_p, gas species are the target
+    # in the loop partial_pressure is updated with gas_species as reference.
+    reactor.gas_species = {sys.getSpeciesIndex(s): pi for s, pi in feed_p.items()}
+    reactor.partial_pressure = dict(reactor.gas_species)     # start at feed composition
+
+    reactor.reservoir = {sys.getSpeciesIndex(s): v for s, v in data.get("reservoir", {}).items()}
+
+    reactor.residence_time = data.get("residence_time") or residence_time_from_flow(
+        data.get("molar_flow_rate", 1e-5), # 7×10⁻⁷ – 7×10⁻⁵ mol/s≈ 1–100 sccm (1 sccm ≈ 7.43×10⁻⁷ mol/s at 0 °C, 1 atm)
+        reactor.volume,# 1×10⁻⁶ – 1×10⁻⁴ m³ (1–100 mL)
+        data.get("total_pressure", 1e5), #1e5 Pa (1 atm) typical; up to ~1e6 Pa
+        reactor.temperature,
+    )
+
     sys.reactor = reactor
-    sys.save_freq = data.get("save_freq", 1)
+    sys.save_freq = data.get("save_freq", 100)
     sys.logfile = data.get("logfile", "kmc.log")
 
     # reactions
     for equation, rdict in data["mec"].items():
-        r1, r2 = parse_reaction_kmc(equation, rdict, sys)
+        r1, r2 = parse_reaction_kmc(equation, rdict, sys, feed_p.keys())
         sys.addReaction(r1)
         if r2 is not None:
             sys.addReaction(r2)
 
     # KMC engine
     kmc = kmc_core.KMC(sys, 123)
+    kmc.steady_window = data.get("steady_window", 0) # in seconds to compare backwards
+    kmc.steady_check_freq = data.get("steady_check_freq", 1000) # every how many to check steady state
+    kmc.steady_tol = data.get("steady_tolerance", 0.05) # percentage of noise
+
+    print(sys.species)
+    print(sys.names)
+    sys.print_reactions()
+    print(reactor.gas_species)
+    print(reactor.partial_pressure)
+    print("res time: ", reactor.residence_time)
+    # quit()
 
     if solver == "kmc_tau":
         tau = data.get("tau", 0.1)
@@ -443,22 +556,57 @@ def run_kmc(data):
     else:
         kmc.runSSA(data["simulation_time"], int(1e+18))
 
-    # plotting
-    #names = list(data["surface_count"].keys()) + list(data.get("gas_count",{}).keys())
     names = sys.names
     hist = sys.history
     times = sys.times
+    extent_history = sys.extent_history
     print(f"kmc steps: {sys.step}  ")
+    
+    # tof
+    if "tof" in data:
+        # t_ss = find_steady_state_onset(times, hist, window=0.05, tol=0.02) # very slow
+        t_ss = 0
+        if kmc.steady_onset > 0: t_ss = kmc.steady_onset
 
-    for i,name in enumerate(names):
+        tof = compute_tof(times, 
+                      extent_history, 
+                      data.get("tof", {}).get("reaction_idx", 0), 
+                      t_ss, data.get("simulation_time"), 
+                      data.get("tof", {}).get("sites", 1))
+        print("TOF ", tof)
+    # print(extent_history)
+    print(reactor.gas_species)
+    print("final partial pressure:", reactor.partial_pressure)
+
+    # plotting
+    gas_idx = set(reactor.gas_species.keys()) | set(reactor.reservoir.keys())
+
+    fig, (ax_gas, ax_surf) = plt.subplots(1, 2, figsize=(10, 5), sharex=True)
+
+    # --- Gas-phase species: partial pressure, feed (in) vs current outlet (out) ---
+    labels, time, pressure_history = load_gas_history()
+    print(len(labels), len(time), pressure_history.shape)
+    for label, ph in zip(labels, pressure_history):
+        ax_gas.plot(time, ph, label=label)
+
+    ax_gas.set_ylabel("partial pressure (Pa)")
+    ax_gas.set_title("Gas phase: feed (in) vs outlet (out)")
+    ax_gas.legend()
+
+    # --- Surface species: discrete population ---
+    for i, name in enumerate(names):
         idx = sys.getSpeciesIndex(name)
-        if idx in reactor.reservoir:
+        if idx in gas_idx:
             continue
-        plt.plot(times,[h[i] for h in hist], label=name)
-    plt.xlim(0, data["simulation_time"])
-    plt.xlabel("time")
-    plt.ylabel("population")
-    plt.legend()
+        ax_surf.plot(times, [h[i] for h in hist], label=name)
+
+    ax_surf.set_xlabel("time")
+    ax_surf.set_ylabel("population")
+    ax_surf.set_title("Surface species")
+    ax_surf.set_xlim(0, data["simulation_time"])
+    ax_surf.legend()
+
+    plt.tight_layout()
     plt.show()
 
 def main():
