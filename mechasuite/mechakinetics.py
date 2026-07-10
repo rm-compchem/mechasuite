@@ -447,7 +447,25 @@ def get_species_dic_from_reac_str(lofstr):
             allspec[spec_pair[1]] = 0
     return allspec
 
-def parse_reaction_kmc(eq, rdict, system, gas_species_names):
+def apply_rate_constant_rescaling(r1, r2, max_rate):
+    """
+    Chatterjee & Vlachos RCR: cap the fastest process the KMC clock has to
+    resolve, without touching the thermodynamics of that step. If either
+    direction of a reversible pair exceeds max_rate, scale BOTH directions
+    by the same factor -- Keq = kf/kr is preserved exactly, so equilibrium
+    coverage is untouched; only the *speed of equilibration* is capped.
+    """
+    if r2 is None:
+        if r1.rate > max_rate:
+            r1.rate = max_rate      # irreversible step, no Keq to protect
+        return
+    fastest = max(r1.rate, r2.rate)
+    if fastest > max_rate:
+        factor = max_rate / fastest
+        r1.rate *= factor
+        r2.rate *= factor
+
+def parse_reaction_kmc(eq, rdict, system, gas_species_names, max_rate=None):
     P_standard = 1e5
     rate = rdict["298"]
     r1 = kmc_core.Reaction()
@@ -486,6 +504,9 @@ def parse_reaction_kmc(eq, rdict, system, gas_species_names):
         r1.rate /= P_standard
     if r2 is not None and r2.adsorption:
         r2.rate /= P_standard
+
+    if max_rate is not None:
+        apply_rate_constant_rescaling(r1, r2, max_rate)
 
     return r1, r2
 
@@ -557,8 +578,10 @@ def run_kmc(data):
     sys.logfile = data.get("logfile", "kmc.log")
 
     # reactions
+    max_rate = data.get("max_rate", None)
+    if max_rate: max_rate = float(max_rate)
     for equation, rdict in data["mec"].items():
-        r1, r2 = parse_reaction_kmc(equation, rdict, sys, feed_p.keys())
+        r1, r2 = parse_reaction_kmc(equation, rdict, sys, feed_p.keys(), max_rate)
         sys.addReaction(r1)
         if r2 is not None:
             sys.addReaction(r2)

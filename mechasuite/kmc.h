@@ -56,7 +56,7 @@ public:
     std::vector<long long> reaction_extent;
     std::vector<std::vector<long long>> extent_history;
 
-    short saveFreq = 100;
+    int saveFreq = 100;
     size_t step = 0;
 
     std::string logfile = "kmc.log";
