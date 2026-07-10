@@ -383,16 +383,49 @@ def find_steady_state_onset(times, history, window, tol=0.02):
             return t
     return None   # never reached steady state within the simulated time
 
-def compute_tof(times, extent_history, reaction_idx, t_start, t_end, n_sites):
-    times = np.asarray(times)
-    extent_history = np.asarray(extent_history)   # shape (n_snapshots, n_reactions)
+def compute_tof(system, species, t_start, t_end, n_sites):
+    # computes the tof as the net_prod = num_formation - num_consumption
+    tof = 0.0
+    if species is None: return tof
+    spec_idx = system.getSpeciesIndex(species)
+
+    reac_form_idx = []
+    reac_consum_idx = []
+    for n, reac in enumerate(system.reactions):
+        if spec_idx in reac.reactants:
+            reac_consum_idx.append(n)
+        if spec_idx in reac.products:
+            reac_form_idx.append(n)
+
+    times = np.asarray(system.times)
+    extent_history = np.asarray(system.extent_history)   # shape (n_snapshots, n_reactions)
     i0 = np.searchsorted(times, t_start)
     i1 = min(np.searchsorted(times, t_end), len(times)-1)
     if i1 <= i0 or i1 >= len(times):
-        return 0.0
-    dN = extent_history[i1, reaction_idx] - extent_history[i0, reaction_idx]
+        return tof
+    
+    for reaction_idx in reac_form_idx:
+        tof += extent_history[i1, reaction_idx] - extent_history[i0, reaction_idx]
+    for reaction_idx in reac_consum_idx:
+        tof -= extent_history[i1, reaction_idx] - extent_history[i0, reaction_idx]
+
     dt = times[i1] - times[i0]
-    return (dN / dt) / n_sites if dt > 0 else 0.0
+    tof = tof / dt / n_sites
+    if tof < 0: tof = 0
+    return tof
+
+def compute_scaleup(sim_site_count, real_sites=None,
+                     area_m2=None, site_density_per_m2=1e19,
+                     mass_g=None, molar_mass=None, dispersion=None):
+    if real_sites is None:
+        if area_m2 is not None:
+            real_sites = area_m2 * site_density_per_m2
+        elif mass_g is not None and molar_mass is not None and dispersion is not None:
+            N_A = 6.02214076e23
+            real_sites = (mass_g / molar_mass) * N_A * dispersion
+        else:
+            raise ValueError("Provide real_sites, or area_m2, or mass/molar_mass/dispersion")
+    return real_sites / sim_site_count
 
 def apparent_activation_energy(temperatures, tofs):
     R = 8.314
@@ -456,16 +489,6 @@ def parse_reaction_kmc(eq, rdict, system, gas_species_names):
 
     return r1, r2
 
-def build_gas_species_map(sys, data):
-    """
-    Full gas-phase population->target map for Reactor.applyFlow, including
-    species that are only ever *produced* (e.g. desorption products) and
-    never fed. The ones listed not listed in gas_count get 0.
-    """
-    feed = data.get("gas_count", {})
-    all_gas_names = data.get("gas_species", list(feed.keys()))
-    return {sys.getSpeciesIndex(name): feed.get(name, 0) for name in all_gas_names}
-
 def residence_time_from_flow(molar_flow_rate, reactor_volume, pressure, temperature):
     R = 8.314  # J/(mol·K)
     """molar_flow_rate: mol/s, reactor_volume: m^3, pressure: Pa, temperature: K"""
@@ -497,7 +520,7 @@ def run_kmc(data):
     # reactor
     reactor = kmc_core.Reactor()
     reactor.closed_system = data.get("closed", True)
-    reactor.volume = data.get("reactor_volume", 1e-5)      # m^3
+    reactor.volume = float(data.get("reactor_volume", 1e-5))      # m^3
     reactor.temperature = data.get("temperature", 300.0)   # K
 
     # populate gas pressure. What is absent
@@ -508,7 +531,7 @@ def run_kmc(data):
         raise ValueError("PARTIAL PERSSURE MUST ADD UP TO 1")
     
     feed_p = {s: P_tot*gfrac for s, gfrac in fracs.items()}
-    
+    print("Using the following pressures in Pa: ", feed_p)
     # gas_species similar to fee_p, gas species are the target
     # in the loop partial_pressure is updated with gas_species as reference.
     reactor.gas_species = {sys.getSpeciesIndex(s): pi for s, pi in feed_p.items()}
@@ -517,11 +540,17 @@ def run_kmc(data):
     reactor.reservoir = {sys.getSpeciesIndex(s): v for s, v in data.get("reservoir", {}).items()}
 
     reactor.residence_time = data.get("residence_time") or residence_time_from_flow(
-        data.get("molar_flow_rate", 1e-5), # 7×10⁻⁷ – 7×10⁻⁵ mol/s≈ 1–100 sccm (1 sccm ≈ 7.43×10⁻⁷ mol/s at 0 °C, 1 atm)
+        float(data.get("molar_flow_rate", 1e-5)), # 7×10⁻⁷ – 7×10⁻⁵ mol/s≈ 1–100 sccm (1 sccm ≈ 7.43×10⁻⁷ mol/s at 0 °C, 1 atm)
         reactor.volume,# 1×10⁻⁶ – 1×10⁻⁴ m³ (1–100 mL)
         data.get("total_pressure", 1e5), #1e5 Pa (1 atm) typical; up to ~1e6 Pa
         reactor.temperature,
     )
+
+    sim_sites = sum(data["surface_count"].values())
+    reactor.scaleup = data.get("scaleup") or compute_scaleup(
+                    sim_sites, **data.get("catalyst_loading", {})
+                    )
+    print(f"using reactor scaleup of: {reactor.scaleup:e}")
 
     sys.reactor = reactor
     sys.save_freq = data.get("save_freq", 100)
@@ -545,7 +574,7 @@ def run_kmc(data):
     sys.print_reactions()
     print(reactor.gas_species)
     print(reactor.partial_pressure)
-    print("res time: ", reactor.residence_time)
+    print("residence time: ", reactor.residence_time)
     # quit()
 
     if solver == "kmc_tau":
@@ -559,7 +588,6 @@ def run_kmc(data):
     names = sys.names
     hist = sys.history
     times = sys.times
-    extent_history = sys.extent_history
     print(f"kmc steps: {sys.step}  ")
     
     # tof
@@ -568,14 +596,13 @@ def run_kmc(data):
         t_ss = 0
         if kmc.steady_onset > 0: t_ss = kmc.steady_onset
 
-        tof = compute_tof(times, 
-                      extent_history, 
-                      data.get("tof", {}).get("reaction_idx", 0), 
+        tof = compute_tof(sys, 
+                      data.get("tof", {}).get("species"), 
                       t_ss, data.get("simulation_time"), 
                       data.get("tof", {}).get("sites", 1))
         print("TOF ", tof)
     # print(extent_history)
-    print(reactor.gas_species)
+    # print(reactor.gas_species)
     print("final partial pressure:", reactor.partial_pressure)
 
     # plotting
@@ -585,7 +612,8 @@ def run_kmc(data):
 
     # --- Gas-phase species: partial pressure, feed (in) vs current outlet (out) ---
     labels, time, pressure_history = load_gas_history()
-    print(len(labels), len(time), pressure_history.shape)
+    pressure_history /= pressure_history.sum(axis=0, keepdims=True)  # instantaneous outlet mole fraction
+    # print(len(labels), len(time), pressure_history.shape)
     for label, ph in zip(labels, pressure_history):
         ax_gas.plot(time, ph, label=label)
 

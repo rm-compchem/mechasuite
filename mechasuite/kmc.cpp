@@ -17,22 +17,6 @@ namespace py = pybind11;
 // Add to kmc.h: an enum + a way to retrieve the last stop reason
 enum class StopReason { Running, ReachedTEnd, NoPropensity, MaxStepReached };
 // ----------------- Reactor -----------------
-// too agresive
-// void Reactor::applyFlow(std::vector<int>& sp, double dt) 
-// {
-//     if(closed_system || residence_time <= 0) return;
-//     for(auto& [idx,target] : gas_species){
-//         if (reservoir.count(idx)){
-//             sp[idx] = reservoir[idx];
-//             continue;
-//         }
-
-//         double relax = (target - sp[idx])*dt/residence_time;
-//         sp[idx] += static_cast<int>(relax);
-//         if(sp[idx]<0) sp[idx]=0;
-//     }
-// }
-
 void writeHistory(const std::string& filename, double time, System& sys)
 {
    std::ofstream outfile;
@@ -188,7 +172,8 @@ void System::applyReactionEvent(size_t rxn_idx, int nfirings,
     constexpr double kB = 1.380649e-23;
 
     // contribution to pressure change of one molecule/atom
-    double per_molecule_Pa = (reactor.volume>0.0) ? kB*reactor.temperature/reactor.volume : 0.0;
+    double per_molecule_Pa = (reactor.volume>0.0) 
+                        ? reactor.scaleup * kB*reactor.temperature/reactor.volume : 0.0;
 
     for(auto& [idx,nu] : R.reactants){
         if(reactor.isGas(idx)) gas_delta_pressure[idx] -= nu*nfirings*per_molecule_Pa;
@@ -211,7 +196,8 @@ void System::syncGasReporting()
     constexpr double kB = 1.380649e-23;
     for(auto& [idx, feed_p] : reactor.gas_species){
         double Pi = reactor.partial_pressure.count(idx) ? reactor.partial_pressure[idx] : 0.0;
-        species[idx] = static_cast<int>(std::round(Pi * reactor.volume / (kB*reactor.temperature)));
+        species[idx] = static_cast<int>(std::round(
+                    Pi * reactor.volume / (kB*reactor.temperature * reactor.scaleup)));
     }
 }
 
@@ -649,11 +635,11 @@ bool KMC::checkSteady(double& time)
 
     if(steadyWindow>0.0 && system.step % checkFreq == 0 && system.isSteadyState(steadyWindow, steadyTol)){
         if(steadyOnset < 0.0){
-            std::cout << "Steady state reached at t=" << time << " (step " << system.step << ")\n";
+            // std::cout << "Steady state reached at t=" << time << " (step " << system.step << ")\n";
             steadyOnset = time;
         }
         else{
-            std::cout << "Steady state reached at t=" << time << " (step " << system.step << ") — stopping early.\n";
+            // std::cout << "Steady state reached at t=" << time << " (step " << system.step << ") — stopping early.\n";
             return true;                
         }
     }
@@ -783,12 +769,13 @@ PYBIND11_MODULE(kmc, m) {
         .def_readwrite("gas_species", &Reactor::gas_species)
         .def_readwrite("reservoir", &Reactor::reservoir)
         .def_readwrite("partial_pressure", &Reactor::partial_pressure)   // if not already exposed via Reactor bindings
-        .def("applyFlow", &Reactor::applyFlow)
+        // .def("applyFlow", &Reactor::applyFlow)
         .def("isGas", &Reactor::isGas)
 
-.def_readwrite("volume", &Reactor::volume)
-.def_readwrite("temperature", &Reactor::temperature)
-.def("updateGasPressures", &Reactor::updateGasPressures)
+        .def_readwrite("volume", &Reactor::volume)
+        .def_readwrite("temperature", &Reactor::temperature)
+        .def_readwrite("scaleup", &Reactor::scaleup)
+        // .def("updateGasPressures", &Reactor::updateGasPressures)
     ;
 
     py::class_<System>(m, "System")

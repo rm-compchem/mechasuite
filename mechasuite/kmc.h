@@ -27,6 +27,7 @@ struct Reactor
     std::map<int,double> partial_pressure;   // Pa, indexed by gas species idx — constant, not simulated
     double volume = 1e-5;        // m^3, gas-phase volume of the reactor
     double temperature = 300.0;  // K
+    double scaleup = 1.0;   // real_sites / simulated_sites
 
     void applyFlow(std::vector<int>& species, double dt, std::mt19937& rng);
     bool isGas(int idx) const { return gas_species.find(idx) != gas_species.end(); }
