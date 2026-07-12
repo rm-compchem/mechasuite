@@ -548,15 +548,16 @@ def run_kmc(data):
     # Feed composition as partial pressures.
     P_tot = data.get("pressure", 1e5)              # 1 atm default
     fracs = data.get("gas_mole_fraction", {})
-    if sum(fracs.values()) < 1:
+    feed_p = {}
+    if fracs and sum(fracs.values()) < 1:
         raise ValueError("PARTIAL PERSSURE MUST ADD UP TO 1")
-    
-    feed_p = {s: P_tot*gfrac for s, gfrac in fracs.items()}
-    print("Using the following pressures in Pa: ", feed_p)
-    # gas_species similar to fee_p, gas species are the target
-    # in the loop partial_pressure is updated with gas_species as reference.
-    reactor.gas_species = {sys.getSpeciesIndex(s): pi for s, pi in feed_p.items()}
-    reactor.partial_pressure = dict(reactor.gas_species)     # start at feed composition
+    if fracs:
+        feed_p = {s: P_tot*gfrac for s, gfrac in fracs.items()}
+        print("Using the following pressures in Pa: ", feed_p)
+        # gas_species similar to fee_p, gas species are the target
+        # in the loop partial_pressure is updated with gas_species as reference.
+        reactor.gas_species = {sys.getSpeciesIndex(s): pi for s, pi in feed_p.items()}
+        reactor.partial_pressure = dict(reactor.gas_species)     # start at feed composition
 
     reactor.reservoir = {sys.getSpeciesIndex(s): v for s, v in data.get("reservoir", {}).items()}
 
@@ -627,24 +628,23 @@ def run_kmc(data):
     # print(extent_history)
     # print(reactor.gas_species)
     print("final partial pressure:", reactor.partial_pressure)
-
+    
     # plotting
     if "plot" not in data: return
-
-    gas_idx = set(reactor.gas_species.keys()) | set(reactor.reservoir.keys())
-
     fig, (ax_gas, ax_surf) = plt.subplots(1, 2, figsize=(10, 5), sharex=True)
 
-    # --- Gas-phase species: partial pressure, feed (in) vs current outlet (out) ---
-    labels, time, pressure_history = load_history("kmc_gas.log")
-    pressure_history /= pressure_history.sum(axis=0, keepdims=True)  # instantaneous outlet mole fraction
-    # print(len(labels), len(time), pressure_history.shape)
-    for label, ph in zip(labels, pressure_history):
-        ax_gas.plot(time, ph, label=label)
+    gas_idx = set(reactor.gas_species.keys()) | set(reactor.reservoir.keys())
+    if gas_idx:
+       # --- Gas-phase species: partial pressure, feed (in) vs current outlet (out) ---
+       labels, time, pressure_history = load_history("kmc_gas.log")
+       pressure_history /= pressure_history.sum(axis=0, keepdims=True)  # instantaneous outlet mole fraction
+       # print(len(labels), len(time), pressure_history.shape)
+       for label, ph in zip(labels, pressure_history):
+           ax_gas.plot(time, ph, label=label)
 
-    ax_gas.set_ylabel("partial pressure (Pa)")
-    ax_gas.set_title("Gas phase: feed (in) vs outlet (out)")
-    ax_gas.legend()
+       ax_gas.set_ylabel("partial pressure (Pa)")
+       ax_gas.set_title("Gas phase: feed (in) vs outlet (out)")
+       ax_gas.legend()
 
     # --- Surface species: discrete population ---
     labels, time, surface_history = load_history(sys.logfile)

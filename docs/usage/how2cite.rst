@@ -1,5 +1,6 @@
 How to cite 
 ############################
 
-R. Millán, M. Ródenas, and A. Misturini. *MechaSuite: An Integrated Software for Chemical Reaction Mechanism Analysis and Microkinetic Modeling*. (submitted)
+J. Chem. Inf. Model. 2026, 66, 10, 5602–5608
+https://doi.org/10.1021/acs.jcim.6c00861
 

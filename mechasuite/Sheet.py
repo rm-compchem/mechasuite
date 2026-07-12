@@ -860,11 +860,10 @@ class MainSheet(QTableWidget):
             itm.setText(self.activecelltext)
             return 
 
-
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
 
-        cell_item_obj = self.item(row - 1, col)
+        cell_item_obj = self.item(row, col)
         # should not try to change non existint items
         if cell_item_obj is None:
             msg.setText("Item does not exist")
@@ -887,9 +886,9 @@ class MainSheet(QTableWidget):
                 colobj.itm_change_name(self.activecelltext, itmtext)
         elif rowname == "Energy":
             colobj = self.data.get_mech(colname)
-
+            # get correct cell obj for itm name which is in row "Name"
+            cell_item_obj = self.item(row - 1, col)
             itmname = cell_item_obj.text()
-
             if colobj.get_itm(itmname) is None or not colobj.get_itm(itmname).set_e(itmtext):
                 msg.setText(itmtext + " bad energy value")
                 msg.setWindowTitle("Error")
@@ -2472,14 +2471,16 @@ class MainSheet(QTableWidget):
 
                 font = QFont()
                 widget_item = QTableWidgetItem(itm.name)
-                font.fromString(itm.name_font)
+                if itm.name_font:
+                    font.fromString(itm.name_font)
                 widget_item.setFont(font)
                 widget_item.setForeground(QColor(120, 120, 250))
                 self.setItem(row + 0, col, widget_item)
 
                 font = QFont()
                 widget_item = QTableWidgetItem("{:.4f}".format(itm.energy))
-                font.fromString(itm.energy_font)
+                if itm.energy_font:
+                    font.fromString(itm.energy_font)
                 widget_item.setFont(font)
                 self.setItem(row + 1, col, widget_item)
 
@@ -2533,16 +2534,17 @@ class MainSheet(QTableWidget):
 
                 font = QFont()
                 widget_item = QTableWidgetItem(itm.name)
-                font.fromString(itm.name_font)
+                if itm.name_font:
+                    font.fromString(itm.name_font)
                 widget_item.setFont(font)
                 if itm.tp == "ts":
                     widget_item.setForeground(QColor(250, 120, 120))
-                #widget_item.setBackground(QColor(255, 128, 128))
                 self.setItem(row + 0, col, widget_item)
 
                 font = QFont()
                 widget_item = QTableWidgetItem("{:.4f}".format(itm.energy))
-                font.fromString(itm.energy_font)
+                if itm.energy_font:
+                    font.fromString(itm.energy_font)
                 widget_item.setFont(font)
                 self.setItem(row + 1, col, widget_item)
 
@@ -3024,7 +3026,7 @@ class MainWindow(QMainWindow):
         self.splitter3.addWidget(self.ztable)
         self.splitter3.addWidget(self.reltable)
         # commented out for the next release uncomment later
-        #self.splitter3.addWidget(self.exctable)
+        self.splitter3.addWidget(self.exctable)
 
         self.splitter2.addWidget(self.image)
         self.splitter2.addWidget(self.openGLWidget)
