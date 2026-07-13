@@ -23,6 +23,7 @@ PROGRAM_FREQ_MAP = {
     "vasp": read_freq_vasp,
     "ase": read_freq_ase
         }
+        
 
 class PlotLabel(object):
     def __init__(self, name, itm, **kwargs):
@@ -640,17 +641,19 @@ class Plot(object):
 
         #self.write_old_react_network_input(outdic, filename)
 
-        if not filename.endswith(".json"):
-            filename += ".json"
-        with open(filename, "w") as f:
-            json.dump(outdic, f, indent=4)
-        #try:
-        #    if not filename.endswith(".yaml"):
-        #      filename += ".yaml"
-        #    with open(filename, "w") as f:
-        #        yaml.safe_dump(outdic, f)
-        #except Exception as e: 
-        #    print(e)
+        if filename.endswith(".json"):
+            with open(filename, "w") as f:
+                json.dump(outdic, f, indent=4)
+            return
+        
+        # try yaml otherwise
+        try:
+           if not filename.endswith(".yaml"):
+             filename += ".yaml"
+           with open(filename, "w") as f:
+               yaml.safe_dump(to_yaml_safe(outdic), f)
+        except Exception as e: 
+           print(e)
         #return
 
 

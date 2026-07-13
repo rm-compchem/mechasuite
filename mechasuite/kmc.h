@@ -50,13 +50,13 @@ public:
     std::vector<double> next_fire_time;
 
     std::vector<std::vector<int>> history;
-    std::vector<double> times;
+    std::vector<double> times;  
     std::vector<std::string> names; // list of species names
 
     std::vector<long long> reaction_extent;
     std::vector<std::vector<long long>> extent_history;
 
-    int saveFreq = 100;
+    long saveFreq = 100;
     size_t step = 0;
 
     std::string logfile = "kmc.log";

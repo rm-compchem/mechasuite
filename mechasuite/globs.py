@@ -114,6 +114,57 @@ plot_units_label = {
    "eV": "eV",
         }
 
+from collections.abc import Mapping
+from enum import Enum
+from pathlib import Path
+
+import numpy as np
+
+
+from collections.abc import Mapping
+from enum import Enum
+from pathlib import Path
+
+import numpy as np
+
+def to_yaml_safe(obj):
+    """
+    Recursively convert a nested structure into plain Python types
+    (int, float, str, bool, None, list, dict) so it can be safely
+    dumped with pyyaml. Handles numpy scalars/arrays, tuples/sets,
+    and converts dict keys as well as values.
+    """
+    # Dicts: convert keys and values
+    if isinstance(obj, dict):
+        return {to_yaml_safe(k): to_yaml_safe(v) for k, v in obj.items()}
+
+    # Lists / tuples / sets -> list
+    if isinstance(obj, (list, tuple, set)):
+        return [to_yaml_safe(v) for v in obj]
+
+    # numpy arrays -> list (recurse in case of dtype=object)
+    if isinstance(obj, np.ndarray):
+        return to_yaml_safe(obj.tolist())
+
+    # numpy scalars (np.int64, np.float32, np.bool_, np.str_, ...)
+    if isinstance(obj, np.generic):
+        return obj.item()
+
+    # Already yaml-safe
+    if obj is None or isinstance(obj, (str, int, float, bool)):
+        return obj
+
+    # Fallback: objects exposing .item() (e.g. some numpy-like types)
+    if hasattr(obj, "item"):
+        try:
+            return obj.item()
+        except Exception:
+            pass
+
+    # Last resort: stringify anything unrecognized
+    return str(obj)
+
+
 colors = {}
 
 colors["H"] = (0.6, 0.6, 0.6, 1.0);
