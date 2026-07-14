@@ -915,6 +915,7 @@ class MainSheet(QTableWidget):
         addref = menu.addAction("Add Reference")
         chgunit = menu.addAction("Convert Unit")
         chgname = menu.addAction("Change Mechanism Name")
+        delmec = menu.addAction("Delete Mechanism")
         delgraph = menu.addAction("Delete Plot")
         del_refs = menu.addAction("Delete References")
         action = menu.exec_(self.mapToGlobal(event))
@@ -930,6 +931,8 @@ class MainSheet(QTableWidget):
             self.chg_unit()
         elif action == newitm:
             self.new_item()
+        elif action == delmec:
+            self.del_mechanism()
         elif action == delgraph:
             self.del_graph()
         elif action == del_refs:
@@ -967,6 +970,14 @@ class MainSheet(QTableWidget):
             if refname == "Default Reference":
                 refname = "Def Ref"
             mec.del_ref(refname)
+    
+    def del_mechanism(self):
+        columns = self.selectionModel().selectedColumns()
+        for column in columns:
+            colname = self.horizontalHeaderItem(column.column()).text()
+            self.data.delete_mechanism(colname)
+        self.update_data()
+        self.parent.plot.update_data()
 
     def del_graph(self):
         pnames = self.data.get_plots_names()
@@ -1402,26 +1413,23 @@ class MainSheet(QTableWidget):
 
     def show_freqs(self):
         cobj = self.selectedItems()[0]
-        print("cobj", cobj.text())  
+        # print("cobj", cobj.text())  
         cname = self.horizontalHeaderItem(cobj.column()).text()
         itmo = self.data.get_mech(cname).get_itm(cobj.text())
-        print("itmo", self.data.get_mech(cname))
+        # print("itmo", self.data.get_mech(cname))
         if itmo is None:
             return
         dialog = QMessageBox()
-        print("itmo.freqs.vibs", itmo.freqs.vibs)
+        # print("itmo.freqs.vibs", itmo.freqs.vibs)
         if itmo.merged is True:
             txt = ""
             for it in itmo.itms:
-                print("it", it.name)
                 txt += " \n".join([str(f) for f in it.freqs.vibs])
                 txt += "\n"
-                print("txt", txt)
         else:
             txt = " \n".join([str(f) for f in itmo.freqs.vibs])
-            txt += "\n"+itmo.freqs.unit
+            txt += "\n"+str(itmo.freqs.unit)
 
-        
         dialog.setText(txt)
         dialog.exec()
 
@@ -1716,12 +1724,21 @@ class MainSheet(QTableWidget):
             if rowname != "Name":
                 continue
             mecobj = self.data.get_mech(colname)
+
             itmobj = mecobj.get_itm(cellobj.text())
             if itmobj is None:
                 continue
+            
             for mecname in dialog.items:
                 dmecobj = self.data.get_mech(mecname)
-                dmecobj.add_itm(itmobj)
+                
+                # make deepcopy to avoid changing orignal itm
+                # also if the copy is made outside the loop
+                # in the second run there might be a mismatch
+                # in energies with the original column
+                itmobjcp = copy.deepcopy(itmobj)
+                itmobjcp.chg_unit(dmecobj.unit)
+                dmecobj.add_itm(itmobjcp)
         self.update_data()
 
     def on_merge_items(self):
@@ -2036,6 +2053,7 @@ class MainSheet(QTableWidget):
                 return
             
             itmobj.update_rel_thermo()
+        self.update_data()
 
     def set_pg(self):
         pgs = ["solid"] + list(Thermo.sigma.keys())
@@ -2343,7 +2361,8 @@ class MainSheet(QTableWidget):
                     if len(reacobj.struct.atoms) != len(itmobj.struct.atoms):
                         msg = QMessageBox()
                         text = "Reactant reference and itermediate do not have" \
-                               " the same numer of types of atoms"
+                               " the same numer of types of atoms. Pleae merge as necessary"\
+                               " to preserve mass balance"
                         msg.setText(text)
                         msg.exec()
                         return
@@ -2538,7 +2557,9 @@ class MainSheet(QTableWidget):
                     font.fromString(itm.name_font)
                 widget_item.setFont(font)
                 if itm.tp == "ts":
-                    widget_item.setForeground(QColor(250, 120, 120))
+                    widget_item.setForeground(QColor(210, 80, 80))
+                elif itm.tp == "mecp":
+                    widget_item.setForeground(QColor(25, 120, 12))
                 self.setItem(row + 0, col, widget_item)
 
                 font = QFont()

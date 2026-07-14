@@ -1677,6 +1677,20 @@ class Itm(object):
             reac.update()
         for state in self.states.values():
             state.update2()
+    
+    def chg_unit(self, unit):
+        #print(unit); print(self.unit); print("Unit")
+        if unit is None:
+            return
+        if unit == self.mech.unit:
+            return
+
+        self.energy *= conv[self.mech.unit][unit]
+        self.zpe *= conv[self.mech.unit][unit]
+        for prop in self.thermo.keys():
+            for temp in self.thermo[prop].keys():
+                self.thermo[prop][temp] *= conv[self.mech.unit][unit]
+        self.full_update()
 
     def photo_from_files(self, photonames):
         databasedir = os.environ["HOME"] + "/.datamanager/photos/"
@@ -2130,16 +2144,17 @@ class Mechanism(object):
 
         itmobjs = self.get_itms()
         for itmobj in itmobjs:
-            #print(conv[self.unit][unit])
-            #print(itmobj.energy)
-            itmobj.energy *= conv[self.unit][unit]
-            itmobj.zpe *= conv[self.unit][unit]
-            for prop in itmobj.thermo.keys():
-                for temp in itmobj.thermo[prop].keys():
-                    itmobj.thermo[prop][temp] *= conv[self.unit][unit]
+        #     #print(conv[self.unit][unit])
+        #     #print(itmobj.energy)
+        #     itmobj.energy *= conv[self.unit][unit]
+        #     itmobj.zpe *= conv[self.unit][unit]
+        #     for prop in itmobj.thermo.keys():
+        #         for temp in itmobj.thermo[prop].keys():
+        #             itmobj.thermo[prop][temp] *= conv[self.unit][unit]
+        # for itmobj in itmobjs:
+        #     itmobj.full_update()
+            itmobj.chg_unit(unit)
         self.unit = unit
-        for itmobj in itmobjs:
-            itmobj.full_update()
 
     def get_itm_index(self, iname):
         for n, itmo in enumerate(self.itms.values()):
@@ -2667,6 +2682,18 @@ class Data(object):
     def __init__(self):
         self.mechs = OrderedDict()
         self.diagrams = OrderedDict()
+
+    def delete_mechanism(self, mecname):
+        if mecname in self.mechs:
+            del self.mechs[mecname]
+        # take care of plots
+        todel = []
+        for pname, plot in self.diagrams.items():
+            if plot.col.name == mecname:
+                todel.append(pname)
+        # delete plots
+        for pname in todel:
+            del self.diagrams[pname]
 
     def to_dict(self):
         selfdict = OrderedDict()
