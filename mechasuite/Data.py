@@ -625,21 +625,16 @@ class Plot(object):
         for itmo in self.get_itms():
             paths_dic, init_val = self.update_export_step_dic(itmo, paths_dic, init_val)
 
-        T = 298
-        network_str = []
         ks_str = ""
-        count = 0
         if self.etype == "E":
             ks_str += "Temperature 298\n"
             outdic = self.update_reaction_network_dic(outdic, paths_dic, T)
         else:
-            for T in self.temps:
+            for T in temperatures:
               ks_str += f"Temperature {T:.2f}\n"
               outdic = self.update_reaction_network_dic(outdic, paths_dic, T)
         
         outdic["initial_values"] = init_val
-
-        #self.write_old_react_network_input(outdic, filename)
 
         if filename.endswith(".json"):
             with open(filename, "w") as f:

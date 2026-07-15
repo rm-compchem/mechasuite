@@ -49,12 +49,17 @@ public:
     std::vector<double> propensities;
     std::vector<double> next_fire_time;
 
-    std::vector<std::vector<int>> history;
+    // NOTE: history / reaction_extent / extent_history are now double-valued
+    // (were vector<int> / long long / vector<long long>). Nothing else relied
+    // on the integer type, and this lets the ODE path (fractional extents,
+    // fractional mean-field populations) share the exact same fields/plumbing
+    // (isSteadyState, compute_tof, logging) as the stochastic engines.
+    std::vector<std::vector<double>> history;
     std::vector<double> times;  
     std::vector<std::string> names; // list of species names
 
-    std::vector<long long> reaction_extent;
-    std::vector<std::vector<long long>> extent_history;
+    std::vector<double> reaction_extent;
+    std::vector<std::vector<double>> extent_history;
 
     long saveFreq = 100;
     size_t step = 0;
@@ -92,6 +97,51 @@ public:
     // stochastic algorithms
     bool stepSSA(double& time, std::mt19937& rng);
     bool stepTau(double& time, double tau, std::mt19937& rng);
+
+    // ---------------------------------------------------------------
+    // Deterministic mean-field ODE solver.
+    //
+    // No spatial correlations => the master equation's thermodynamic
+    // (N -> infinity) limit is just the mean-field rate ODEs for the
+    // exact same Reaction/Reactor objects used by SSA/tau/adaptive above.
+    // This solves that limit directly instead of averaging over many
+    // stochastic trajectories.
+    // ---------------------------------------------------------------
+
+    // Packed ODE state vector y:
+    //   y[0 .. ode_n_surf-1]                     -> surface species amounts
+    //   y[ode_n_surf .. ode_n_surf+ode_n_gas-1]   -> free (non-reservoir) gas partial pressures [Pa]
+    //   y[ode_extent_offset .. end]               -> cumulative reaction extents (one per reaction)
+    std::vector<int> ode_surf_idx;
+    std::unordered_map<int,int> ode_surf_pos;
+    std::vector<int> ode_gas_idx;
+    std::unordered_map<int,int> ode_gas_pos;
+    int ode_n_surf = 0;
+    int ode_n_gas  = 0;
+    int ode_extent_offset = 0;
+    int ode_state_size = 0;
+
+    void buildODEIndexMaps();
+    int  odeStateSize() const { return ode_state_size; }
+
+    // dy/dt = f(y). Reuses the exact same rate law as computePropensity
+    // (continuous generalization of the combinatorial `binomial` factor,
+    // see contFallingFactorial in kmc.cpp) and the exact same gas<->pressure
+    // bookkeeping as applyReactionEvent / Reactor::updateGasPressures.
+    void computeODERHS(const std::vector<double>& y, std::vector<double>& dydt) const;
+
+    // Numerical (finite-difference) Jacobian of computeODERHS at y, given f0=f(y).
+    // J is row-major, size odeStateSize()^2.
+    void computeODEJacobian(const std::vector<double>& y, const std::vector<double>& f0,
+                             std::vector<double>& J) const;
+
+    // One linearized-implicit ("Rosenbrock-Euler" / W-method) step of size h,
+    // applied in place to y. L-stable, so it stays stable through the fast
+    // adsorption/desorption pre-equilibria typical of single-site surface
+    // kinetics without needing tiny steps the way an explicit method would.
+    // Returns false if the linear solve is singular (caller should shrink h).
+    bool rosenbrockEulerStep(std::vector<double>& y, double h) const;
+
 private:
     std::unordered_map<std::string,int> name_to_idx;
 };
@@ -111,4 +161,15 @@ public:
     void runSSA(double t_end, size_t max_steps);
     void runTau(double tau, double t_end);
     void runAdaptive(double t_end, size_t max_steps, double eps=0.03, int nc=10, int nSSAFallback=100);
+
+    // Deterministic mean-field ODE integration of the same reaction network.
+    // rtol/atol: adaptive step-size error tolerances (relative / absolute,
+    //   mixed units in the state vector -- surface counts and gas Pa share
+    //   one atol, so if that's an issue for your system tighten rtol instead).
+    // h_init/h_min/h_max: initial, minimum, maximum step size [s]
+    //   (h_max<=0 -> t_end/20).
+    // max_steps: cap on step *attempts* (not just accepted steps), safety net.
+    void runODE(double t_end, double rtol=1e-6, double atol=1e-6,
+                double h_init=1e-8, double h_min=1e-14, double h_max=-1.0,
+                size_t max_steps=2000000);
 };

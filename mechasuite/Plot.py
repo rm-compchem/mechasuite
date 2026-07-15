@@ -772,7 +772,7 @@ class Plot(QWidget):
         filename = QFileDialog.getSaveFileName()
         if not filename[0]:
             return
-        self.current_plot.export_reaction_network(filename[0])
+        self.current_plot.export_reaction_network(filename[0], temps)
 
     def select_bars(self):
         self.selected = []

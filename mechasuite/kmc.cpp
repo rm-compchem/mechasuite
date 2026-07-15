@@ -16,6 +16,69 @@ namespace py = pybind11;
 
 // Add to kmc.h: an enum + a way to retrieve the last stop reason
 enum class StopReason { Running, ReachedTEnd, NoPropensity, MaxStepReached };
+
+namespace {
+
+// Continuous generalization of System::binomial(n,k): the falling factorial
+// n(n-1)...(n-k+1)/k!, clamped to zero once any factor would go negative.
+// For integer n this equals binomial(n,k) exactly; for the continuous
+// populations used by the ODE (mean-field limit) it interpolates smoothly
+// and reproduces the same saturation/exclusion behaviour (a nearly-empty
+// site can't sustain a same-species bimolecular step) that the stochastic
+// engine gets from sampling without replacement -- so the *same* rate
+// constant gives consistent propensities in both engines.
+double contFallingFactorial(double n, int nu)
+{
+    if(nu <= 0) return 1.0;
+    if(n <= 0.0) return 0.0;
+    double res = 1.0;
+    for(int i=0;i<nu;++i){
+        double term = n - i;
+        if(term <= 0.0) return 0.0;
+        res *= term;
+    }
+    double fact = 1.0;
+    for(int i=2;i<=nu;++i) fact *= i;
+    return res / fact;
+}
+
+// Dense Gaussian elimination with partial pivoting for (I - h*J) k = rhs.
+// State dimension for a single-site mean-field model is small (a handful to
+// a few dozen unknowns), so plain O(n^3) elimination is plenty fast and
+// keeps this self-contained (no external linear-algebra dependency).
+bool solveLinear(std::vector<double> A, std::vector<double> b, std::vector<double>& x, int n)
+{
+    for(int col=0; col<n; ++col){
+        int piv = col;
+        double best = std::abs(A[(size_t)col*n+col]);
+        for(int r=col+1; r<n; ++r){
+            double v = std::abs(A[(size_t)r*n+col]);
+            if(v > best){ best = v; piv = r; }
+        }
+        if(best < 1e-12) return false; // singular / too ill-conditioned to trust
+        if(piv != col){
+            for(int c=0;c<n;++c) std::swap(A[(size_t)col*n+c], A[(size_t)piv*n+c]);
+            std::swap(b[col], b[piv]);
+        }
+        double diag = A[(size_t)col*n+col];
+        for(int r=col+1; r<n; ++r){
+            double factor = A[(size_t)r*n+col] / diag;
+            if(factor == 0.0) continue;
+            for(int c=col;c<n;++c) A[(size_t)r*n+c] -= factor*A[(size_t)col*n+c];
+            b[r] -= factor*b[col];
+        }
+    }
+    x.assign(n, 0.0);
+    for(int r=n-1; r>=0; --r){
+        double sum = b[r];
+        for(int c=r+1; c<n; ++c) sum -= A[(size_t)r*n+c]*x[c];
+        x[r] = sum / A[(size_t)r*n+r];
+    }
+    return true;
+}
+
+} // namespace
+
 // ----------------- Reactor -----------------
 void writeHistory(const std::string& filename, double time, System& sys)
 {
@@ -448,6 +511,158 @@ void System::printReactions() const
     }
 }
 
+// ================================================================
+// Deterministic mean-field ODE solver
+// ================================================================
+
+void System::buildODEIndexMaps()
+{
+    ode_surf_idx.clear();
+    ode_surf_pos.clear();
+    ode_gas_idx.clear();
+    ode_gas_pos.clear();
+
+    int pos = 0;
+    for(size_t idx=0; idx<species.size(); ++idx){
+        if(reactor.isGas((int)idx)) continue;          // gas handled separately (as pressures)
+        ode_surf_idx.push_back((int)idx);
+        ode_surf_pos[(int)idx] = pos++;
+    }
+    for(auto& [idx, feed_p] : reactor.gas_species){
+        if(reactor.reservoir.count(idx)) continue;      // pinned (infinite) reservoir gas -- not part of the state
+        ode_gas_idx.push_back(idx);
+        ode_gas_pos[idx] = pos++;
+    }
+
+    ode_n_surf = (int)ode_surf_idx.size();
+    ode_n_gas  = (int)ode_gas_idx.size();
+    ode_extent_offset = pos;
+    ode_state_size = pos + (int)reactions.size();
+}
+
+// Mean-field dy/dt. Mirrors computePropensity + applyReactionEvent exactly,
+// just with continuous populations instead of discrete counts/firings, so
+// the same rate constants give consistent kinetics in both engines:
+//   - gas reactant in an adsorption-type step: rate *= p^nu  (same as computePropensity)
+//   - surface reactant: rate *= contFallingFactorial(n, nu)  (continuum limit of binomial(n,nu))
+//   - gas species' derivative gets the reaction's per-molecule pressure contribution,
+//     exactly the conversion applyReactionEvent uses (scaleup * kB * T / V)
+//   - open-system gas species relax toward feed with time constant residence_time,
+//     the continuum analogue of Reactor::updateGasPressures' analytic transport term
+//   - reservoir-pinned gas species are excluded from the state (held fixed), matching
+//     the `if(reservoir.count(idx)) continue;` skip in updateGasPressures
+void System::computeODERHS(const std::vector<double>& y, std::vector<double>& dydt) const
+{
+    dydt.assign(y.size(), 0.0);
+
+    constexpr double kB = 1.380649e-23;
+    const double per_molecule_Pa = (reactor.volume > 0.0)
+        ? reactor.scaleup * kB * reactor.temperature / reactor.volume : 0.0;
+
+    auto surfAmount = [&](int idx)->double{
+        auto it = ode_surf_pos.find(idx);
+        return (it != ode_surf_pos.end()) ? y[it->second] : 0.0;
+    };
+    auto gasPressure = [&](int idx)->double{
+        auto it = ode_gas_pos.find(idx);
+        if(it != ode_gas_pos.end()) return y[it->second];
+        auto pit = reactor.partial_pressure.find(idx);   // pinned reservoir gas: fixed at its stored value
+        return (pit != reactor.partial_pressure.end()) ? pit->second : 0.0;
+    };
+
+    for(size_t j=0; j<reactions.size(); ++j){
+        const Reaction& r = reactions[j];
+        double rate = r.rate;
+
+        for(auto& [idx,nu] : r.reactants){
+            if(r.adsorption && reactor.isGas(idx)){
+                double p = gasPressure(idx);
+                rate *= std::pow(p, nu);
+            } else {
+                double n = surfAmount(idx);
+                rate *= contFallingFactorial(n, nu);
+            }
+            if(rate == 0.0) break;
+        }
+        if(rate == 0.0) continue;
+
+        dydt[ode_extent_offset + j] += rate;
+
+        for(auto& [idx,nu] : r.reactants){
+            if(reactor.isGas(idx)){
+                auto it = ode_gas_pos.find(idx);
+                if(it != ode_gas_pos.end()) dydt[it->second] -= nu*rate*per_molecule_Pa;
+            } else {
+                auto it = ode_surf_pos.find(idx);
+                if(it != ode_surf_pos.end()) dydt[it->second] -= nu*rate;
+            }
+        }
+        for(auto& [idx,nu] : r.products){
+            if(reactor.isGas(idx)){
+                auto it = ode_gas_pos.find(idx);
+                if(it != ode_gas_pos.end()) dydt[it->second] += nu*rate*per_molecule_Pa;
+            } else {
+                auto it = ode_surf_pos.find(idx);
+                if(it != ode_surf_pos.end()) dydt[it->second] += nu*rate;
+            }
+        }
+    }
+
+    if(!reactor.closed_system && reactor.residence_time > 0.0){
+        for(auto& [idx, feed_p] : reactor.gas_species){
+            auto it = ode_gas_pos.find(idx);
+            if(it == ode_gas_pos.end()) continue;   // reservoir-pinned, skip
+            double Pi = y[it->second];
+            dydt[it->second] += (feed_p - Pi) / reactor.residence_time;
+        }
+    }
+}
+
+void System::computeODEJacobian(const std::vector<double>& y, const std::vector<double>& f0,
+                                 std::vector<double>& J) const
+{
+    const int n = (int)y.size();
+    J.assign((size_t)n*n, 0.0);
+    std::vector<double> yp = y, fp(n);
+
+    for(int i=0;i<n;++i){
+        double yi = yp[i];
+        double eps = 1e-6 * std::max(1.0, std::abs(yi));
+        yp[i] = yi + eps;
+        computeODERHS(yp, fp);
+        for(int r=0;r<n;++r) J[(size_t)r*n + i] = (fp[r]-f0[r]) / eps;
+        yp[i] = yi;
+    }
+}
+
+bool System::rosenbrockEulerStep(std::vector<double>& y, double h) const
+{
+    const int n = (int)y.size();
+    std::vector<double> f0(n);
+    computeODERHS(y, f0);
+
+    std::vector<double> J;
+    computeODEJacobian(y, f0, J);
+
+    // (I - h*J) k = f0 -- linearly-implicit ("W-method") Euler step. L-stable,
+    // so it stays stable through fast adsorption/desorption pre-equilibria
+    // without needing the tiny steps an explicit method would be forced into.
+    std::vector<double> A((size_t)n*n, 0.0);
+    for(int r=0;r<n;++r){
+        for(int c=0;c<n;++c) A[(size_t)r*n+c] = -h*J[(size_t)r*n+c];
+        A[(size_t)r*n+r] += 1.0;
+    }
+
+    std::vector<double> k;
+    if(!solveLinear(A, f0, k, n)) return false;
+
+    for(int i=0;i<n;++i){
+        double yn = y[i] + h*k[i];
+        y[i] = (yn < 0.0) ? 0.0 : yn;   // physical non-negativity guard
+    }
+    return true;
+}
+
 // ----------------- SSA -----------------
 bool System::stepSSA(double& time, std::mt19937& rng)
 {
@@ -747,7 +962,117 @@ system.extent_history.clear();
     std::cout << "Completed normally, t=" << time << "\n";
 }
 
+// ----------------- Deterministic ODE run -----------------
+void KMC::runODE(double t_end, double rtol, double atol,
+                  double h_init, double h_min, double h_max, size_t max_steps)
+{
+    std::cout << "Running deterministic mean-field ODE integration "
+                 "(linearized-implicit, stiff-capable)\n";
 
+    system.buildODEIndexMaps();
+    const int n = system.odeStateSize();
+
+    std::vector<double> y(n, 0.0);
+    for(int i=0;i<system.ode_n_surf;++i)
+        y[i] = static_cast<double>(system.species[system.ode_surf_idx[i]]);
+    for(int i=0;i<system.ode_n_gas;++i){
+        int idx = system.ode_gas_idx[i];
+        auto it = system.reactor.partial_pressure.find(idx);
+        y[system.ode_n_surf+i] = (it != system.reactor.partial_pressure.end()) ? it->second : 0.0;
+    }
+    // reaction extents start at zero (default-initialized above)
+
+    initHistoryFile(system.logfile, system);
+    system.reaction_extent.assign(system.reactions.size(), 0.0);
+    system.extent_history.clear();
+    system.times.clear();
+    system.history.clear();
+    system.step = 0;
+    steadyOnset = -1.0;
+
+    if(h_max <= 0.0) h_max = std::max(t_end/20.0, h_init);
+
+    auto recordSnapshot = [&](double time, const std::vector<double>& yv){
+        for(int i=0;i<system.ode_n_surf;++i)
+            system.species[system.ode_surf_idx[i]] = static_cast<int>(std::llround(yv[i]));
+        for(int i=0;i<system.ode_n_gas;++i)
+            system.reactor.partial_pressure[system.ode_gas_idx[i]] = yv[system.ode_n_surf+i];
+        system.syncGasReporting();
+
+        for(size_t j=0;j<system.reactions.size();++j)
+            system.reaction_extent[j] = yv[system.ode_extent_offset+j];
+
+        system.times.push_back(time);
+        system.extent_history.push_back(system.reaction_extent);
+
+        std::vector<double> row(system.species.size());
+        for(size_t i=0;i<system.species.size();++i) row[i] = static_cast<double>(system.species[i]);
+        system.history.push_back(row);
+
+        writeHistory(system.logfile, time, system);
+        system.step++;
+    };
+
+    recordSnapshot(0.0, y);
+
+    double t = 0.0, h = h_init;
+    size_t nattempt = 0, naccept = 0;
+
+    while(t < t_end && nattempt < max_steps){
+        if(t + h > t_end) h = t_end - t;
+
+        std::vector<double> y_full = y;
+        bool ok = system.rosenbrockEulerStep(y_full, h);
+
+        std::vector<double> y_half = y;
+        ok = ok && system.rosenbrockEulerStep(y_half, 0.5*h);
+        ok = ok && system.rosenbrockEulerStep(y_half, 0.5*h);
+
+        ++nattempt;
+
+        if(!ok){
+            h *= 0.5;
+            if(h < h_min){
+                std::cout << "STOPPED: singular Jacobian / step collapsed at t=" << t << "\n";
+                break;
+            }
+            continue;
+        }
+
+        double err_norm = 0.0;
+        for(int i=0;i<n;++i){
+            double sc = atol + rtol*std::max(std::abs(y_full[i]), std::abs(y_half[i]));
+            double e = (y_half[i]-y_full[i]) / (sc>0.0 ? sc : 1.0);
+            err_norm += e*e;
+        }
+        err_norm = std::sqrt(err_norm/std::max(n,1));
+
+        // order-1 method -> optimal step-size exponent is 1/(p+1) = 1/2
+        double fac = 0.9*std::pow(1.0/std::max(err_norm,1e-10), 0.5);
+        fac = std::min(5.0, std::max(0.2, fac));
+        double h_new = std::min(h_max, std::max(h_min, h*fac));
+
+        bool accept = (err_norm <= 1.0) || (h <= h_min*1.0001);
+        if(accept){
+            y = y_half;   // Richardson-extrapolated (more accurate) state
+            t += h;
+            ++naccept;
+            if(naccept % (size_t)std::max(system.saveFreq, 1L) == 0 || t >= t_end){
+                recordSnapshot(t, y);
+                if(checkSteady(t)) break;
+            }
+        }
+        h = h_new;
+
+        if(PyErr_CheckSignals() != 0) throw py::error_already_set();
+    }
+
+    if(system.times.empty() || system.times.back() < t) recordSnapshot(t, y);
+
+    std::cout << "ODE integration completed: t=" << t
+              << "  accepted steps=" << naccept
+              << "  attempts=" << nattempt << "\n";
+}
 
 
 PYBIND11_MODULE(kmc, m) {
@@ -814,5 +1139,9 @@ PYBIND11_MODULE(kmc, m) {
         .def("runTau", &KMC::runTau)
         .def("runAdaptive", &KMC::runAdaptive,
             py::arg("t_end"),  py::arg("max_steps"), py::arg("eps")=0.03, py::arg("nc")=10, py::arg("nSSAFallback")=100)
+        .def("runODE", &KMC::runODE,
+            py::arg("t_end"), py::arg("rtol")=1e-6, py::arg("atol")=1e-6,
+            py::arg("h_init")=1e-8, py::arg("h_min")=1e-14, py::arg("h_max")=-1.0,
+            py::arg("max_steps")=2000000)
     ;
 }

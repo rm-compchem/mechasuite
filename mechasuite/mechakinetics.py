@@ -465,9 +465,9 @@ def apply_rate_constant_rescaling(r1, r2, max_rate):
         r1.rate *= factor
         r2.rate *= factor
 
-def parse_reaction_kmc(eq, rdict, system, gas_species_names, max_rate=None):
+def parse_reaction_kmc(eq, T, rdict, system, gas_species_names, max_rate=None):
     P_standard = 1e5
-    rate = rdict["298"]
+    rate = rdict[T]
     r1 = kmc_core.Reaction()
     r2 = None
     lhs, rhs = eq.split("=")
@@ -580,9 +580,13 @@ def run_kmc(data):
 
     # reactions
     max_rate = data.get("max_rate", None)
+    if max_rate and solver in ("kmc_ode", "ode"):
+        print("NOTE: ignoring 'max_rate' for the ODE solver (rate rescaling "
+              "is only meaningful for the stochastic KMC clock).")
+        max_rate = None
     if max_rate: max_rate = float(max_rate)
     for equation, rdict in data["mec"].items():
-        r1, r2 = parse_reaction_kmc(equation, rdict, sys, feed_p.keys(), max_rate)
+        r1, r2 = parse_reaction_kmc(equation, reactor.temperature, rdict, sys, feed_p.keys(), max_rate)
         sys.addReaction(r1)
         if r2 is not None:
             sys.addReaction(r2)
@@ -606,6 +610,20 @@ def run_kmc(data):
         kmc.runTau(tau, data["simulation_time"])
     elif solver == "kmc_adaptive":
         kmc.runAdaptive(data["simulation_time"], int(1e+18))
+    elif solver in ("kmc_ode", "ode"):
+        # Deterministic mean-field limit of the exact same reaction network
+        # (no spatial correlations -> valid for isolated, independent Cu
+        # sites). Much faster than averaging many stochastic trajectories,
+        # at the cost of losing site-to-site fluctuation information.
+        kmc.runODE(
+            data["simulation_time"],
+            rtol=data.get("ode_rtol", 1e-6),
+            atol=data.get("ode_atol", 1e-6),
+            h_init=data.get("ode_h_init", 1e-8),
+            h_min=data.get("ode_h_min", 1e-14),
+            h_max=data.get("ode_h_max", -1.0),
+            max_steps=int(data.get("ode_max_steps", 2_000_000)),
+        )
     else:
         kmc.runSSA(data["simulation_time"], int(1e+18))
 
