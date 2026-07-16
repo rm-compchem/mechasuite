@@ -3049,7 +3049,7 @@ class Data(object):
                     itmobj = mecobj.add_itm(itm["name"], energy=itm["energy"],
                                    tp=itm["tp"], freqs=itm["freqs"],
                                    cm=itm["cm"], temps=itm["temps"],
-                                   struct=itm["struct"], smiles=itm["smiles"],
+                                   struct=itm.get("struct"), smiles=itm.get("smiles"),
                                    pg=itm["pg"], photos=itm["photos"])
                     # print(itmobj)
                     if itmobj.tp == "mecp":
