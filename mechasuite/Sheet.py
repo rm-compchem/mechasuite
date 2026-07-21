@@ -2532,6 +2532,9 @@ class MainSheet(QTableWidget):
                 elif filter == "ref":
                     if itm.tp != "ref":
                         continue
+                elif filter == "mecp":
+                    if itm.tp != "mecp":
+                        continue
                 elif filter == "merged":
                     if not itm.merged:
                         continue
@@ -3020,7 +3023,7 @@ class MainWindow(QMainWindow):
         # TOOL BAR ----------------------------
         self.comboT.setEditable(True)
         self.combo_filter.addItems([
-          "all",  "ts", "min", "ref", "None", "freqs", "no freqs",
+          "all",  "ts", "min", "ref","mecp", "None", "freqs", "no freqs",
             "merged", ""
         ])
         self.combo_filter.setEditable(True)

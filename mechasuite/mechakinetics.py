@@ -534,6 +534,8 @@ def run_kmc(data):
     # init species and count
     allspec = get_species_dic_from_reac_str(list(data["mec"].keys())) # gets {A: 0, B:0 ...}
     allspec.update(data["surface_count"]) # init number of particles, gas are updated with partial pressure
+    total_surface_species = sum(data["surface_count"].values())
+    print("total surface count ", total_surface_species)
     # allspec.update(data.get("gas_count", {}))  # becarefull to populate also the outlet gases
     for s, v in allspec.items():
         sys.addSpecies(s,v)
@@ -622,7 +624,7 @@ def run_kmc(data):
             h_init=data.get("ode_h_init", 1e-8),
             h_min=data.get("ode_h_min", 1e-14),
             h_max=data.get("ode_h_max", -1.0),
-            max_steps=int(data.get("ode_max_steps", 2_000_000)),
+            max_steps=int(data.get("max_steps", int(1e+18))),
         )
     else:
         kmc.runSSA(data["simulation_time"], int(1e+18))
@@ -670,10 +672,10 @@ def run_kmc(data):
         idx = sys.getSpeciesIndex(name)
         if idx in gas_idx:
             continue
-        ax_surf.plot(time, sh, label=name)
+        ax_surf.plot(time, sh/total_surface_species, label=name)
 
     ax_surf.set_xlabel("time")
-    ax_surf.set_ylabel("population")
+    ax_surf.set_ylabel("Coverage")
     ax_surf.set_title("Surface species")
     ax_surf.set_xlim(0, data["simulation_time"])
     ax_surf.legend()

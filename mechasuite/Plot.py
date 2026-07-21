@@ -117,13 +117,17 @@ class Label(ComponentBase):
         self.coors[1] = self.parent.ymax - self.coors[1]
 
     def update_pixels(self):
-        self.pixels[0] = self.coors[0] / (self.parent.xmax - self.parent.xmin)
-        self.pixels[0] *= (self.parent.width() - self.parent.xmargin * 2)
-        self.pixels[0] += + self.parent.xmargin
+        npixel0 = self.coors[0] / (self.parent.xmax - self.parent.xmin)
+        npixel0 *= (self.parent.width() - self.parent.xmargin * 2)
+        npixel0 += + self.parent.xmargin
+        if npixel0 < abs(2147483647.0): # less than max int 
+            self.pixels[0] = npixel0
 
-        self.pixels[1] = (self.parent.ymax - self.coors[1])/ (self.parent.ymax - self.parent.ymin)
-        self.pixels[1] *= (self.parent.height() - self.parent.ymargin * 2)
-        self.pixels[1] += self.parent.ymargin
+        npixel1 = (self.parent.ymax - self.coors[1])/ (self.parent.ymax - self.parent.ymin)
+        npixel1 *= (self.parent.height() - self.parent.ymargin * 2)
+        npixel1 += self.parent.ymargin
+        if abs(npixel1) < 2147483647.0: # less than max int 
+            self.pixels[1] = npixel1
 
     def draw(self, qp):
         if not self.visible:
@@ -314,13 +318,17 @@ class Bar(ComponentBase):
         self.pixels[2] *= (self.parent.width() - self.parent.xmargin * 2)
         self.pixels[2] += + self.parent.xmargin
 
-        self.pixels[1] = (self.parent.ymax - self.coors[1])/ (self.parent.ymax - self.parent.ymin)
-        self.pixels[1] *= (self.parent.height() - self.parent.ymargin * 2)
-        self.pixels[1] += + self.parent.ymargin
+        npixel1 = (self.parent.ymax - self.coors[1])/ (self.parent.ymax - self.parent.ymin)
+        npixel1 *= (self.parent.height() - self.parent.ymargin * 2)
+        npixel1 += self.parent.ymargin
+        if abs(npixel1) < 2147483647.0:# less than max int 
+            self.pixels[1] = npixel1
 
-        self.pixels[3] = (self.parent.ymax - self.coors[3]) / (self.parent.ymax - self.parent.ymin)
-        self.pixels[3] *= (self.parent.height() - self.parent.ymargin * 2)
-        self.pixels[3] += + self.parent.ymargin
+        npixel3 = (self.parent.ymax - self.coors[3]) / (self.parent.ymax - self.parent.ymin)
+        npixel3 *= (self.parent.height() - self.parent.ymargin * 2)
+        npixel3 += self.parent.ymargin
+        if abs(npixel3) < 2147483647.0:# less than max int 
+            self.pixels[3] = npixel3
 
     def mouse_is_over(self, x, y):
         m = (self.pixels[3]-self.pixels[1])/(self.pixels[2]-self.pixels[0])
@@ -1039,6 +1047,26 @@ class Plot(QWidget):
                 self.setCursor(Qt.SizeAllCursor)
         self.update()
 
+    def print_ea(self, clicked):
+        print("Kinetics of ", clicked.name)
+        from mechasuite.globs import R, Kb, h
+        u = "kJ"
+        T = 673.15
+        if not isinstance(clicked, Bar):
+            return
+        for blink in clicked.blinks:
+            dG = blink.coors[3] - blink.coors[1]
+            kf = (Kb[u] * T / h[u]) * (np.e**(-dG / (R[u] * T)))
+            print(f"kf {kf}  dG {dG}")
+        for alink in clicked.alinks:
+            dG = alink.coors[1] - alink.coors[3]
+            kf = (Kb[u] * T / h[u]) * (np.e**(-dG / (R[u] * T)))
+            print(f"kr {kf}  dG {dG}")
+            
+            # self.gd.col.unit
+            # print(self.gd.col.unit)
+            # print(self.parent())
+
     def mousePressEvent(self, e):
         self.setFocus()
         if e.button() == 4: self.middle_down = True
@@ -1053,6 +1081,8 @@ class Plot(QWidget):
                     else:
                         self.selected.append(clicked)
                         clicked.selected = True
+                # temporal print TS
+                self.print_ea(clicked)
             elif e.modifiers() == Qt.ShiftModifier:
                 clicked = self.get_clicked(x, y)
                 if isinstance(clicked, Bar):

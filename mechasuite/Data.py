@@ -552,7 +552,7 @@ class Plot(object):
                 if alinko is not None:
                     second_min = alinko.pitm2 # got the second minima
             
-                if itmo.itm.tp == "ts":
+                if itmo.itm.tp == "ts" or itmo.itm.tp == "mecp":
                     # ts cannot be disconnected
                     if first_min is None or second_min is None: 
                         continue
@@ -564,24 +564,36 @@ class Plot(object):
                     #    key += f"{second_min.itm.itms[0].name}+{second_min.itm.itms[1].name}"
                     #else:
                     #    key = f"{second_min.name}"
-                    key = f"{first_min.name}={second_min.name}"
-                    paths_dic[key] = [first_min, second_min, itmo] # ts goes to the end
+                    step = f"{first_min.name}={second_min.name}"
+                    key = f"{first_min.name}{itmo.name}{second_min.name}"
+                    paths_dic[key] = {"step": step, "itms": [first_min, second_min, itmo]} # ts goes to the end
                 elif itmo.itm.tp == "min":
-                    if first_min.tp != "ts":
+                    if first_min.tp != "ts" and first_min.tp != "mecp":
+                        step = f"{first_min.name}={itmo.name}"
                         key = f"{first_min.name}={itmo.name}"
-                        paths_dic[key] = [first_min, itmo] # no TS
+                        paths_dic[key] = {"step": step, "itms": [first_min, itmo]} # no TS
                         # print("itmo.name: ", itmo.name, "first: ", first_min.tp, "second: ", second_min.tp)
 
-                    if second_min.itm.tp != "ts":
+                    if second_min.itm.tp != "ts" and second_min.itm.tp != "mecp":
+                        step = f"{itmo.name}={second_min.name}"
                         key = f"{itmo.name}={second_min.name}"
-                        paths_dic[key] = [itmo, second_min] # no TS
+                        # paths_dic[key] =  [itmo, second_min]# no TS
+                        paths_dic[key] = {"step": step, "itms": [itmo, second_min]} # no TS
+
                         # print("itmo.name: ", itmo.name, "first: ", first_min.tp, "second: ", second_min.tp)
 
         return paths_dic, init_val
     
-    def update_reaction_network_dic(self, outdic, paths_dic, T:float): 
+    def update_reaction_network_dic(self, outdic, paths_dic, T:float):
+        """
+        paths_dic: Dict, has the following struct: {"step": A+C=B, "itms": [min1, ts, min2]}
+                # keys are only used to avoid overriding same step with different TS
+
+        """ 
         u = self.col.unit
-        for stepname, itms in paths_dic.items():
+        for value in paths_dic.values(): 
+            stepname = value["step"]
+            itms = value["itms"]
             if len(itms) == 3:
                 first_min = itms[0]
                 second_min = itms[1]
@@ -608,7 +620,11 @@ class Plot(object):
             kr = (Kb[u] * T / h[u]) * (np.e**(-dgr / (R[u] * T)))
 
             if stepname in outdic["mec"]:
-                outdic["mec"][stepname][T] = [kf, kr]
+                if T in outdic["mec"][stepname]: # sum the constants
+                    outdic["mec"][stepname][T][0] += kf
+                    outdic["mec"][stepname][T][1] += kr
+                else:
+                    outdic["mec"][stepname][T] = [kf, kr]
             else:
                 outdic["mec"][stepname] = {T:[kf, kr]}
         return outdic
@@ -628,6 +644,7 @@ class Plot(object):
         ks_str = ""
         if self.etype == "E":
             ks_str += "Temperature 298\n"
+            T = 298
             outdic = self.update_reaction_network_dic(outdic, paths_dic, T)
         else:
             for T in temperatures:

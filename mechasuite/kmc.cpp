@@ -956,7 +956,10 @@ system.extent_history.clear();
         if(PyErr_CheckSignals() != 0) throw py::error_already_set();
 
         // interrupt steady state
-        if(checkSteady(time)) break;
+        if(checkSteady(time)) {
+            std::cout << "Steady state reached at t=" << time << " (step " << system.step << ") — stopping early.\n";
+	    break;
+	}
 
     }
     std::cout << "Completed normally, t=" << time << "\n";
