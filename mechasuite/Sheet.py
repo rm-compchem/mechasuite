@@ -2003,19 +2003,20 @@ class MainSheet(QTableWidget):
             colname = self.horizontalHeaderItem(col).text()
             itmobj = self.data.get_mech(colname).get_itm(itmname)
             if itmobj.tp == "ref":
-                msg = QMessageBox()
-                msg.setText("Deleting reference is not implemented")
-                msg.exec()
-                return
+                # msg = QMessageBox()
+                # msg.setText("Deleting reference items is not implemented")
+                # msg.exec()
+                # return
                 ref_names = ""
-                for ref in self.data.get_mech(colname).get_refs():
-                    for itm in ref.itms:
-                        if itm is itmobj:
-                            ref_names += ref.name + "\n"
+                for ref_name in self.data.get_mech(colname).get_refs_names():
+                    reflist = self.data.get_mech(colname).get_ref(ref_name)
+                    if itmobj in reflist:
+                        ref_names += ref_name + "\n"
                 if ref_names:
                     msg = QMessageBox()
                     msg.setText("This item cannot be deleted without deleting:\n" + ref_names)
                     msg.exec()
+                    return
             else:
                 for itm in self.data.get_mech(colname).get_itms():
                     if itm.tp != "ref" and itm is not itmobj:
@@ -2747,10 +2748,56 @@ class RefSheet(QTableWidget):
 
     def contextMenuEvent(self, event):
         menu = QMenu(self)
-        tempdep = menu.addAction("Temperature dependency")
+        # tempdep = menu.addAction("Temperature dependency")
+        editcoefs = menu.addAction("Edit reference coefficients")
         action = menu.exec_(self.mapToGlobal(event.pos()))
-        if action == tempdep:
-            self.on_temp_dependency()
+        # if action == tempdep:
+            # self.on_temp_dependency()
+        if action == editcoefs:
+            self.on_edit_coefficients()
+
+    def on_edit_coefficients(self):
+        col = self.currentColumn()
+        colname = self.horizontalHeaderItem(col).text()
+        if not self.tp == "ref":
+            return
+        
+        ref = self.itmobj.get_ref(colname)
+        if ref is None:
+            return
+        
+        def get_coefs(names, icoefs):
+            coefs = []
+            dialog = QInputDialog(self)
+            dialog.setWindowTitle("Edit Coefficients")
+            dialog.setLabelText(names)
+            dialog.setTextValue(icoefs)
+            if dialog.exec() == 0:
+                return -1, coefs # abort the whole reference editing
+            coefs = dialog.textValue()
+            coefs = coefs.split()
+            try:
+                coefs = [float(i) for i in coefs]
+            except Exception as e:
+                return 0, coefs # want to continue but coefs are wrong
+            if len(coefs) != len(ref.refs):
+                return 0, coefs # want to continue but coefs are wrong
+            return 1, coefs # # want to continue and coefs are ok
+        
+        # draw an input dialog
+        names = " ".join([f"{ref.name}, " for ref in ref.refs])
+        icoefs = " ".join([f"{c} " for c in ref.coefs])
+        ok, coefs = get_coefs(names, icoefs)
+        while not ok: # 0 evaluates to False, the rest avoids the loop
+            d = QMessageBox()
+            d.setText("Please enter valid coeffients. There should be as many float values as names shown in input dialog")
+            d.exec()
+            ok, coefs = get_coefs(names, icoefs)
+        if ok == -1: return # user do not want to continue
+        ref.coefs = coefs
+        if self.itmobj is not None:
+            self.itmobj.full_update()
+            self.update_data()
 
     def on_temp_dependency(self):
         if self.tp == "ref":

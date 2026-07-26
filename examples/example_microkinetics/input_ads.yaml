@@ -1,0 +1,42 @@
+closed: false
+mec:
+  I=P+S:
+    298:
+    - 2.1757017831042536
+    - 4.832099086983306e-2
+  R+S=I:
+    298:
+    - 4.1757017831042536
+    - 4.832099086983306e-2
+closed: false
+pressure: 100000.0  # Pa
+temperature: 298
+reactor_volume: 1e-6 # m3 1 ml
+# residence time se puede calcular con el volumen de reactor y el flujo
+residence_time: 1. # what i get from fanny, converting 1.5 g*h/mol
+molar_flow_rate: 3.6e-5 # mol/s  0.13 mol/h
+simulation_time: 10 # seconds
+solver: ode # other options kmc, kmc_tau, kmc_adaptive
+surface_count:
+  S: 1
+gas_mole_fraction:
+  R: 1.0
+  P: 0.0
+    #  O2: 0.0
+    #  "NO": 0.0
+#reservoir:
+    #R: 1000
+save_freq: 1
+steady_check_freq: 0
+steady_tolerance: 0.02
+steady_window: 10   # ~ tau/10
+tof:
+  species: P
+  sites: 1000
+
+catalyst_loading:
+  mass_g: 0.2
+  molar_mass: 64     # Pt
+  dispersion: 0.02
+
+plot: true
