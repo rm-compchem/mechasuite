@@ -573,8 +573,16 @@ class Plot(QWidget):
                 plt.text(label.coors[0], label.coors[1], label.text, fontsize=label.font.pointSize())
 
     def setup_maplotlib_settings(self, plt, xmax, xmin, ymax, ymin):
-        print("setting matplotlib ", xmax, xmin, ymax, ymin)
+        # print("setting matplotlib ", xmax, xmin, ymax, ymin)
         fontsize = int(self.parent().comboSize.currentText())
+        figsize = (6, 4)
+        figsize = self.parent().plotsizeInput.text()
+        figsize = figsize.split("x")
+        if len(figsize) == 2:
+            try:
+                figsize = (float(figsize[0]), float(figsize[1]))
+            except:
+                print("Invalid matplotlig figure size ", figsize)
 
         # matplotlib.rcParams("")
         matplotlib.rc('xtick', labelsize=fontsize * 0.8)
@@ -582,9 +590,8 @@ class Plot(QWidget):
         matplotlib.rcParams["savefig.directory"] = os.getcwd()
         # matplotlib.rc('text', usetex=True)
         # matplotlib.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
-
-        matplotlib.rcParams["font.family"] = "Times"
-        matplotlib.rcParams["figure.figsize"] = (8,4)
+        # matplotlib.rcParams["font.family"] = "Times"
+        matplotlib.rcParams["figure.figsize"] = figsize
         plt.tight_layout()
         #plt.subplots_adjust(left=0.05, bottom=0.05, top=0.95, right=0.95, wspace=0.2, hspace=0.26)
 
@@ -1187,6 +1194,7 @@ class MainCanvas(QMainWindow):
         self.comboSize = QComboBox(self.toolbar)
         self.comboE = QComboBox(self.toolbar)
         self.comboT = QComboBox(self.toolbar)
+        self.plotsizeInput = QLineEdit("6.0x4.0", self.toolbar)
 
         self.data = gd
         self.init_ui()
@@ -1218,6 +1226,8 @@ class MainCanvas(QMainWindow):
         self.toolbar.addWidget(self.comboE)
         self.toolbar.addWidget(QLabel("Temperature: "))
         self.toolbar.addWidget(self.comboT)
+        self.toolbar.addWidget(QLabel("Plot size(inch):"))
+        self.toolbar.addWidget(self.plotsizeInput)
 
         self.setGeometry(200, 200, 800, 800)
         self.setWindowTitle('Plot')

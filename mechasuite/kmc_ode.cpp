@@ -373,7 +373,8 @@ void MeanFieldODE::run(double t_end, double rtol, double atol,
             ++naccept;
             if(naccept % (size_t)std::max(system.saveFreq, 1L) == 0 || t >= t_end){
                 system.unpackAndCommit(t, y);
-                if(steady.update(system.step, t, system.times, system.history)) break;
+                if(steady.update(system.step, t, system.times, system.history))
+			{ std::cout << "reached steady state "<< "\n"; break;}
             }
         }
         h = h_new;

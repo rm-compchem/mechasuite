@@ -284,7 +284,7 @@ def run_kmc(data):
     if is_ode:
         sim_system = mk_core.ODESystem(sys)
         sim_system.save_freq = sys.save_freq
-        sim_system.logfile = data.get("ode_logfile", "kmc_ode.log")
+        sim_system.logfile = data.get("logfile", "kmc.log")
 
         engine = mk_core.MeanFieldODE(sim_system)
         engine.steady_window = data.get("steady_window", 0)
@@ -322,6 +322,7 @@ def run_kmc(data):
     logger.log(f"kmc steps: {sim_system.step}  ")
 
     # tof
+    tof = None
     if "tof" in data:
         t_ss = 0
         if engine.steady_onset > 0: t_ss = engine.steady_onset
@@ -330,7 +331,7 @@ def run_kmc(data):
                       data.get("tof", {}).get("species"),
                       t_ss, data.get("simulation_time"),
                       data.get("tof", {}).get("sites", 1))
-        logger.log("TOF ", tof)
+    logger.log("TOF ", tof)
     logger.log("final partial pressure:", sim_system.reactor.partial_pressure)
 
     # plotting
@@ -366,6 +367,29 @@ def run_kmc(data):
     plt.tight_layout()
     plt.show()
 
+    return tof
+
+def run_kmc_ea(data):
+    from scipy import stats
+    temperatures = data.get("temperatures_ae")
+    data["plot"] = False
+
+    tofs, iT = [], []
+    for temp in temperatures:
+        data["temperature"] = temp
+        tof = run_kmc(data)
+        tofs.append(tof)
+        
+        iT.append(1/temp)
+    slope, n, r, p, std_err = stats.linregress(iT, tofs)
+    print(f"Ea = {(slope*-8.31)/1e3} kJ/mol\n\
+            Intercept = {n}\n\
+            Pre-exponential factor (298 K) = {(n-1-np.log(1.38064852e-23)-np.log(298)+np.log(6.62607004e-34))*8.31} s^-1\n\
+            R^2 = {r**2}")
+    plt.plot(iT, tofs)
+    plt.legend()
+    plt.show()
+
 def main():
     try:
         filename = sys.argv[1]
@@ -381,8 +405,11 @@ def main():
         with open(filename) as f:
             mec_dic = yaml.safe_load(f)
 
-    # default to kmc
-    run_kmc(mec_dic)
+    if "temperatures_ae" in mec_dic:
+        run_kmc_ea(mec_dic)
+    else:
+        # default to kmc
+        run_kmc(mec_dic)
 
     
 if __name__== "__main__":
