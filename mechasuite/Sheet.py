@@ -2792,8 +2792,10 @@ class RefSheet(QTableWidget):
         if u != target_unit:
             energy *= conv[u][target_unit]
         ref_energy = state.ref.energy
-        #print("REFENERGY", ref_energy)
+        print("REFENERGY", ref_energy)
         reorg_energy = energy - ref_energy # estoy restando E1,0 - E1,1, eso es reorganization energy.
+        
+        print("REORGANIZATION ENERGY", reorg_energy)
         state.set_reorganization_energy(reorg_energy)
         self.update_data(self.itmobj)
 
@@ -2883,7 +2885,7 @@ class RefSheet(QTableWidget):
                 if T in zobj.thermo["g"]:
                     self.setItem(3, col, QTableWidgetItem("{:.4f}".format(zobj.g(T))))
                     self.setItem(2, col, QTableWidgetItem("{:.4f}".format(zobj.h(T))))
-                    self.setItem(4, col, QTableWidgetItem("{:.4f}".format(zobj.stot(T))))
+                    self.setItem(4, col, QTableWidgetItem("{:.8f}".format(zobj.stot(T))))
 
                 else:
                     self.setItem(2, col, QTableWidgetItem(""))
