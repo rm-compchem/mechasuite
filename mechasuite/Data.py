@@ -1890,8 +1890,11 @@ class Itm(object):
             if isinstance(itm, str):
                 itmobj = self.mech.get_itm(itm)
                 if itmobj is None:
-                    raise TypeError("Received None type instead of type item")
-                self.itms.append(itmobj)
+                    pass
+                    #raise TypeError("Received None type instead of type item")
+                    print(" item: ", self.name)
+                else:
+                    self.itms.append(itmobj)
             elif isinstance(itm, Itm):
                 self.itms.append(itm)
             else:
