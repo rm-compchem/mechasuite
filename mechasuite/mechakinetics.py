@@ -18,10 +18,12 @@ class Logger:
     
     def log(self, *args):
         for arg in args:
-            print(arg)
-            if not isinstance(arg, str):
-                arg = str(arg)
-            self.outfile.write(f"{arg}\n")
+            print(arg, end=" ")
+            #if not isinstance(arg, str):
+            #    arg = str(arg)
+            self.outfile.write(f"{arg} ")
+        print()
+        self.outfile.write("\n")
     
     # make sure file is closed
     def __del__(self):
@@ -83,7 +85,7 @@ def compute_tof(system, species, t_start, t_end, n_sites):
 
     dt = times[i1] - times[i0]
     tof = tof / dt / n_sites
-    if tof < 0: tof = 0
+    #if tof < 0: tof = 0
     return tof
 
 def compute_scaleup(sim_site_count, real_sites=None,
@@ -333,12 +335,22 @@ def run_kmc(data):
                       data.get("tof", {}).get("sites", 1))
     logger.log("TOF ", tof)
     logger.log("final partial pressure:", sim_system.reactor.partial_pressure)
-
+    # report total surface count
+    gas_idx = set(sim_system.reactor.gas_species.keys()) | set(sim_system.reactor.reservoir.keys())
+    final_sum_surf = 0
+    for n, species in enumerate(sim_system.species):
+        if n in gas_idx:
+            continue
+        final_sum_surf += species
+    logger.log("final surf sum: ", final_sum_surf) 
+    sys.print_reactions()
+    print("reaction extent: ", sim_system.reaction_extent)
+    #print(sim_system.extent_history)
+    
     # plotting
-    if "plot" not in data: return
+    if not data.get("plot", False): return tof
     fig, (ax_gas, ax_surf) = plt.subplots(1, 2, figsize=(10, 5), sharex=True)
 
-    gas_idx = set(sim_system.reactor.gas_species.keys()) | set(sim_system.reactor.reservoir.keys())
     gas_logfile = sim_system.gasLogFilename() if is_ode else "kmc_gas.log"
 
     if gas_idx:
@@ -366,7 +378,7 @@ def run_kmc(data):
 
     plt.tight_layout()
     plt.show()
-
+    
     return tof
 
 def run_kmc_ea(data):

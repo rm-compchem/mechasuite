@@ -227,8 +227,10 @@ void System::printReactions() const
 {
     for(size_t i=0;i<reactions.size();++i){
         std::cout << i << ": ";
-        for(auto& [idx,nu]: reactions[i].reactants) std::cout << nu << names[idx] << "->";
-        for(auto& [idx,nu]: reactions[i].products)  std::cout << nu << names[idx] << "\n";
+        for(auto& [idx,nu]: reactions[i].reactants) std::cout << nu << names[idx] << "+";
+        std::cout<<"--->";
+        for(auto& [idx,nu]: reactions[i].products)  std::cout << nu << names[idx] << "+";
+        std::cout<<"\n";
     }
 }
 

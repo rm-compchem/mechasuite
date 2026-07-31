@@ -222,6 +222,7 @@ bool ODESystem::rosenbrockEulerStep(std::vector<double>& y, double h) const
 
     for(int i=0;i<n;++i){
         double yn = y[i] + h*k[i];
+        if(yn < -1.e-6) return false; //my condition, reject if too negative
         y[i] = (yn < 0.0) ? 0.0 : yn;   // physical non-negativity guard
     }
     return true;
