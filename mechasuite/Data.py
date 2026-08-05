@@ -2003,8 +2003,6 @@ class Itm(object):
         else:
             return 0.0
 
-
-
     def calc_thermo(self, temps=[], modes=0, P=1.0, V=0, nnfreq=False):
         if not temps:
             return
@@ -2068,6 +2066,7 @@ class Itm(object):
                                  ispin_mult=self.spin)
             Thermo.set_freq(freqs, E, nnfreq=nnfreq)
             zpe, thermo = Thermo.calc_all()
+            #thermo = to_yaml_safe(thermo)
             for prop, dictT in thermo.items():
                 for T, value in dictT.items():
                     self.thermo[prop][T] = value

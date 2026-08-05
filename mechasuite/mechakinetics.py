@@ -48,6 +48,13 @@ def is_steady_state(times, history, t_check, window, tol=0.02):
     rel_change = np.abs(curr - prev) / denom
     return np.all(rel_change < tol)
 
+def load_history(filename):
+    with open(filename) as f:
+        header = f.readline()
+        names = header.split()[1:]
+    data = np.loadtxt(filename, skiprows=1)
+    return names, data[:, 0], data[:, 1:].T
+
 def find_steady_state_onset(times, history, window, tol=0.02):
     for t in times:
         if is_steady_state(times, history, t, window, tol):
@@ -87,6 +94,28 @@ def compute_tof(system, species, t_start, t_end, n_sites):
     tof = tof / dt / n_sites
     #if tof < 0: tof = 0
     return tof
+
+def compute_conversion(system, gas_logfile, species, t_start, t_end):
+    conv = 1.0
+    labels, time, pressure_history = load_history(gas_logfile)
+    try:
+        spec_idx = labels.index(species)
+    except Exception as e: 
+        print(e)
+        return 0.0
+    #if species is None: return tof
+    #spec_idx = system.getSpeciesIndex(species)
+    
+    #return (system.reactor.gas_species[spec_idx] - system.reactor.partial_pressure[spec_idx])/system.reactor.gas_species[spec_idx]
+
+    i0 = np.searchsorted(time, t_start)
+    i1 = min(np.searchsorted(time, t_end), len(time)-1)
+    if i1 <= i0 or i1 >= len(time):
+        conv = pressure_history[spec_idx, -1]
+    else:
+        conv = np.mean(pressure_history[spec_idx, i0:i1])
+    conv = (pressure_history[spec_idx][0] - conv)/pressure_history[spec_idx][0] 
+    return conv
 
 def compute_scaleup(sim_site_count, real_sites=None,
                      area_m2=None, site_density_per_m2=1e19,
@@ -189,6 +218,16 @@ def parse_reaction_kmc(eq, T, rdict, system, gas_species_names, max_rate=None):
 
     return r1, r2
 
+def report_total_surface(sim_system, logger):
+    # report total surface count
+    gas_idx = set(sim_system.reactor.gas_species.keys()) | set(sim_system.reactor.reservoir.keys())
+    final_sum_surf = 0
+    for n, species in enumerate(sim_system.species):
+        if n in gas_idx:
+            continue
+        final_sum_surf += species
+    logger.log("final surf sum: ", final_sum_surf) 
+
 def residence_time_from_flow(molar_flow_rate, reactor_volume, pressure, temperature):
     R = 8.314  # J/(mol·K)
     """molar_flow_rate: mol/s, reactor_volume: m^3, pressure: Pa, temperature: K"""
@@ -199,12 +238,6 @@ def pressure_to_count(P, volume, temperature):
     kB = 1.380649e-23
     return int(round(P * volume / (kB * temperature)))
 
-def load_history(filename):
-    with open(filename) as f:
-        header = f.readline()
-        names = header.split()[1:]
-    data = np.loadtxt(filename, skiprows=1)
-    return names, data[:, 0], data[:, 1:].T
 
 def run_kmc(data):
     logger = Logger()
@@ -220,7 +253,6 @@ def run_kmc(data):
     logger.log("total surface count ", total_surface_species)
     for s, v in allspec.items():
         sys.addSpecies(s,v)
-
     # reactor
     reactor = mk_core.Reactor()
     reactor.closed_system = data.get("closed", True)
@@ -274,7 +306,7 @@ def run_kmc(data):
         if r2 is not None:
             sys.addReaction(r2)
 
-    logger.log(sys.species, sys.names, reactor.gas_species, reactor.partial_pressure)
+    #logger.log(sys.species, sys.names, reactor.gas_species, reactor.partial_pressure)
     logger.log("residence time: ", reactor.residence_time)
 
     # ------------------------------------------------------------
@@ -323,35 +355,33 @@ def run_kmc(data):
 
     logger.log(f"kmc steps: {sim_system.step}  ")
 
+    gas_logfile = sim_system.gasLogFilename() if is_ode else "kmc_gas.log"
     # tof
     tof = None
+    conv = 1
     if "tof" in data:
         t_ss = 0
         if engine.steady_onset > 0: t_ss = engine.steady_onset
-
+        if "onset" in data["tof"]: t_ss = data["tof"]["onset"]
+        logger.log("steady sate onset: ", t_ss)
         tof = compute_tof(sim_system,
                       data.get("tof", {}).get("species"),
                       t_ss, data.get("simulation_time"),
                       data.get("tof", {}).get("sites", 1))
+        conv = compute_conversion(sim_system, gas_logfile,
+                      data.get("tof", {}).get("species"),
+                      t_ss, data.get("simulation_time"),
+                      )
     logger.log("TOF ", tof)
     logger.log("final partial pressure:", sim_system.reactor.partial_pressure)
-    # report total surface count
-    gas_idx = set(sim_system.reactor.gas_species.keys()) | set(sim_system.reactor.reservoir.keys())
-    final_sum_surf = 0
-    for n, species in enumerate(sim_system.species):
-        if n in gas_idx:
-            continue
-        final_sum_surf += species
-    logger.log("final surf sum: ", final_sum_surf) 
-    sys.print_reactions()
-    print("reaction extent: ", sim_system.reaction_extent)
+    report_total_surface(sim_system,logger)
+    #sys.print_reactions()
+    #print("reaction extent: ", sim_system.reaction_extent)
     #print(sim_system.extent_history)
     
     # plotting
-    if not data.get("plot", False): return tof
+    if not data.get("plot", False): return tof, conv
     fig, (ax_gas, ax_surf) = plt.subplots(1, 2, figsize=(10, 5), sharex=True)
-
-    gas_logfile = sim_system.gasLogFilename() if is_ode else "kmc_gas.log"
 
     if gas_idx:
        labels, time, pressure_history = load_history(gas_logfile)
@@ -379,26 +409,29 @@ def run_kmc(data):
     plt.tight_layout()
     plt.show()
     
-    return tof
+    return tof, conv
 
 def run_kmc_ea(data):
     from scipy import stats
     temperatures = data.get("temperatures_ae")
     data["plot"] = False
 
-    tofs, iT = [], []
+    tofs, convs, iT = [], [], []
     for temp in temperatures:
         data["temperature"] = temp
-        tof = run_kmc(data)
-        tofs.append(tof)
-        
+        tof, conv = run_kmc(data)
+        tof = abs(tof)
+        print("conversion: ", conv)
+        tofs.append(np.log(tof))
+        convs.append(np.log(conv))
         iT.append(1/temp)
-    slope, n, r, p, std_err = stats.linregress(iT, tofs)
+        print("\n\n\n")
+    slope, n, r, p, std_err = stats.linregress(iT, convs)
     print(f"Ea = {(slope*-8.31)/1e3} kJ/mol\n\
             Intercept = {n}\n\
             Pre-exponential factor (298 K) = {(n-1-np.log(1.38064852e-23)-np.log(298)+np.log(6.62607004e-34))*8.31} s^-1\n\
             R^2 = {r**2}")
-    plt.plot(iT, tofs)
+    plt.scatter(iT, convs)
     plt.legend()
     plt.show()
 

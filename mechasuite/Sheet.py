@@ -2748,11 +2748,11 @@ class RefSheet(QTableWidget):
 
     def contextMenuEvent(self, event):
         menu = QMenu(self)
-        # tempdep = menu.addAction("Temperature dependency")
+        tempdep = menu.addAction("Temperature dependency")
         editcoefs = menu.addAction("Edit reference coefficients")
         action = menu.exec_(self.mapToGlobal(event.pos()))
-        # if action == tempdep:
-            # self.on_temp_dependency()
+        if action == tempdep:
+            self.on_temp_dependency()
         if action == editcoefs:
             self.on_edit_coefficients()
 
@@ -3196,11 +3196,13 @@ class MainWindow(QMainWindow):
         if not filename.endswith(".json"):
             filename += ".json"
         try:
+            outdic = self.data.to_dict()
+            outdic = to_yaml_safe(outdic)
             with open(filename, "w") as f:
-                json.dump(self.data.to_dict(), f, indent=4)
-        except:
+                json.dump(outdic, f, indent=4)
+        except Exception as e:
             msg = QMessageBox()
-            msg.setText("File: " + str(self.current_file) + " not saved!")
+            msg.setText("File: " + str(self.current_file) + " not saved!\n"+str(e))
             msg.exec()
         else:
             self.current_file = filename
@@ -3405,6 +3407,21 @@ class MainWindow(QMainWindow):
                     except Exception as e:
                         print("Could not add reference ", refname, " to item ", itmname, str(e))
 
+            # calc thermo
+            if "thermo" in mecinfo:
+                thermo = mecinfo["thermo"]
+                for itmobj in mecobj.get_itms():
+                    try:
+                        itmobj.calc_thermo(thermo["temps"], 
+                                       0, 
+                                       thermo.get("P", 1),
+                                       thermo.get("V", 0),
+                                       thermo.get("nnfreq", False))
+                    except: pass
+                # update
+                for itmobj in mecobj.get_itms():
+                    itmobj.full_update()
+
         # make plots
         for mecname, mecinfo in datadict.items():
             mecobj = self.data.get_mech(mecname)
@@ -3445,8 +3462,8 @@ class MainWindow(QMainWindow):
         self.plot.update_data()
         #self.plot.update_data()
         # temporary save 
-        with open(".temp_mechasuit.json", "w") as f:
-            json.dump(self.data.to_dict(), f, indent=4)
+        #with open(".temp_mechasuit.json", "w") as f:
+        #    json.dump(self.data.to_dict(), f, indent=4)
 
     def export_to_excel(self, e):
         filename, _ = QFileDialog.getSaveFileName(self, "save file", self.last_dir)
