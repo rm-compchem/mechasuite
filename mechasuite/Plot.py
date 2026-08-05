@@ -1089,7 +1089,7 @@ class Plot(QWidget):
                         self.selected.append(clicked)
                         clicked.selected = True
                 # temporal print TS
-                self.print_ea(clicked)
+                #self.print_ea(clicked)
             elif e.modifiers() == Qt.ShiftModifier:
                 clicked = self.get_clicked(x, y)
                 if isinstance(clicked, Bar):

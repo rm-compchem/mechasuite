@@ -619,6 +619,22 @@ class Plot(object):
             kf = (Kb[u] * T / h[u]) * (np.e**(-dgf / (R[u] * T)))
             kr = (Kb[u] * T / h[u]) * (np.e**(-dgr / (R[u] * T)))
 
+            if len(itms) == 3:
+               kappa = 1.0
+               reac = tsobj.itm.get_reac(first_min.name)
+               if reac is None:
+                   reac = tsobj.itm.get_reac(second_min.name)
+               if reac is None:
+                   reac = first_min.itm.get_reac(tsobj.name)
+               if reac is None:
+                   reac = second_min.itm.get_reac(tsobj.name)
+
+               if reac is not None:
+                   kappa = getattr(reac, "kappa", 1.0)
+
+               kf *= kappa
+               kr *= kappa         
+
             if stepname in outdic["mec"]:
                 if T in outdic["mec"][stepname]: # sum the constants
                     outdic["mec"][stepname][T][0] += kf
