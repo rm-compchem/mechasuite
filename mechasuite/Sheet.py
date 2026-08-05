@@ -2750,11 +2750,66 @@ class RefSheet(QTableWidget):
         menu = QMenu(self)
         tempdep = menu.addAction("Temperature dependency")
         editcoefs = menu.addAction("Edit reference coefficients")
+        addtransmissioncoef = menu.addAction("Add transmission coefficient")
         action = menu.exec_(self.mapToGlobal(event.pos()))
         if action == tempdep:
             self.on_temp_dependency()
         if action == editcoefs:
             self.on_edit_coefficients()
+        if action == addtransmissioncoef:
+            self.on_add_transmission_coefficient()
+            
+    def on_add_transmission_coefficient(self):
+        if self.tp != "reac":
+            return
+
+        if self.itmobj is None or self.itmobj.tp != "ts":
+            QMessageBox.warning(self, "Transmission coefficient",
+                                "Transmission coefficient can only be set for TS items.")
+            return
+
+        col = self.currentColumn()
+        colname = self.horizontalHeaderItem(col).text()
+        if not colname:
+            return
+
+        reac = self.itmobj.get_reac(colname)
+        if reac is None:
+            return
+
+        current_kappa = getattr(reac, "kappa", 1.0)
+
+        while True:
+            kappa_text, ok = QInputDialog.getText(
+                self,
+                "Transmission coefficient",
+                "Enter κ:",
+                text=str(current_kappa)
+            )
+
+            if not ok:
+                return
+
+            try:
+                kappa_val = float(kappa_text)
+
+                if not (0.0 <= kappa_val <= 1.0):
+                    raise ValueError("Value out of bounds.")
+
+                break # Exit the loop if conversion is successful
+
+            except ValueError:
+                QMessageBox.warning(
+                    self, 
+                    "Invalid Input",
+                    "Please enter a valid float value between 0.0 and 1.0"
+                )
+
+        reac.kappa = kappa_val
+        reac.update()
+        self.update_data(self.itmobj)
+
+        
 
     def on_edit_coefficients(self):
         col = self.currentColumn()

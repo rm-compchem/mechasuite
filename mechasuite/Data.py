@@ -619,6 +619,22 @@ class Plot(object):
             kf = (Kb[u] * T / h[u]) * (np.e**(-dgf / (R[u] * T)))
             kr = (Kb[u] * T / h[u]) * (np.e**(-dgr / (R[u] * T)))
 
+            if len(itms) == 3:
+               kappa = 1.0
+               reac = tsobj.itm.get_reac(first_min.name)
+               if reac is None:
+                   reac = tsobj.itm.get_reac(second_min.name)
+               if reac is None:
+                   reac = first_min.itm.get_reac(tsobj.name)
+               if reac is None:
+                   reac = second_min.itm.get_reac(tsobj.name)
+
+               if reac is not None:
+                   kappa = getattr(reac, "kappa", 1.0)
+
+               kf *= kappa
+               kr *= kappa         
+
             if stepname in outdic["mec"]:
                 if T in outdic["mec"][stepname]: # sum the constants
                     outdic["mec"][stepname][T][0] += kf
@@ -1054,6 +1070,7 @@ class Reac(object):
         self.abs_en = 0.0
         self.abs_zpe = 0.0
         self.zpe = 0.0
+        self.kappa = 1.0 # Default transmission coefficient
 
         self.thermo = {
             "g": {}, "h": {}, "stot": {},
@@ -1091,7 +1108,8 @@ class Reac(object):
         selfdict["ref"] = self.ref.name
         selfdict["name"] = self.name
         selfdict["thermo"] = self.thermo
-        selfdict["relref"] = self.relref
+        selfdict["relref"] = self.relref 
+        selfdict["kappa"] = self.kappa
         return selfdict
 
     def update(self):
@@ -1171,14 +1189,14 @@ class Reac(object):
                     self.thermo[key][T] = relp
 
             if self.parent_itm.tp == "ts":
-                self.thermo["prob"] = 1.0
+                self.thermo["prob"] = self.kappa
                 try:
-                    self.thermo["k"][T] = (Kb[u] * T / h[u]) * (np.e**(-self.thermo["g"][T] / (R[u] * T)))
+                    self.thermo["k"][T] = self.thermo["prob"] * (Kb[u] * T / h[u]) * (np.e**(-self.thermo["g"][T] / (R[u] * T)))
                 except Exception as e:
                     print("There was an error computing K", e)
                 try:
                     # No se porque hay un e multiplicando lo que deberia ser KbT/h * exp^R/T
-                    self.thermo["a"][T] = (np.e * Kb[u] * T / h[u])*(np.e**(self.thermo["stot"][T]/R[u])) 
+                    self.thermo["a"][T] = self.thermo["prob"] * (np.e * Kb[u] * T / h[u])*(np.e**(self.thermo["stot"][T]/R[u])) 
                 except Exception as e:
                     print("There was an error computing A", e)
                 try:
@@ -2914,6 +2932,7 @@ class Data(object):
                                 # add reac does not need a name, the name is taken
                                 # from the reference: reac obj
                                 itmobj.add_reac(reacobjs[0])
+                                reacobj = itmobj.get_reac(reacobjs[0].name)
                         else:
                             if "relref" in reac:
                                 # busco el object itm que es de referencia para itmobj
@@ -2922,6 +2941,11 @@ class Data(object):
                                     itmobj.add_reac(mecobj.get_itm(reac["ref"]), reac["relref"])
                                 except:
                                     pass
+                                else:
+                                    reacobj = itmobj.get_reac(reac["ref"])
+                        if reacobj is not None and "kappa" in reac:
+                            reacobj.kappa = float(reac["kappa"])
+                            reacobj.update()
                     if itm.get("states"):
                         for state in itm["states"]:
                             # NO PONGO LO DE "refs" PORQUE NO SE QUE ES
