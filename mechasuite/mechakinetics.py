@@ -274,16 +274,16 @@ def run_kmc(data):
     reactor.reservoir = {sys.getSpeciesIndex(s): v for s, v in data.get("reservoir", {}).items()}
 
     reactor.residence_time = data.get("residence_time") or residence_time_from_flow(
-        float(data.get("molar_flow_rate", 1e-5)),
-        reactor.volume,
-        data.get("total_pressure", 1e5),
-        reactor.temperature,
-    )
+            float(data.get("molar_flow_rate", 1e-5)),
+            reactor.volume,
+            data.get("total_pressure", 1e5),
+            reactor.temperature,
+            )
 
     sim_sites = sum(data["surface_count"].values())
     reactor.scaleup = data.get("scaleup") or compute_scaleup(
-                    sim_sites, **data.get("catalyst_loading", {})
-                    )
+            sim_sites, **data.get("catalyst_loading", {})
+            )
     logger.log(f"using reactor scaleup of: {reactor.scaleup:e}")
 
     sys.reactor = reactor
@@ -382,6 +382,8 @@ def run_kmc(data):
     # plotting
     if not data.get("plot", False): return tof, conv
     fig, (ax_gas, ax_surf) = plt.subplots(1, 2, figsize=(10, 5), sharex=True)
+
+    gas_idx = set(sim_system.reactor.gas_species.keys()) | set(sim_system.reactor.reservoir.keys())
 
     if gas_idx:
        labels, time, pressure_history = load_history(gas_logfile)
