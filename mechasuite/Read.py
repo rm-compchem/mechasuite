@@ -257,6 +257,36 @@ def read_freq_ase(filename):
     # in the future i might want to return also the normal modes
     return vibs, unit
 
+def read_freq_molden(moldenfile):
+    freqs = []
+    unit = "cm-1"
+
+    if not os.path.isfile(moldenfile):
+        return freqs, unit
+
+    in_freq_section = False
+
+    with open(moldenfile) as f:
+        for line in f:
+            stripped = line.strip()
+
+            if stripped.upper() == "[FREQ]":
+                in_freq_section = True
+                continue
+
+            if in_freq_section and stripped.startswith("["):
+                break
+
+            if not in_freq_section or not stripped:
+                continue
+
+            try:
+                freqs.append(float(stripped.split()[0]))
+            except ValueError:
+                continue
+
+    return freqs, unit
+
 def read_orca_pg(outfile):
     pg = None
     with open(outfile) as f:
@@ -510,6 +540,26 @@ def detect_vasp(fpath, filenames):
                 break
     return d
 
+def detect_molden(fpath, filenames):
+    """
+    Detect a Molden-format file in a directory.
+    """
+    for filename in filenames:
+        filepath = os.path.join(fpath, filename)
+
+        try:
+            with open(filepath, encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    if re.search(r"\bmolden\b", line, re.IGNORECASE):
+                        return {
+                            "program": "molden",
+                            "freq_file": filename,
+                        }
+        except (OSError, UnicodeDecodeError):
+            continue
+
+    return {}
+
 def detect_program(fpath):
     """
     Tries to detect the software that was used to run the calculation
@@ -526,13 +576,18 @@ def detect_program(fpath):
 
     # detect orca
     infodic = detect_orca(fpath, files)
-    if info_dic:
-        return info_dic
+    if infodic:
+        return infodic
 
     # detect gaussian
     infodic = detect_gaussian(fpath, files)
-    if info_dic:
-        return info_dic
+    if infodic:
+        return infodic
+
+    # Detect Molden
+    infodic = detect_molden(fpath, files)
+    if infodic:
+        return infodic
 
     # no program detected return empty dic
     return {}

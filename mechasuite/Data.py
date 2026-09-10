@@ -21,7 +21,8 @@ PROGRAM_FREQ_MAP = {
     "gaussian": read_freq_gaussian,
     "orca": read_freq_orca,
     "vasp": read_freq_vasp,
-    "ase": read_freq_ase
+    "ase": read_freq_ase,
+    "molden": read_freq_molden
         }
         
 
@@ -142,20 +143,34 @@ class PlotItm(object):
         idict["alinks"] = self.alinks
         return idict
 
+    def _ref_obj(self):
+        return self.itm.get_ref(self.ref)
+
+
     def get_temps(self):
-        return self.itm.get_ref(self.ref).temps
+        ref = self._ref_obj()
+        if ref is None:
+            return getattr(self.itm, "temps", [])
+        return ref.temps
 
     def get_name(self):
         return self.itm.name
 
     def energy(self):
-        return self.itm.get_ref(self.ref).energy
+        ref = self._ref_obj()
+        if ref is None:
+            return getattr(self.itm, "energy", 0.0)
+        return ref.energy
 
     def get_energy(self):
-        return self.itm.get_ref(self.ref).energy
+        return self.energy()
 
     def g(self, T):
-        return self.itm.get_ref(self.ref).g(T)
+        ref = self._ref_obj()
+        if ref is None:
+            # try to call itm.g(T) if available, else None
+            return getattr(self.itm, "g", lambda t: None)(T)
+        return ref.g(T)
 
     def get_g_or_energy(self, etype, T):
         # Probably not the best designed method
@@ -1336,7 +1351,7 @@ class State_Conv(Reac):
 
         # Define driving force attribute
         if self.process_type == "NR_decay" or self.process_type == "RISC":
-            self.HR_factor = 0.1  # Huang-Rhys factor for the process (Weak coupling limit)
+            self.HR_factor = 0.90  # Huang-Rhys factor for the process (Weak coupling limit)
             self.max_freq_GS = None # Maximum vibrational frequency of the ground state (in cm-1)
 
         self.update2()
@@ -1965,6 +1980,7 @@ class Itm(object):
             return False
         
         if program not in PROGRAM_FREQ_MAP:
+            print("Frequency reader:", repr(program), f)
             print(program, " not implemented for frequency reading")
             return False
 
@@ -1977,6 +1993,7 @@ class Itm(object):
 
         self.freqs.set_vibs(vibs[:])
         self.freqs.unit = "cm-1"
+        return True
     
     def pg_from_orca_file(self, infile):
         pg = None
@@ -2879,10 +2896,17 @@ class Data(object):
                     if "zpe" in itm:
                         itmobj.zpe = itm["zpe"]
                     if "merged" in itm and itm["merged"]:
-                        itmobj.add_itms(itm["itms"])
-                        itmobj.merged=itm["merged"]
+                        if not hasattr(mecobj, "_pending_merges"):
+                            mecobj._pending_merges = []
+                        mecobj._pending_merges.append((itmobj.name, itm.get("itms", [])))
+                        itmobj.merged = itm["merged"]
                     else:
                         itmobj.merged = False
+                    #if "merged" in itm and itm["merged"]:
+                    #    itmobj.add_itms(itm["itms"])
+                    #    itmobj.merged=itm["merged"]
+                    #else:
+                    #    itmobj.merged = False
                     if "spin" in itm:
                         itmobj.spin = itm["spin"]
 

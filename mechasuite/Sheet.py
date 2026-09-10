@@ -1682,7 +1682,8 @@ class MainSheet(QTableWidget):
             return
         f, _ = QFileDialog.getOpenFileName()
         if f:
-            if not itmobj.freqs_from_file(f):
+            program = "molden" if f.lower().endswith(".molden") else "" # detect the frequency format comming from molden files
+            if not itmobj.freqs_from_file(f, program=program):
                 msb = QMessageBox()
                 msb.setText("Could not load frequencies")
                 msb.exec()

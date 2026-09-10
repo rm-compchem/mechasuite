@@ -687,6 +687,7 @@ def rot():
 
 
 def vib():
+    
     global ZPVE, ZPVET, UvibT, SvibT, n_modes, Final_freqs, Qvib, Qvibg, outcarfile, thermoinput
     Qvib, Qvibg = [], []
     ZPVET, UvibT, SvibT, Final_freqs = [], [], [], []
@@ -820,7 +821,7 @@ def elec():
 # function to calculate the total contributions of U and S
 # and the corresponding H and G
 def total():
-    global Utot, Stot, HT, GT, Utrans, Strans, Urot, Srot, UvibT, SvibT, E, ZPVE, SelecT
+    global Utot, Stot, HT, GT, Utrans, Strans, Urot, Srot, UvibT, SvibT, E, ZPVE, SelecT, ZPVET
     global Qtrans, Qrot, Qvib, Qvibg, Qelect, Qtot
     Utot, Stot, HT, GT = [], [], [], []
     Qtot = []
@@ -839,6 +840,7 @@ def total():
         if PG == "atom" or PG =="ATOM" or PG == "Atom":
             # I could print U or Strans directly too but I think it is clearer this way
             ZPVE = 0
+            ZPVET = [0.0 for _ in Final_temps]
             Urot, UvibT, Srot, SvibT = [], [], [], []
             for i in Utrans:
                 UvibT.append(0.0)
