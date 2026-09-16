@@ -1419,18 +1419,42 @@ class MainSheet(QTableWidget):
         # print("itmo", self.data.get_mech(cname))
         if itmo is None:
             return
-        dialog = QMessageBox()
+        #dialog = QMessageBox()
         # print("itmo.freqs.vibs", itmo.freqs.vibs)
-        if itmo.merged is True:
-            txt = ""
-            for it in itmo.itms:
-                txt += " \n".join([str(f) for f in it.freqs.vibs])
-                txt += "\n"
-        else:
-            txt = " \n".join([str(f) for f in itmo.freqs.vibs])
-            txt += "\n"+str(itmo.freqs.unit)
+        def format_frequencies(item):
+            lines = [
+                f"Mode  Frequency({item.freqs.unit})  Rotation(%)"
+            ]
 
-        dialog.setText(txt)
+            for mode, frequency in enumerate(item.freqs.vibs, start=1):
+                if mode <= len(item.freqs.rotation):
+                    rotation = item.freqs.rotation[mode - 1]
+                    rotation_text = (
+                        "N/A" if rotation is None else f"{rotation:.4f}"
+                    )
+                else:
+                    rotation_text = "N/A"
+
+                lines.append(
+                    f"{mode:4d}  {frequency:16.2f}  {rotation_text:11}"
+                )
+
+            return "\n".join(lines)
+
+        if itmo.merged:
+            text = []
+
+            for item in itmo.itms:
+                text.append(item.name)
+                text.append(format_frequencies(item))
+                text.append("")
+
+            message = "\n".join(text)
+        else:
+            message = format_frequencies(itmo)
+
+        dialog = QMessageBox(self)
+        dialog.setText(message)
         dialog.exec()
 
     def export_thermo_csv(self):

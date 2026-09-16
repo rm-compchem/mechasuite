@@ -592,3 +592,40 @@ def detect_program(fpath):
     # no program detected return empty dic
     return {}
 
+
+# ADDED TO IMPLEMENT qRRHO:
+
+def read_rotational_character(filename):
+    """
+    Read per-mode total rotational character.
+
+    Returns
+    -------
+    list[tuple]
+        Tuples containing:
+        (mode_number, frequency_cm1, total_rotation_percent)
+    """
+    rotations = []
+
+    if not os.path.isfile(filename):
+        return rotations
+
+    with open(filename) as f:
+        for line in f:
+            fields = line.split()
+
+            # Skip comments, separators, and the column header.
+            if len(fields) < 3:
+                continue
+
+            try:
+                mode = int(fields[0])
+                frequency = float(fields[1])
+                total_rotation = float(fields[2])
+            except ValueError:
+                continue
+
+            rotations.append((mode, frequency, total_rotation))
+
+    return rotations
+
