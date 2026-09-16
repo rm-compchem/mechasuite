@@ -1029,6 +1029,7 @@ class MainSheet(QTableWidget):
         menu = QMenu(self)
         freqmenu = menu.addMenu("Frequencies")
         thermomenu = menu.addMenu("Thermochemical Analysis")
+        vibrationalmenu = menu.addMenu("Vibrational Analysis")
         plotmenu = menu.addMenu("Plot")
 
         addzero = menu.addAction("Add Reference")
@@ -1058,6 +1059,7 @@ class MainSheet(QTableWidget):
         show_freqs = freqmenu.addAction("Show Frequencies")
         scale_freqs = freqmenu.addAction("Scale Frequencies")
         edit_freqs = freqmenu.addAction("Edit Frequencies")
+        analyze_rotation = vibrationalmenu.addAction("Analyze Rotational Character")
 
         calcthermo = thermomenu.addAction("Calculate")
         delthermo = thermomenu.addAction("Delete")
@@ -1121,6 +1123,8 @@ class MainSheet(QTableWidget):
             self.scale_freqs()
         elif action == edit_freqs:
             self.edit_freqs()
+        elif action == analyze_rotation:
+            self.analyze_rotational_character()
         elif action == addtoplot:
             self.add_to_plot()
         elif action == duplicate:
@@ -1711,6 +1715,48 @@ class MainSheet(QTableWidget):
                 msb = QMessageBox()
                 msb.setText("Could not load frequencies")
                 msb.exec()
+
+    def analyze_rotational_character(self):
+        cell_objects = self.selectedItems()
+        if not cell_objects:
+            return
+        cell_object = cell_objects[0]
+        colname = self.horizontalHeaderItem(cell_object.column()).text()
+        itmobj = self.data.get_mech(colname).get_itm(cell_object.text())
+        if itmobj is None:
+            return
+
+        folder = itmobj.calc_path or ""
+        output_path = os.path.join(folder, "job.out")
+        xyz_path = os.path.join(folder, "job.xyz")
+        poscar_path = os.path.join(folder, "POSCAR")
+        if not os.path.isfile(output_path):
+            output_path, _ = QFileDialog.getOpenFileName(
+                self, "Choose vibrational output", folder,
+                "Output files (*.out OUTCAR);;All files (*)"
+            )
+        if not output_path:
+            return
+        if not os.path.isfile(xyz_path):
+            xyz_path = None
+
+        try:
+            result = itmobj.rotational_character_from_vibrations(
+                output_path,
+                xyz_path=xyz_path,
+                poscar_path=poscar_path,
+                format="auto",
+            )
+        except (OSError, ValueError) as error:
+            QMessageBox.critical(self, "Vibrational analysis failed", str(error))
+            return
+
+        self.update_data()
+        QMessageBox.information(
+            self,
+            "Vibrational analysis complete",
+            f"Stored rotational percentages for {len(result.frequencies)} modes.",
+        )
 
 #    def export_to_matplotlib(self):
 #        cellobjs = self.selectedItems()

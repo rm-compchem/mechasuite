@@ -9,6 +9,7 @@ from scipy import optimize
 from mechasuite.Landau import *
 import yaml, json
 import copy
+from mechasuite.vibrational import analyze_vibrations, align_rotational_percentages
 
 PROGRAM_ENERGY_MAP = {
     "gaussian": read_energy_gaussian,
@@ -2043,6 +2044,31 @@ class Itm(object):
 
         self.freqs.rotation = aligned_rotation
         return len(aligned_rotation) == len(self.freqs.vibs)
+
+    def rotational_character_from_vibrations(
+        self,
+        output_path,
+        xyz_path=None,
+        poscar_path="POSCAR",
+        format="auto",
+        cutoff=1.2,
+        tolerance=0.5,
+    ):
+        """Analyze normal modes and persist only aligned total percentages."""
+        result = analyze_vibrations(
+            output_path,
+            xyz_path=xyz_path,
+            poscar_path=poscar_path,
+            format=format,
+            cutoff=cutoff,
+        )
+        self.freqs.rotation = align_rotational_percentages(
+            self.freqs.vibs,
+            result.frequencies,
+            result.total_rotational_percentages,
+            match_tolerance=tolerance,
+        )
+        return result
 
     
     def pg_from_orca_file(self, infile):
