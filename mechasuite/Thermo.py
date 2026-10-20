@@ -687,11 +687,12 @@ def rot():
 
 
 def vib():
+    
     global ZPVE, ZPVET, UvibT, SvibT, n_modes, Final_freqs, Qvib, Qvibg, outcarfile, thermoinput
     Qvib, Qvibg = [], []
     ZPVET, UvibT, SvibT, Final_freqs = [], [], [], []
     n_modes = 0
-
+    rotations = globals().get("mode_rotations", [])
     print(" ")
     if user_modes == 0:
         if PG == "Coov" or PG == "Dooh":
@@ -742,15 +743,61 @@ def vib():
                 continue
             ZPVE += 0.5*h*freqs[f]*NA
             Uvib += R*((h*freqs[f])/(Kb*(math.e**((h*freqs[f])/(Kb*T))-1)))
-            Svib += R*((h*freqs[f])/(Kb*T*((math.e**((h*freqs[f])/(Kb*T)))-1))-math.log(1-math.e**((-h*freqs[f])/(Kb*T))))
+
+            # We will use harmonic approximation for all modes above 100 cm-1, and free rotor for those below 100 cm-1 which have a rotational component. For those below 100 cm-1 without a rotational component, we will use the harmonic approximation.
+            theta_over_T = (h * freqs[f]) / (Kb * T) # dimensionless 
+            # Calculate the entropy contribution from the harmonic oscillator
+            sho_entropy = R * (
+                theta_over_T / (math.exp(theta_over_T) - 1)
+                - math.log(1 - math.exp(-theta_over_T))
+            )
+            # Calculate the rotational contribution if the mode has a rotational component
+            if f < len(rotations) and rotations[f] is not None:
+                x = rotations[f] / 100.0
+                x = min(max(x, 0.0), 1.0)
+            else:
+                x = 0.0
+            # Calculate the effective inertia for the mode (from the qRRHO paper)
+            inertia = h / (8 * pi**2 * freqs[f])
+            average_inertia = 1.0e-44
+            effective_inertia = (
+                inertia * average_inertia
+                / (inertia + average_inertia)
+            )
+            # Calculate the entropy contribution from the free rotor
+            sfr_entropy = R * (
+                0.5
+                + math.log(
+                    math.sqrt(
+                        8 * pi**3
+                        * effective_inertia
+                        * Kb
+                        * T
+                    ) / h
+                )
+            )
+            
+            #  qRRHO logic with rotational contribution:
+
+            freq_cm = freqs[f] / (c * 100)
+            
+            # Define Grimme's cutoff frequency (100 cm-1 is standard)
+            omega_0 = 100.0
+            
+            # Calculate the Harmonic Oscillator weight (approaches 1 at high freq, 0 at low freq)
+            weight = 1.0 / (1.0 + (omega_0 / freq_cm)**4)
+            
+            # Apply rotational contribution and weighting to the entropy
+            Svib += weight * sho_entropy + (1.0 - weight) * (x * sfr_entropy + (1.0 - x) * sho_entropy)
+
             qvib *= 1/(1 - math.e**-((h*freqs[f])/(Kb*T)))
             qvibg *= (math.e**-((h*freqs[f])/(Kb*T)))/(1 - math.e**-((h*freqs[f])/(Kb*T)))
-        ZPVET.append(ZPVE)
-        UvibT.append(Uvib)
-        SvibT.append(Svib)
-        Qvib.append(qvib)
-        Qvibg.append(qvibg)
-    print(" ")
+            print(" ")
+    ZPVET.append(ZPVE)
+    UvibT.append(Uvib)
+    SvibT.append(Svib)
+    Qvib.append(qvib)
+    Qvibg.append(qvibg)
 
 # function to calculate electronic entropy (note that Uelec = 0)
 # we use the common approximation in which it depends only on spin
@@ -820,7 +867,7 @@ def elec():
 # function to calculate the total contributions of U and S
 # and the corresponding H and G
 def total():
-    global Utot, Stot, HT, GT, Utrans, Strans, Urot, Srot, UvibT, SvibT, E, ZPVE, SelecT
+    global Utot, Stot, HT, GT, Utrans, Strans, Urot, Srot, UvibT, SvibT, E, ZPVE, SelecT, ZPVET
     global Qtrans, Qrot, Qvib, Qvibg, Qelect, Qtot
     Utot, Stot, HT, GT = [], [], [], []
     Qtot = []
@@ -839,6 +886,7 @@ def total():
         if PG == "atom" or PG =="ATOM" or PG == "Atom":
             # I could print U or Strans directly too but I think it is clearer this way
             ZPVE = 0
+            ZPVET = [0.0 for _ in Final_temps]
             Urot, UvibT, Srot, SvibT = [], [], [], []
             for i in Utrans:
                 UvibT.append(0.0)
@@ -1115,8 +1163,10 @@ def main():
     print("{:-^68}".format("-"))
 
 
-def set_freq(frequencies, Energy, nnfreq=False):
-    global freqs, E, user_modes, n_freq, no_neg_freqs
+def set_freq(frequencies, Energy, rotations=None, nnfreq=False):
+    global freqs, mode_rotations, E, user_modes, n_freq, no_neg_freqs
+
+    mode_rotations = [] if rotations is None else list(rotations)
     E = Energy
     no_neg_freqs = nnfreq
 

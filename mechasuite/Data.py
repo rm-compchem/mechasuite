@@ -9,6 +9,7 @@ from scipy import optimize
 from mechasuite.Landau import *
 import yaml, json
 import copy
+from mechasuite.vibrational import analyze_vibrations, align_rotational_percentages
 
 PROGRAM_ENERGY_MAP = {
     "gaussian": read_energy_gaussian,
@@ -21,7 +22,8 @@ PROGRAM_FREQ_MAP = {
     "gaussian": read_freq_gaussian,
     "orca": read_freq_orca,
     "vasp": read_freq_vasp,
-    "ase": read_freq_ase
+    "ase": read_freq_ase,
+    "molden": read_freq_molden
         }
         
 
@@ -142,20 +144,34 @@ class PlotItm(object):
         idict["alinks"] = self.alinks
         return idict
 
+    def _ref_obj(self):
+        return self.itm.get_ref(self.ref)
+
+
     def get_temps(self):
-        return self.itm.get_ref(self.ref).temps
+        ref = self._ref_obj()
+        if ref is None:
+            return getattr(self.itm, "temps", [])
+        return ref.temps
 
     def get_name(self):
         return self.itm.name
 
     def energy(self):
-        return self.itm.get_ref(self.ref).energy
+        ref = self._ref_obj()
+        if ref is None:
+            return getattr(self.itm, "energy", 0.0)
+        return ref.energy
 
     def get_energy(self):
-        return self.itm.get_ref(self.ref).energy
+        return self.energy()
 
     def g(self, T):
-        return self.itm.get_ref(self.ref).g(T)
+        ref = self._ref_obj()
+        if ref is None:
+            # try to call itm.g(T) if available, else None
+            return getattr(self.itm, "g", lambda t: None)(T)
+        return ref.g(T)
 
     def get_g_or_energy(self, etype, T):
         # Probably not the best designed method
@@ -773,16 +789,22 @@ class Struct():
 
 class Freq(object):
     def __init__(self, fdict=None):
+        self.vibs = []
+        self.rotation = []
+        self.unit = None
+
         if fdict is not None:
             self.set_vibs(fdict["vibs"])
+            self.rotation = [
+                None if value is None else float(value)
+                for value in fdict.get("rotation", [])
+            ]
             self.unit = fdict["unit"]
-        else:
-            self.vibs = []
-            self.unit = None
 
     def to_dict(self):
         selfdict = OrderedDict()
         selfdict["vibs"] = self.vibs
+        selfdict["rotation"] = self.rotation
         selfdict["unit"] = self.unit
         return selfdict
 
@@ -1336,7 +1358,7 @@ class State_Conv(Reac):
 
         # Define driving force attribute
         if self.process_type == "NR_decay" or self.process_type == "RISC":
-            self.HR_factor = 0.1  # Huang-Rhys factor for the process (Weak coupling limit)
+            self.HR_factor = 0.90  # Huang-Rhys factor for the process (Weak coupling limit)
             self.max_freq_GS = None # Maximum vibrational frequency of the ground state (in cm-1)
 
         self.update2()
@@ -1965,6 +1987,7 @@ class Itm(object):
             return False
         
         if program not in PROGRAM_FREQ_MAP:
+            print("Frequency reader:", repr(program), f)
             print(program, " not implemented for frequency reading")
             return False
 
@@ -1977,6 +2000,76 @@ class Itm(object):
 
         self.freqs.set_vibs(vibs[:])
         self.freqs.unit = "cm-1"
+        return True
+
+
+    def rotation_from_file(self, filename):
+        """
+        Load total rotational character and align it with self.freqs.vibs.
+        """
+        rotations = read_rotational_character(filename)
+
+        if not rotations:
+            self.freqs.rotation = []
+            return False
+
+        if not self.freqs.vibs:
+            self.freqs.rotation = []
+            return False
+
+        remaining = rotations[:]
+        aligned_rotation = []
+
+        for frequency in self.freqs.vibs:
+            if not remaining:
+                aligned_rotation.append(None)
+                continue
+
+            index = min(
+                range(len(remaining)),
+                key=lambda i: abs(remaining[i][1] - frequency)
+            )
+
+
+            # Check threshold  to avoid destroying data on mismatched frequencies (like translations/rotations)
+            if abs(remaining[index][1] - frequency) > 0.5:
+                self.cm += (
+                    "WARNING: Could not match rotational character for "
+                    + str(frequency) + " cm-1\n"
+                )
+                aligned_rotation.append(None)
+            else:
+                mode, rotation_frequency, rotation = remaining.pop(index)
+                aligned_rotation.append(float(rotation))
+
+        self.freqs.rotation = aligned_rotation
+        return len(aligned_rotation) == len(self.freqs.vibs)
+
+    def rotational_character_from_vibrations(
+        self,
+        output_path,
+        xyz_path=None,
+        poscar_path="POSCAR",
+        format="auto",
+        cutoff=1.2,
+        tolerance=0.5,
+    ):
+        """Analyze normal modes and persist only aligned total percentages."""
+        result = analyze_vibrations(
+            output_path,
+            xyz_path=xyz_path,
+            poscar_path=poscar_path,
+            format=format,
+            cutoff=cutoff,
+        )
+        self.freqs.rotation = align_rotational_percentages(
+            self.freqs.vibs,
+            result.frequencies,
+            result.total_rotational_percentages,
+            match_tolerance=tolerance,
+        )
+        return result
+
     
     def pg_from_orca_file(self, infile):
         pg = None
@@ -2051,7 +2144,7 @@ class Itm(object):
                 Thermo.set_input(temps, ipg=pg, unit=unit, imodes=modes,
                                  iprecalc=iprecalc, ip=P, iv=V, ispin=True,
                                  ispin_mult=itm.spin)
-                Thermo.set_freq(freqs, E, nnfreq=nnfreq)
+                Thermo.set_freq(freqs, E, rotations=itm.freqs.rotation, nnfreq=nnfreq)
                 zpe, thermo = Thermo.calc_all()
                 for prop, dictT in thermo.items():
                     for T, value in dictT.items():
@@ -2082,7 +2175,7 @@ class Itm(object):
             Thermo.set_input(temps, ipg=pg, unit=unit, imodes=modes,
                              iprecalc=iprecalc, ip=P, iv=V, ispin=True,
                                  ispin_mult=self.spin)
-            Thermo.set_freq(freqs, E, nnfreq=nnfreq)
+            Thermo.set_freq(freqs, E, rotations=self.freqs.rotation, nnfreq=nnfreq)
             zpe, thermo = Thermo.calc_all()
             #thermo = to_yaml_safe(thermo)
             for prop, dictT in thermo.items():
@@ -2542,7 +2635,14 @@ class Mechanism(object):
 
         # try to read freqs
         freq_path = os.path.join(folder, data.get("freq_file", ""))
-        itmobj.freqs_from_file(freq_path, program)
+        freq_program = program
+        if freq_path.lower().endswith(".molden"):
+            freq_program = "molden"
+        itmobj.freqs_from_file(freq_path, freq_program)
+        rotation_file = data.get("rotation_file")
+        if rotation_file:
+            rotation_path = os.path.join(folder, rotation_file)
+            itmobj.rotation_from_file(rotation_path)
        
         # try to read struct
         struct_path = os.path.join(folder, data.get("struct_file", ""))
@@ -2886,10 +2986,17 @@ class Data(object):
                     if "zpe" in itm:
                         itmobj.zpe = itm["zpe"]
                     if "merged" in itm and itm["merged"]:
-                        itmobj.add_itms(itm["itms"])
-                        itmobj.merged=itm["merged"]
+                        if not hasattr(mecobj, "_pending_merges"):
+                            mecobj._pending_merges = []
+                        mecobj._pending_merges.append((itmobj.name, itm.get("itms", [])))
+                        itmobj.merged = itm["merged"]
                     else:
                         itmobj.merged = False
+                    #if "merged" in itm and itm["merged"]:
+                    #    itmobj.add_itms(itm["itms"])
+                    #    itmobj.merged=itm["merged"]
+                    #else:
+                    #    itmobj.merged = False
                     if "spin" in itm:
                         itmobj.spin = itm["spin"]
 

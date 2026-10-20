@@ -310,24 +310,28 @@ class Bar(ComponentBase):
         self.coors[3] = self.parent.ymax - self.coors[3]
 
     def update_pixels(self):
-        self.pixels[0] = self.coors[0] / (self.parent.xmax - self.parent.xmin)
-        self.pixels[0] *= (self.parent.width() - self.parent.xmargin * 2)
-        self.pixels[0] += + self.parent.xmargin
-
-        self.pixels[2] = self.coors[2] / (self.parent.xmax - self.parent.xmin)
-        self.pixels[2] *= (self.parent.width() - self.parent.xmargin * 2)
-        self.pixels[2] += + self.parent.xmargin
-
-        npixel1 = (self.parent.ymax - self.coors[1])/ (self.parent.ymax - self.parent.ymin)
-        npixel1 *= (self.parent.height() - self.parent.ymargin * 2)
-        npixel1 += self.parent.ymargin
-        if abs(npixel1) < 2147483647.0:# less than max int 
+        # use safe defaults if any coors are None
+        x0 = self.coors[0] if self.coors[0] is not None else self.parent.xmin
+        x2 = self.coors[2] if self.coors[2] is not None else self.parent.xmax
+        # choose a sensible y default (middle of current plot range)
+        y_default = (self.parent.ymin + self.parent.ymax) / 2.0
+        y1 = self.coors[1] if self.coors[1] is not None else y_default
+        y3 = self.coors[3] if self.coors[3] is not None else y1
+    
+        # compute pixels for x endpoints
+        self.pixels[0] = x0 / (self.parent.xmax - self.parent.xmin) * (self.parent.width() - self.parent.xmargin * 2) + self.parent.xmargin
+        self.pixels[2] = x2 / (self.parent.xmax - self.parent.xmin) * (self.parent.width() - self.parent.xmargin * 2) + self.parent.xmargin
+    
+        # compute pixels for y endpoints (guard against zero division)
+        yspan = (self.parent.ymax - self.parent.ymin)
+        if yspan == 0.0:
+            yspan = 1e-8
+        npixel1 = (self.parent.ymax - y1) / yspan * (self.parent.height() - self.parent.ymargin * 2) + self.parent.ymargin
+        if abs(npixel1) < 2147483647.0:
             self.pixels[1] = npixel1
-
-        npixel3 = (self.parent.ymax - self.coors[3]) / (self.parent.ymax - self.parent.ymin)
-        npixel3 *= (self.parent.height() - self.parent.ymargin * 2)
-        npixel3 += self.parent.ymargin
-        if abs(npixel3) < 2147483647.0:# less than max int 
+    
+        npixel3 = (self.parent.ymax - y3) / yspan * (self.parent.height() - self.parent.ymargin * 2) + self.parent.ymargin
+        if abs(npixel3) < 2147483647.0:
             self.pixels[3] = npixel3
 
     def mouse_is_over(self, x, y):
@@ -1089,7 +1093,10 @@ class Plot(QWidget):
                         self.selected.append(clicked)
                         clicked.selected = True
                 # temporal print TS
-                #self.print_ea(clicked)
+                try:
+                    self.print_ea(clicked)
+                except:
+                    pass
             elif e.modifiers() == Qt.ShiftModifier:
                 clicked = self.get_clicked(x, y)
                 if isinstance(clicked, Bar):

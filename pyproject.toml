@@ -16,5 +16,6 @@ cmake.version = ">=3.15"
 [project.scripts]
 mechadata = "mechasuite.mechadata:main"
 mechakinetics = "mechasuite.mechakinetics:main"
+mechavib = "mechasuite.mechavib:main"
 
 
