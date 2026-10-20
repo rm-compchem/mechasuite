@@ -3384,13 +3384,17 @@ class MainWindow(QMainWindow):
 
             # update types
             for itmname in mecinfo.get("ts_items", []):
-                itmobj = mecobj.get_itm(itmname)
+                # process itm location to extract name of folder
+                itm_name_correct = os.path.basename(itmname)
+                itmobj = mecobj.get_itm(itm_name_correct)
                 if itmobj is None:
                     continue
                 itmobj.tp = "ts"
 
             for itmname in mecinfo.get("min_items", []):
-                itmobj = mecobj.get_itm(itmname)
+                # process itm location to extract name of folder
+                itm_name_correct = os.path.basename(itmname)
+                itmobj = mecobj.get_itm(itm_name_correct)
                 if itmobj is None:
                     continue
                 itmobj.tp = "min"
@@ -3399,7 +3403,6 @@ class MainWindow(QMainWindow):
                 # process itm location to extract name of folder
                 itm_name_correct = os.path.basename(itmname)
                 itmobj = mecobj.get_itm(itm_name_correct)
-                
                 if itmobj is None:
                     continue
                 itmobj.tp = "ref"    

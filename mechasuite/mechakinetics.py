@@ -82,8 +82,9 @@ def compute_tof(system, species, t_start, t_end, n_sites):
     extent_history = np.asarray(system.extent_history)   # shape (n_snapshots, n_reactions)
     i0 = np.searchsorted(times, t_start)
     i1 = min(np.searchsorted(times, t_end), len(times)-1)
-    if i1 <= i0 or i1 >= len(times):
-        return tof
+    print(i0, i1)
+    if i1 == i0:
+        i0 = 0
     
     for reaction_idx in reac_form_idx:
         tof += extent_history[i1, reaction_idx] - extent_history[i0, reaction_idx]
@@ -418,22 +419,32 @@ def run_kmc_ea(data):
     temperatures = data.get("temperatures_ae")
     data["plot"] = False
 
-    tofs, convs, iT = [], [], []
+    def outdata():
+        with open(data.get("ea_logfile", "kmc_ea.log"), "w") as f:
+            f.write("T  Conversion  TOF \n")
+            for ti, conv, tof in zip(T, convs, tofs):
+                f.write(f"{ti:.6f}  {conv:.6f}  {tof:.6f} \n")
+
+    tofs, convs, T = [], [], []
     for temp in temperatures:
         data["temperature"] = temp
         tof, conv = run_kmc(data)
         tof = abs(tof)
         print("conversion: ", conv)
-        tofs.append(np.log(tof))
-        convs.append(np.log(conv))
-        iT.append(1/temp)
+        tofs.append(tof)
+        convs.append(conv)
+        T.append(temp)
         print("\n\n\n")
-    slope, n, r, p, std_err = stats.linregress(iT, convs)
+    outdata()
+    
+    iT = 1/np.array(T) 
+    convlog = np.log(conv)
+    slope, n, r, p, std_err = stats.linregress(iT, convlog)
     print(f"Ea = {(slope*-8.31)/1e3} kJ/mol\n\
             Intercept = {n}\n\
             Pre-exponential factor (298 K) = {(n-1-np.log(1.38064852e-23)-np.log(298)+np.log(6.62607004e-34))*8.31} s^-1\n\
             R^2 = {r**2}")
-    plt.scatter(iT, convs)
+    plt.scatter(iT, convlog)
     plt.legend()
     plt.show()
 

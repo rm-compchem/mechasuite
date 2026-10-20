@@ -2589,12 +2589,19 @@ class Mechanism(object):
             return None
             
         data_file = os.path.join(folder, ".data")
-        if os.path.isfile(data_file):
-            with open(data_file) as fd:
-                local_data = yaml.safe_load(fd)
-                # update with loaded info
-                data.update(local_data)
-                return self.itm_from_folder_custom(folder, data, add=add)
+        if not os.path.isfile(data_file):
+            return self.itm_from_folder_custom(folder, data, add=add)
+        
+        local_data = {}
+        with open(data_file) as fd:
+           local_data = yaml.safe_load(fd)
+       
+        if not local_data or not isinstance(local_data, dict):
+            return self.itm_from_folder_custom(folder, data, add=add)
+
+        # update with loaded info
+        data.update(local_data)
+        return self.itm_from_folder_custom(folder, data, add=add)
         
         # detect program is data is empty
         if not data:
