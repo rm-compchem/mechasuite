@@ -826,7 +826,7 @@ class Plot(QWidget):
                        if itm.coors[0] == x]
 
         for n, itm in enumerate(sorted_itms):
-            if n == len(sorted_itms) - 1:
+            if n >= len(sorted_itms) - 1:
                 break
             if self.bars_connected(itm, sorted_itms[n+1]):
                 continue
@@ -838,7 +838,9 @@ class Plot(QWidget):
             self.bars.append(Bar(self, newlink, tp="link"))
             itm.update_links()
             sorted_itms[n+1].update_links()
-        self.update()
+        
+        self.current_plot.update_temp_en()
+        self.update_data()
 
     def on_change_color(self):
         color = QColorDialog().getColor()

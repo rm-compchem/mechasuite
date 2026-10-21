@@ -1512,22 +1512,25 @@ class MainSheet(QTableWidget):
         for cellobj in cellobjs:
             try:
                 col, row = cellobj.column(), cellobj.row()
-            except RuntimeError:
+            except RuntimeError as e:
                 continue
             rowname = self.verticalHeaderItem(row).text()
-
             if rowname != "Name":
                 continue
             colname = self.horizontalHeaderItem(col).text()
             itmname = cellobj.text()
+            # print("rowname: ", rowname, "itmname: ", itmname, " cellobj: ", cellobj)
+
             itmobj = self.data.get_mech(colname).get_itm(itmname)
             if itmobj is None:
                 continue
             itmobj.full_update()
-            self.update_data()
-            # update plots
-            self.data.update_plot_energies()
-            self.parent.plot.update_data()
+
+        # if called inside loop causes deletion c++ wrapped object
+        self.update_data()
+        # update plots
+        self.data.update_plot_energies()
+        self.parent.plot.update_data()
 
     def update_itm_data_from_folder(self):
         """
@@ -2880,8 +2883,6 @@ class RefSheet(QTableWidget):
         reac.update()
         self.update_data(self.itmobj)
 
-        
-
     def on_edit_coefficients(self):
         col = self.currentColumn()
         colname = self.horizontalHeaderItem(col).text()
@@ -3449,8 +3450,9 @@ class MainWindow(QMainWindow):
             if mecobj is None:
                 continue
 
-            # set units
-            unit = mecinfo.get("units")  
+            # set units, support for both "unit" and "units"
+            unit = mecinfo.get("unit")  
+            unit = mecinfo.get("units", unit)  
             mecobj.chg_unit(unit)
 
             # update types
