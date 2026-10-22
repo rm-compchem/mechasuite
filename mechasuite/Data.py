@@ -1742,7 +1742,9 @@ class Itm(object):
         for prop in self.thermo.keys():
             for temp in self.thermo[prop].keys():
                 self.thermo[prop][temp] *= conv[self.mech.unit][unit]
-        self.full_update()
+        # this has to called after all itms units have been changed
+        # because relative and reaction energies depend on various other itms
+        # self.full_update() 
 
     def photo_from_files(self, photonames):
         databasedir = os.environ["HOME"] + "/.datamanager/photos/"
@@ -2260,22 +2262,17 @@ class Mechanism(object):
             return self.itms[newname]
 
     def chg_unit(self, unit=None):
-        #print(unit); print(self.unit); print("Unit")
         if unit is None:
             return
 
         itmobjs = self.get_itms()
         for itmobj in itmobjs:
-        #     #print(conv[self.unit][unit])
-        #     #print(itmobj.energy)
-        #     itmobj.energy *= conv[self.unit][unit]
-        #     itmobj.zpe *= conv[self.unit][unit]
-        #     for prop in itmobj.thermo.keys():
-        #         for temp in itmobj.thermo[prop].keys():
-        #             itmobj.thermo[prop][temp] *= conv[self.unit][unit]
-        # for itmobj in itmobjs:
-        #     itmobj.full_update()
             itmobj.chg_unit(unit)
+
+        # full_update has to called after all itms units have been changed
+        # because relative and reaction energies depend on various other itms
+        for itmobj in itmobjs:
+            itmobj.full_update()
         self.unit = unit
 
     def get_itm_index(self, iname):
