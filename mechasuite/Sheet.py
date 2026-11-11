@@ -18,6 +18,9 @@ from mechasuite.Read import unfold_temps
 import re
 # import rotate
 import time
+import tempfile
+from collections import deque
+import copy
 
 class Log:
     def __init__(self):
@@ -1002,7 +1005,8 @@ class MainSheet(QTableWidget):
             itm_energy = float(itm_energy)
         except ValueError:
             itm_energy = 0.0
-
+        
+        self.parent.register() # store undo
         cname = self.horizontalHeaderItem(self.currentColumn()).text()
         mecobj = self.data.get_mech(cname)
         mecobj.add_itm(itmname, energy=itm_energy)
@@ -1022,6 +1026,9 @@ class MainSheet(QTableWidget):
             return
         if unit == mobj.unit:
             return
+
+        # all checks pass now save current state
+        self.parent.register() # store undo
         mobj.chg_unit(unit)
         self.update_data()
 
@@ -3050,6 +3057,67 @@ class RefSheet(QTableWidget):
                     self.setItem(4, col, QTableWidgetItem(""))
                     self.setItem(5, col, QTableWidgetItem(""))
 
+class VersionControl:
+    def __init__(self):
+        self.tempdir = tempfile.TemporaryDirectory(prefix="ms_")
+        # next index to be saved or the one loaded in current view
+        self.curr_index = -1 
+        self.filenames = []
+
+    def register(self, data: Data):
+        if not data: return
+
+        new_filename = f"hist_{len(self.filenames):05d}.json"
+
+        # convert to dictionary
+        try:
+            dicdata = data.to_dict()
+        except Exception as e:
+            print(e)
+            return
+        try:
+            dicdata = json.dumps(dicdata, indent=4)
+        except Exception as e:
+            print(e)
+            return
+
+        # actual save to disk
+        try:
+            load_name = os.path.join(self.tempdir.name, new_filename)
+            with open(load_name, "w") as f:
+                f.write(dicdata)
+        except Exception as e:
+            print(e)
+            return
+
+        # if all goes well append last name to list
+        self.filenames.append(new_filename)
+        self.curr_index += 1     
+
+    def undo(self):
+        data = None
+        # check and reset params
+        if len(self.filenames) == 0:
+            self.curr_index = -1
+            return data
+
+        # No more undo to performe
+        if self.curr_index == 0:
+            return data
+
+        self.curr_index -= 1
+        # now load filenames[self.curr_index]
+        load_name = os.path.join(self.tempdir.name, self.filenames[self.curr_index])
+        try:
+            with open(load_name) as f:
+                datadic = json.load(f)
+            data = dict_to_data(datadic)
+        except:
+            # restore last state
+            self.curr_index += 1
+
+        return data       
+    
 
 class MainWindow(QMainWindow):
     def __init__(self, infile):
@@ -3060,6 +3128,9 @@ class MainWindow(QMainWindow):
         self.plot = MainCanvas(self, self.data)
         self.last_dir = os.getenv("PWD")
         #self.load_data()
+        # self.version_control = VersionControl()
+        self.undo_stack = deque()
+        self.redo_stack = deque()
 
         # Widgets initialization------------------------------------------------------
         self.table = MainSheet(self, self.data)
@@ -3161,6 +3232,16 @@ class MainWindow(QMainWindow):
         newMec.setStatusTip("Create new mechanism")
         newMec.triggered.connect(self.on_new_mech)
 
+        undo = QAction("&Undo", self)
+        undo.setShortcut("Ctrl+z")
+        undo.setStatusTip("")
+        undo.triggered.connect(self.undo)
+
+        redo = QAction("&Redo", self)
+        redo.setShortcut("Ctrl+shift+z")
+        redo.setStatusTip("")
+        redo.triggered.connect(self.redo)
+
         plot_action = QAction("&Show Plot Window", self)
         plot_action.setShortcut("Ctrl+g")
         plot_action.setStatusTip("Show all energy plots")
@@ -3188,6 +3269,8 @@ class MainWindow(QMainWindow):
 
         editmenu = mainmenu.addMenu("&Edit")
         editmenu.addAction(newMec)
+        editmenu.addAction(undo)
+        editmenu.addAction(redo)
 
         viewmenu = mainmenu.addMenu("&View")
         viewmenu.addAction(plot_action)
@@ -3247,6 +3330,28 @@ class MainWindow(QMainWindow):
     #     # if event.key == Qt.Key_Q and event.modifiers() == Qt.ControlModifier:
     #     if event.key == Qt.Key_Escape:
     #         self.close()
+    def register(self):
+        self.undo_stack.append(copy.deepcopy(self.data))
+        self.redo_stack.clear()
+        print("done registering ")
+
+    def undo(self):
+        """Revert to the previous state."""
+        if not self.undo_stack:
+            print("Nothing to undo")
+            return
+        self.redo_stack.append(copy.deepcopy(self.data))
+        self.data = self.undo_stack.pop()
+        self.table.update_data(self.data)
+
+    def redo(self):
+        """Re-apply the last undone action."""
+        if not self.redo_stack:
+            print("Nothing to redo")
+            return
+        self.undo_stack.append(copy.deepcopy(self.data))
+        self.data = self.redo_stack.pop()
+        self.table.update_data(self.data)
 
     def quit(self, e):
         d = QMessageBox()
