@@ -15,6 +15,7 @@ PROGRAM_ENERGY_MAP = {
     "gaussian": read_energy_gaussian,
     "orca": read_energy_orca,
     "vasp": read_energy_vasp,
+    "cp2k": read_energy_cp2k,
     "ase": read_energy_ase
         }
 
@@ -22,6 +23,7 @@ PROGRAM_FREQ_MAP = {
     "gaussian": read_freq_gaussian,
     "orca": read_freq_orca,
     "vasp": read_freq_vasp,
+    "cp2k": read_freq_cp2k,
     "ase": read_freq_ase,
     "molden": read_freq_molden
         }
@@ -1762,7 +1764,7 @@ class Itm(object):
             shutil.copy(photo, databasedir + newname)
             self.photos.append(newname)
 
-    def struct_from_file(self, infile):
+    def struct_from_file(self, infile, program=None):
         """
         :param infile:
         :return bool:
@@ -1776,12 +1778,14 @@ class Itm(object):
         nat, labels, coors, celda = 0, [], [], []
         if infile.endswith(".xyz"):
             nat, labels, coors = read_xyz(infile)
-            if nat and labels and coors:
-                self.struct.update(nat=nat, labels=labels, coors=coors)
         elif "POSCAR" in infile or "CONTCAR" in infile:
             nat, labels, coors, celda = read_poscar(infile)
-            if nat and labels and coors:
-                self.struct.update(nat=nat, labels=labels, coors=coors, cell=celda)
+        elif program == "cp2k":
+            nat, labels, coors, celda = read_cp2k_output(infile)
+
+        if nat and labels and coors:
+            self.struct.update(nat=nat, labels=labels, coors=coors, cell=celda)
+
         if not coors:
             self.cm += "ERROR REDING STRUCT FROM "+ infile+"\n"
             return False
@@ -2643,7 +2647,7 @@ class Mechanism(object):
        
         # try to read struct
         struct_path = os.path.join(folder, data.get("struct_file", ""))
-        itmobj.struct_from_file(struct_path)
+        itmobj.struct_from_file(struct_path, program)
         
         itmobj.set_tp(data.get("tp", "min")) # default is min
 
@@ -2706,109 +2710,6 @@ class Mechanism(object):
             data = detect_program(folder)
 
         return self.itm_from_folder_custom(folder, data, add=add)
-
-        # THIS BELOW HAS TO BE DELETED  ------------
-        # THE FUNCTIONALITY HAS BEEN MIGRATED TO Read.py
-        itmname = os.path.basename(folder)
-        # Try VASP, if not try ORCA.
-        energy = None
-        poss_files = ["OSZICAR.opt", "job.out"]
-        for pfile in poss_files:
-            path = os.path.join(folder, pfile)
-            if not os.path.isfile(path):
-                continue
-            try:
-                if pfile == "OSZICAR.opt":
-                    energy, spin = read_oszicar_energy(path)
-                    unit = "eV"
-                elif pfile == "job.out":
-                    energy = read_orca_energy(path)
-                    unit = "Ha"
-            except Exception as e:
-                print("Error reading energy for: " + itmname)
-                print(e)
-                return None
-        if energy is None:
-            print("No energy file found for: " + itmname)
-            return None
-
-        if unit != self.unit:
-            energy *= conv[unit][self.unit]
-        itmobj = Itm(itmname, energy=energy, spin=spin)
-        if add:
-            itmobj = self.add_itm(itmname, energy=energy, spin=spin)
-
-        if itmobj is None:
-            print("Item no added, that name is already used")
-            return None
-
-        if os.path.isfile(folder + "/DIMCAR") or os.path.isfile(folder + "/DIMCAR.out"):
-            tp = "ts"
-        elif os.path.isfile(folder + "/MECP.info.molden"):
-            tp = "mecp"
-        else:
-            tp = "min"
-        itmobj.set_tp(tp)
-
-        # Try VASP, if not try ORCA.
-        poss_files = ["MECP.info.molden", "OUTCAR.freq", "job.out", "OUTCAR"]
-        for pfile in poss_files:
-            path = os.path.join(folder, pfile)
-            try:
-                path2 = os.path.join(folder, "OUTCAR.fake")
-            except:
-                print("No OUTCAR.fake for frequencies")
-                path2 = None
-            if not os.path.isfile(path):
-                continue
-            try:
-                if pfile == "MECP.info.molden":
-                    freqs, unit, redmass, grad, grad_diff= read_mfreq(path, path2)
-                    if redmass is not None:
-                        itmobj.redmass = redmass
-                    if grad is not None:
-                        itmobj.grad = grad
-                    if grad_diff is not None:
-                        itmobj.diffgrad = grad_diff
-                elif pfile == "OUTCAR.freq":
-                    freqs, unit = read_outcar_freqs(path)
-                elif pfile == "OUTCAR":
-                    try: 
-                        freqs, unit = read_outcar_freqs(path)
-                    except Exception as e:
-                        print("Error reading frequencies from OUTCAR for: " + itmname)
-                        print(e)
-                        continue
-                elif pfile == "job.out":
-                    freqs = read_orca_freqs(path)
-                    unit = "cm-1"
-                    # Also get Point group
-                    pg = read_orca_pg(path)
-                    if pg is not None:
-                        itmobj.pg = pg
-            except Exception as e:
-                print("Error reading frequencies for: " + itmname)
-                print(e)
-            else:
-                itmobj.freqs.set_vibs(freqs[:])
-                itmobj.freqs.unit = unit
-                break
-#
-        poss_files = ["POSCAR.opt", "poscar.xyz", "job.xyz", "CONTCAR.opt", "CONTCAR", "POSCAR"]
-        for pfile in poss_files:
-            path = os.path.join(folder, pfile)
-            if os.path.isfile(path):
-                structfile = path
-                break
-
-        itmobj.struct_from_file(structfile)
-        listdirs = os.listdir(folder)
-        listdirs = [folder + "/" + p for p in listdirs if "foto" in p and p.endswith(".png")]
-        itmobj.photo_from_files(listdirs)
-
-        return itmobj
-
-        # THIS ABOVE HAS TO BE DELETED  ------------
 
 
 class Data(object):

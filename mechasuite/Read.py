@@ -29,6 +29,23 @@ def read_energy_vasp(vaspfile):
                 energy = float(line.split()[-1])
     return energy, spin, pg, unit
 
+def read_energy_cp2k(infile):
+    energy = 0.0
+    spin = 0 # set to zero. None gives problems when summing various spins: None + int
+    pg = "Solid"
+    unit = "Ha"
+    if not os.path.isfile(infile):
+        return energy, spin, pg, unit
+    try:
+        from tigris.io import load_frame
+    except:
+        return energy, spin, pg, unit
+
+    frame = load_frame(infile, fmt="cp2k")
+    energy = frame.energy
+
+    return energy, spin, pg, unit
+
 def read_energy_orca(outfile):
     energy = 0.0
     spin =  0 # set to zero. None gives problems when summing various spins: None + int
@@ -105,6 +122,21 @@ def read_freq_vasp(outcar):
                 freqs.append(float(linea.split()[7]))
             except:
                 freqs.append(-float(linea.split()[6]))
+    unit = "cm-1"
+    return freqs, unit
+
+def read_freq_cp2k(infile):
+    freqs = []
+    unit = None
+    rf = False
+    if not os.path.isfile(infile):
+        return freqs, unit
+    try:
+        from tigris.io import load_frame
+    except:
+        return freqs, unit
+    frame = load_frame(infile, fmt="cp2k")
+    freqs = frame.freqs
     unit = "cm-1"
     return freqs, unit
 
@@ -392,6 +424,18 @@ def read_poscar(poscar):
         p.xyz = p.coor
 
     return p.totalat, p.label_extended, p.xyz, list(p.celda)
+
+def read_cp2k_output(infile):
+    try:
+        from tigris.io import load_frame
+    except:
+        return 0, [], [], []
+
+    frame = load_frame(infile, fmt="cp2k")
+    lat = []
+    if frame.pbc:
+        lat = frame.lattice.tolist()
+    return frame.natoms, frame.symbols, frame.coords.tolist(), lat
 
 def mult_split(string):
     if "-" not in string:
